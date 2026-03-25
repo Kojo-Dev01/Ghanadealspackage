@@ -27,7 +27,10 @@ export function SaveButton({ propertyId, variant = "card" }: SaveButtonProps) {
       e.preventDefault();
       e.stopPropagation();
 
-      if (!user || user.role !== "buyer") return;
+      if (!user || user.role !== "buyer") {
+        window.dispatchEvent(new Event("gd:open-login"));
+        return;
+      }
 
       const token = localStorage.getItem(TOKEN_KEY);
       if (!token) return;
@@ -44,9 +47,6 @@ export function SaveButton({ propertyId, variant = "card" }: SaveButtonProps) {
     },
     [user, saved, propertyId]
   );
-
-  // Don't render for non-buyer users
-  if (!user || user.role !== "buyer") return null;
 
   if (variant === "detail") {
     return (

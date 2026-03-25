@@ -69,8 +69,17 @@ export function ExtractedShellClient({ children }: ExtractedShellClientProps) {
       }
     };
 
+    const handleOpenLogin = () => {
+      setMobileOpen(false);
+      setActiveModal("login");
+    };
+
     window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
+    window.addEventListener("gd:open-login", handleOpenLogin);
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+      window.removeEventListener("gd:open-login", handleOpenLogin);
+    };
   }, []);
 
   const showToast = (message: string, type: ToastType = "info") => {

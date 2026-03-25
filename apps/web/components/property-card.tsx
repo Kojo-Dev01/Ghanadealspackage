@@ -16,15 +16,17 @@ export function PropertyCard({ property }: PropertyCardProps) {
 
   return (
     <article className="property-card-v">
-      <Link href={`/property/${property.id}`}>
-        <div className="card-img">
+      <div className="card-img">
+        <Link href={`/property/${property.id}`}>
           <Image src={property.image} alt={property.title} width={640} height={420} />
-          <div className="card-badges">
-            {badge ? <span className={badge.className}>{badge.label}</span> : null}
-          </div>
-          <div className="card-photo-count">{property.photos} photos</div>
-          <SaveButton propertyId={property.id} />
+        </Link>
+        <div className="card-badges">
+          {badge ? <span className={badge.className}>{badge.label}</span> : null}
         </div>
+        <div className="card-photo-count">{property.photos} photos</div>
+        <SaveButton propertyId={property.id} />
+      </div>
+      <Link href={`/property/${property.id}`}>
         <div className="card-body">
           <div className="card-type">
             {property.type} for {property.listingType === "rent" ? "Rent" : "Sale"}

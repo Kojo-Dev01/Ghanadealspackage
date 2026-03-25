@@ -457,9 +457,10 @@ export async function fetchSavedProperties(token: string): Promise<{ items: Save
 
 export async function saveProperty(token: string, propertyId: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/buyer/saved/${propertyId}`, {
+    const url = `${API_BASE}/buyer/saved/${propertyId}`;
+    const res = await fetch(url, {
       method: "POST",
-      headers: authHeaders(token),
+      headers: { authorization: `Bearer ${token}` },
     });
     return res.ok;
   } catch { return false; }
@@ -467,9 +468,10 @@ export async function saveProperty(token: string, propertyId: string): Promise<b
 
 export async function unsaveProperty(token: string, propertyId: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/buyer/saved/${propertyId}`, {
+    const url = `${API_BASE}/buyer/saved/${propertyId}`;
+    const res = await fetch(url, {
       method: "DELETE",
-      headers: authHeaders(token),
+      headers: { authorization: `Bearer ${token}` },
     });
     return res.ok;
   } catch { return false; }
