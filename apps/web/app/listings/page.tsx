@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { fetchProperties } from "../../lib/api";
 import { PropertyCard } from "../../components/property-card";
@@ -48,15 +49,17 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
               action={<Link href="/" className="btn btn-outline">Home</Link>}
             />
 
-            <ListingsFilters
-              q={q}
-              listingType={listingType}
-              type={type}
-              minPrice={minPrice}
-              maxPrice={maxPrice}
-              minBeds={minBeds}
-              minBaths={minBaths}
-            />
+            <Suspense>
+              <ListingsFilters
+                q={q}
+                listingType={listingType}
+                type={type}
+                minPrice={minPrice}
+                maxPrice={maxPrice}
+                minBeds={minBeds}
+                minBaths={minBaths}
+              />
+            </Suspense>
 
             <div className="property-grid">
               {result.items.map((property) => (

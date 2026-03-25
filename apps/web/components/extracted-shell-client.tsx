@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { ExtractedHeader } from "./extracted-header";
 import { ExtractedFooter } from "./extracted-footer";
 import { AuthModals } from "./auth-modals";
@@ -98,15 +98,17 @@ export function ExtractedShellClient({ children }: ExtractedShellClientProps) {
 
   return (
     <>
-      <ExtractedHeader
-        headerScrolled={headerScrolled}
-        mobileOpen={mobileOpen}
-        onToggleMobileNav={toggleMobileNav}
-        onCloseMobileNav={closeMobileNav}
-        onOpenLogin={openLogin}
-        onOpenSignup={openSignup}
-        onShowToast={showToast}
-      />
+      <Suspense>
+        <ExtractedHeader
+          headerScrolled={headerScrolled}
+          mobileOpen={mobileOpen}
+          onToggleMobileNav={toggleMobileNav}
+          onCloseMobileNav={closeMobileNav}
+          onOpenLogin={openLogin}
+          onOpenSignup={openSignup}
+          onShowToast={showToast}
+        />
+      </Suspense>
       {children}
       <ExtractedFooter />
       <AuthModals
