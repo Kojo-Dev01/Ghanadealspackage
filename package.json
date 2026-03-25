@@ -1,0 +1,26 @@
+{
+  "name": "ghanadeals-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "shared/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev:web & npm run dev:api & npm run dev:admin & npm run dev:agents",
+    "dev:web": "npm --workspace @ghanadeals/web run dev",
+    "dev:api": "npm --workspace @ghanadeals/api run dev",
+    "dev:admin": "npm --workspace @ghanadeals/admin run dev",
+    "dev:agents": "npm --workspace @ghanadeals/agents run dev",
+    "build": "npm run build:web && npm run build:api && npm run build:admin && npm run build:agents",
+    "build:web": "npm --workspace @ghanadeals/web run build",
+    "build:api": "npm --workspace @ghanadeals/api run build",
+    "build:admin": "npm --workspace @ghanadeals/admin run build",
+    "build:agents": "npm --workspace @ghanadeals/agents run build",
+    "lint": "npm run lint:web && npm run lint:api && npm run lint:admin && npm run lint:agents",
+    "lint:web": "npm --workspace @ghanadeals/web run lint",
+    "lint:api": "npm --workspace @ghanadeals/api run lint",
+    "lint:admin": "npm --workspace @ghanadeals/admin run lint",
+    "lint:agents": "npm --workspace @ghanadeals/agents run lint"
+  }
+}
