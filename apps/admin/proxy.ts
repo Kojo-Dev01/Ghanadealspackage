@@ -16,7 +16,9 @@ async function hasValidSession(token?: string) {
       new TextEncoder().encode(secret)
     );
     const role = String(payload.role ?? "");
-    const allowedRoles = (process.env.ADMIN_ALLOWED_ROLES ?? "admin,moderator")
+    const allowedRoles = (
+      process.env.ADMIN_ALLOWED_ROLES ?? "super_admin,moderator,customer_service"
+    )
       .split(",")
       .map((r) => r.trim())
       .filter(Boolean);
