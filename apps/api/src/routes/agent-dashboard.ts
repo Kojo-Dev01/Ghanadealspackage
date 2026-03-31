@@ -221,6 +221,45 @@ export async function registerAgentDashboardRoutes(app: FastifyInstance) {
     };
   });
 
+  // ── PUT /inquiries/:id/status — update inquiry status ────────
+  const inquiryStatusSchema = z.object({ status: z.enum(["new", "read", "responded", "closed"]) });
+
+  app.put("/inquiries/:id/status", async (request, reply) => {
+    const auth = await requireAgent(request, reply);
+    if (!auth) return;
+
+    const { id } = request.params as { id: string };
+    const parsed = inquiryStatusSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ message: "Valid status required (new, read, responded, closed)" });
+    }
+
+    const supabase = getSupabaseAdminClient()!;
+
+    // Verify the inquiry belongs to one of this agent's properties
+    const { data: inquiry } = await (supabase as any)
+      .from("inquiries")
+      .select("id, property_id, properties!inner(agent_id)")
+      .eq("id", id)
+      .single();
+
+    if (!inquiry || inquiry.properties?.agent_id !== auth.agentId) {
+      return reply.code(404).send({ message: "Inquiry not found" });
+    }
+
+    const { error } = await (supabase as any)
+      .from("inquiries")
+      .update({ status: parsed.data.status, updated_at: new Date().toISOString() })
+      .eq("id", id);
+
+    if (error) {
+      request.log.error(error, "Failed to update inquiry status");
+      return reply.code(500).send({ message: "Failed to update status" });
+    }
+
+    return { message: `Inquiry marked as ${parsed.data.status}` };
+  });
+
   // ── GET /stats — overview numbers ───────────────────────────
   app.get("/stats", async (request, reply) => {
     const auth = await requireAgent(request, reply);

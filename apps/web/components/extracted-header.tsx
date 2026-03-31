@@ -27,6 +27,7 @@ export function ExtractedHeader({
 }: ExtractedHeaderProps) {
   const [isDark, setIsDark] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user, agent, loading: authLoading, logout } = useAuth();
@@ -44,6 +45,7 @@ export function ExtractedHeader({
   const homeActive = pathname === "/";
 
   useEffect(() => {
+    setMounted(true);
     const saved = window.localStorage.getItem("gh-theme");
     if (saved === "dark") {
       document.documentElement.setAttribute("data-theme", "dark");
@@ -93,7 +95,12 @@ export function ExtractedHeader({
             +233 30 212 3456
           </a>
           <div id="authButtons">
-            {authLoading ? null : user ? (
+            {!mounted || authLoading ? (
+              <>
+                <button className="btn-login" type="button" style={{ visibility: "hidden" }}>Login</button>
+                <button className="btn-signup" type="button" style={{ visibility: "hidden" }}>Sign Up</button>
+              </>
+            ) : user ? (
               <div style={{ position: "relative" }}>
                 <button
                   type="button"

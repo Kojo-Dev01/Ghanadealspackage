@@ -2208,14 +2208,39 @@ ul, ol { list-style: none; }
 }
 
 @media (max-width: 768px) {
-  .hero { height: 480px; }
-  .hero-content h1 { font-size: 32px; }
-  .hero-stats { gap: 20px; }
+  .hero { height: auto; min-height: 580px; padding: 60px 0 50px; }
+  .hero-content { padding: 0 20px; }
+  .hero-content h1 { font-size: 28px; margin-bottom: 8px; }
+  .hero-content > p { font-size: 14px; margin-bottom: 20px; }
+  .hero-stats { gap: 16px; }
   .hero-stats .stat strong { font-size: 18px; }
 
-  .search-bar { flex-direction: column; padding: 14px; }
-  .search-bar .search-field { width: 100%; }
-  .search-bar .btn-primary { width: 100%; }
+  .search-bar-wrap { max-width: 100%; }
+  .search-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 0;
+  }
+  .search-tabs::-webkit-scrollbar { display: none; }
+  .search-tab { padding: 8px 16px; font-size: 13px; white-space: nowrap; flex-shrink: 0; }
+  .search-tab.active { background: var(--bg-primary); color: var(--text-primary); }
+
+  .search-bar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 12px;
+    gap: 8px;
+    border-radius: 0 var(--radius-lg) var(--radius-lg) var(--radius-lg);
+  }
+  .search-bar .search-field {
+    flex: 1 1 calc(50% - 4px);
+    min-width: calc(50% - 4px);
+  }
+  .search-bar .search-field input,
+  .search-bar .search-field select { padding: 10px 10px 10px 32px; font-size: 13px; }
+  .search-bar .search-field .field-icon { left: 10px; width: 14px; height: 14px; }
+  .search-bar .btn-primary { width: 100%; flex-basis: 100%; padding: 12px; font-size: 14px; }
 
   .property-grid { grid-template-columns: repeat(2, 1fr); }
   .locations-grid { grid-template-columns: repeat(2, 1fr); }
@@ -2246,17 +2271,29 @@ ul, ol { list-style: none; }
 }
 
 @media (max-width: 480px) {
-  .hero { height: 420px; }
-  .hero-content h1 { font-size: 26px; }
-  .hero-stats { flex-direction: column; gap: 8px; }
+  .hero { min-height: 560px; padding: 56px 0 44px; }
+  .hero-content { padding: 0 16px; }
+  .hero-content h1 { font-size: 24px; margin-bottom: 6px; }
+  .hero-content > p { font-size: 13px; margin-bottom: 16px; }
+  .hero-stats { flex-direction: column; gap: 6px; }
   .hero-stats .stat strong { display: inline; font-size: 16px; margin-right: 4px; }
+
+  .search-tab { padding: 7px 12px; font-size: 12px; }
+  .search-tab.active { background: var(--bg-primary); color: var(--text-primary); }
+
+  .search-bar { padding: 10px; gap: 6px; }
+  .search-bar .search-field {
+    flex: 1 1 100%;
+    min-width: 100%;
+  }
+  .search-bar .search-field input,
+  .search-bar .search-field select { padding: 10px 10px 10px 30px; font-size: 13px; }
+  .search-bar .btn-primary { padding: 11px; font-size: 14px; }
 
   .property-grid { grid-template-columns: 1fr; }
   .locations-grid { grid-template-columns: 1fr; }
   .agents-grid { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr; }
-
-  .search-tabs { flex-wrap: wrap; }
 
   .card-action-btns { flex-wrap: wrap; }
 

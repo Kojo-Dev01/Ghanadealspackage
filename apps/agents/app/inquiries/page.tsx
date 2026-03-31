@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AgentShell } from "@/components/agent-shell";
 import { fetchAgentInquiries } from "@/lib/api";
+import { InquiryStatusActions } from "@/components/inquiry-status-actions";
 
 type InquiriesPageProps = {
   searchParams: Promise<{ status?: string; page?: string }>;
@@ -96,6 +97,7 @@ export default async function AgentInquiriesPage({
               {inquiry.message}
             </p>
             <p className="text-xs text-muted">Received {inquiry.createdAt}</p>
+            <InquiryStatusActions inquiryId={inquiry.id} currentStatus={inquiry.status} />
           </article>
         ))}
 

@@ -213,6 +213,26 @@ export async function fetchAgentInquiries(
   }
 }
 
+// ── Inquiry Actions ────────────────────────────────────────
+
+export async function updateInquiryStatus(
+  id: string,
+  status: "new" | "read" | "responded" | "closed"
+): Promise<{ ok: boolean; message: string }> {
+  const token = await getSessionToken();
+  if (!token) return { ok: false, message: "Not authenticated" };
+  try {
+    const res = await fetchEndpoint(`/v1/agent/inquiries/${encodeURIComponent(id)}/status`, token, {
+      method: "PUT",
+      body: JSON.stringify({ status }),
+    });
+    const json = await res.json();
+    return { ok: res.ok, message: json.message ?? "Failed to update status" };
+  } catch {
+    return { ok: false, message: "Network error" };
+  }
+}
+
 // ── Listing CRUD ───────────────────────────────────────────
 
 export type CreateListingData = {

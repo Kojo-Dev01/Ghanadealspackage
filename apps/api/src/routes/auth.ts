@@ -15,6 +15,16 @@ const loginSchema = z.object({
   password: z.string().min(1)
 });
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email()
+});
+
+const resetPasswordSchema = z.object({
+  accessToken: z.string().min(1),
+  refreshToken: z.string().min(1),
+  password: z.string().min(8).max(128)
+});
+
 export async function registerAuthRoutes(app: FastifyInstance) {
   // ── POST /signup ────────────────────────────────────────────
   app.post("/signup", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
@@ -203,5 +213,68 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       agent: agentRecord,
       profile: profileRecord
     };
+  });
+
+  // ── POST /forgot-password ───────────────────────────────────
+  app.post("/forgot-password", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (request, reply) => {
+    const body = forgotPasswordSchema.safeParse(request.body);
+    if (!body.success) {
+      return reply.code(400).send({ message: "Please provide a valid email address" });
+    }
+
+    const supabaseAdmin = getSupabaseAdminClient();
+    if (!supabaseAdmin) {
+      return reply.code(503).send({ message: "Auth service is not configured" });
+    }
+
+    const { email } = body.data;
+    const webUrl = process.env.CORS_ORIGINS?.split(",")[0] ?? "http://localhost:3000";
+
+    const { error } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
+      redirectTo: `${webUrl}/reset-password`
+    });
+
+    if (error) {
+      request.log.error(error, "Password reset email failed");
+    }
+
+    // Always return success to prevent email enumeration
+    return { message: "If an account with that email exists, a password reset link has been sent." };
+  });
+
+  // ── POST /reset-password ────────────────────────────────────
+  app.post("/reset-password", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (request, reply) => {
+    const body = resetPasswordSchema.safeParse(request.body);
+    if (!body.success) {
+      return reply.code(400).send({ message: "Invalid request data" });
+    }
+
+    const supabaseClient = getSupabaseServerClient();
+    if (!supabaseClient) {
+      return reply.code(503).send({ message: "Auth service is not configured" });
+    }
+
+    const { accessToken, refreshToken, password } = body.data;
+
+    // Set the session from the recovery tokens
+    const { error: sessionError } = await supabaseClient.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken
+    });
+
+    if (sessionError) {
+      return reply.code(400).send({ message: "Invalid or expired reset link. Please request a new one." });
+    }
+
+    // Update the password
+    const { error: updateError } = await supabaseClient.auth.updateUser({
+      password
+    });
+
+    if (updateError) {
+      return reply.code(400).send({ message: "Failed to update password. Please try again." });
+    }
+
+    return { message: "Password has been reset successfully. You can now log in with your new password." };
   });
 }

@@ -72,7 +72,7 @@ export function HeroSection({ totalProperties = 0, totalAgents = 0 }: HeroSectio
             <button className={`search-tab ${activeTab === "land" ? "active" : ""}`} onClick={() => setActiveTab("land")}>Land</button>
           </div>
           <div className="search-bar">
-            <div className="search-field" style={{ flex: 2 }}>
+            <div className="search-field" style={{ flex: "2 1 200px" }}>
               <svg className="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
               <input ref={locationRef} type="text" placeholder="Location, community, landmark..." />
             </div>

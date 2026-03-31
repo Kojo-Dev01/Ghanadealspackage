@@ -301,6 +301,40 @@ export async function loginUser(
   }
 }
 
+export async function requestPasswordReset(
+  email: string
+): Promise<{ ok: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE}/auth/forgot-password`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email })
+    });
+    const json = await response.json();
+    return { ok: response.ok, message: json.message ?? "Something went wrong" };
+  } catch {
+    return { ok: false, message: "Network error — please try again" };
+  }
+}
+
+export async function resetPassword(
+  accessToken: string,
+  refreshToken: string,
+  password: string
+): Promise<{ ok: boolean; message: string }> {
+  try {
+    const response = await fetch(`${API_BASE}/auth/reset-password`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ accessToken, refreshToken, password })
+    });
+    const json = await response.json();
+    return { ok: response.ok, message: json.message ?? "Something went wrong" };
+  } catch {
+    return { ok: false, message: "Network error — please try again" };
+  }
+}
+
 export async function fetchMe(
   token: string
 ): Promise<{ user: AuthUser; agent: AgentProfile | null; profile: UserProfile | null } | null> {
