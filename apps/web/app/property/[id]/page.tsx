@@ -6,6 +6,7 @@ import { ExtractedShell } from "../../../components/extracted-shell";
 import { InquiryForm } from "../../../components/inquiry-form";
 import { SaveButton } from "../../../components/save-button";
 import { GalleryLightbox } from "../../../components/gallery-lightbox";
+import { MortgageCalculator } from "../../../components/mortgage-calculator";
 
 type PropertyPageProps = {
   params: Promise<{ id: string }>;
@@ -20,6 +21,8 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   }
 
   const gallery = property.gallery?.length ? property.gallery : [property.imageLg ?? property.image];
+  const floorPlans = property.floorPlans ?? [];
+  const hasCoordinates = property.latitude != null && property.longitude != null;
 
   return (
     <ExtractedShell>
@@ -72,6 +75,45 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
                   ))}
                 </div>
               </div>
+
+              {/* Floor Plans */}
+              {floorPlans.length > 0 && (
+                <div className="detail-section">
+                  <h3 className="detail-section-title">Floor Plans</h3>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
+                    {floorPlans.map((url, i) => (
+                      <a key={i} href={url} target="_blank" rel="noopener noreferrer" style={{ display: "block", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
+                        <img src={url} alt={`Floor plan ${i + 1}`} style={{ width: "100%", height: "auto" }} />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Map Location */}
+              {hasCoordinates && (
+                <div className="detail-section">
+                  <h3 className="detail-section-title">Location on Map</h3>
+                  <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)" }}>
+                    <iframe
+                      title="Property location"
+                      width="100%"
+                      height="300"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${property.longitude! - 0.005}%2C${property.latitude! - 0.005}%2C${property.longitude! + 0.005}%2C${property.latitude! + 0.005}&layer=mapnik&marker=${property.latitude}%2C${property.longitude}`}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Mortgage Calculator */}
+              {property.listingType === "sale" && (
+                <div className="detail-section">
+                  <MortgageCalculator price={property.price} />
+                </div>
+              )}
             </div>
 
             <div className="detail-sidebar">

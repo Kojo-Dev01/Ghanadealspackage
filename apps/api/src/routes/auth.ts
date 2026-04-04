@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { getSupabaseAdminClient, getSupabaseServerClient } from "../lib/supabase.js";
+import { createNotification } from "../lib/notifications.js";
 
 const signupSchema = z.object({
   name: z.string().min(2).max(100),
@@ -107,6 +108,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       { sub: userId, email, role: accountType, name },
       { expiresIn: "7d" }
     );
+
+    // Welcome notification (fire-and-forget)
+    createNotification({
+      userId,
+      type: "welcome",
+      title: "Welcome to GhanaDeals!",
+      body: `Hi ${name}, your ${accountType} account is ready.`,
+    }).catch((err) => request.log.error(err, "Failed to create welcome notification"));
 
     return reply.code(201).send({
       token,

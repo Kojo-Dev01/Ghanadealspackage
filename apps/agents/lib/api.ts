@@ -108,6 +108,9 @@ export type DashboardListing = {
   amenities: string[];
   furnishing: string;
   parking: string;
+  latitude?: number;
+  longitude?: number;
+  floorPlans: string[];
   featured: boolean;
   moderationStatus: string;
   createdAt: string;
@@ -253,6 +256,9 @@ export type CreateListingData = {
   amenities?: string[];
   furnishing?: string;
   parking?: string;
+  latitude?: number;
+  longitude?: number;
+  floorPlans?: string[];
 };
 
 export async function createListing(

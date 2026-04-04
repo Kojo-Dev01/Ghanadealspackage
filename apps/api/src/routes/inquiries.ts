@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { getSupabaseAdminClient } from "../lib/supabase.js";
 import { notifyAgentNewInquiry } from "../lib/email.js";
+import { createNotification } from "../lib/notifications.js";
 
 const inquirySchema = z.object({
   propertyId: z.string().uuid(),
@@ -29,7 +30,7 @@ export async function registerInquiryRoutes(app: FastifyInstance) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: property } = await (supabase as any)
       .from("properties")
-      .select("id, title, agent_id, agents!inner(id, name, email)")
+      .select("id, title, agent_id, agents!inner(id, user_id, name, email)")
       .eq("id", body.propertyId)
       .eq("moderation_status", "approved")
       .single();
@@ -38,7 +39,7 @@ export async function registerInquiryRoutes(app: FastifyInstance) {
       return reply.code(404).send({ message: "Property not found" });
     }
 
-    const prop = property as { id: string; title: string; agent_id: string; agents: { id: string; name: string; email: string } };
+    const prop = property as { id: string; title: string; agent_id: string; agents: { id: string; user_id: string; name: string; email: string } };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase.from("inquiries") as any).insert({
@@ -61,6 +62,17 @@ export async function registerInquiryRoutes(app: FastifyInstance) {
         { name: body.name, email: body.email, phone: body.phone, message: body.message },
         { title: prop.title, id: prop.id }
       ).catch((err) => app.log.error(err, "Failed to send inquiry email"));
+    }
+
+    // In-app notification for agent
+    if (prop.agents?.user_id) {
+      createNotification({
+        userId: prop.agents.user_id,
+        type: "inquiry_received",
+        title: "New Inquiry",
+        body: `${body.name} inquired about "${prop.title}"`,
+        data: { propertyId: prop.id, inquiryId: (data as { id: string }).id },
+      }).catch((err) => app.log.error(err, "Failed to create inquiry notification"));
     }
 
     return reply.code(201).send({

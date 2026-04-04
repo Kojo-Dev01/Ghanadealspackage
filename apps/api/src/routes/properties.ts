@@ -31,6 +31,9 @@ export interface PropertyRow {
   parking: string;
   featured: boolean;
   moderation_status: ModerationStatus;
+  latitude: number | null;
+  longitude: number | null;
+  floor_plans: string[];
   created_at: string;
   updated_at: string;
 }
@@ -71,7 +74,7 @@ function toApiProperty(row: PropertyWithAgent) {
     imageLg: row.image_lg ?? undefined,
     gallery: row.gallery,
     badges: row.badges,
-    photos: row.photos,
+    photos: (row.gallery?.length ?? 0) + (row.image ? 1 : 0),
     description: row.description,
     amenities: row.amenities,
     ref: row.ref,
@@ -80,6 +83,9 @@ function toApiProperty(row: PropertyWithAgent) {
     parking: row.parking,
     featured: row.featured,
     moderationStatus: row.moderation_status,
+    latitude: row.latitude ?? undefined,
+    longitude: row.longitude ?? undefined,
+    floorPlans: row.floor_plans ?? [],
     agent: {
       id: row.agents.id,
       name: row.agents.name,
@@ -106,6 +112,10 @@ export async function registerPropertyRoutes(app: FastifyInstance) {
       page?: string;
       limit?: string;
       featured?: string;
+      swLat?: string;
+      swLng?: string;
+      neLat?: string;
+      neLng?: string;
     };
 
     const supabase = getSupabaseAdminClient();
@@ -155,6 +165,21 @@ export async function registerPropertyRoutes(app: FastifyInstance) {
     }
     if (query.featured === "true") {
       qb = qb.eq("featured", true);
+    }
+
+    // Map bounds filter
+    const swLat = Number(query.swLat);
+    const swLng = Number(query.swLng);
+    const neLat = Number(query.neLat);
+    const neLng = Number(query.neLng);
+    if (!Number.isNaN(swLat) && !Number.isNaN(swLng) && !Number.isNaN(neLat) && !Number.isNaN(neLng)) {
+      qb = qb
+        .gte("latitude", swLat)
+        .lte("latitude", neLat)
+        .gte("longitude", swLng)
+        .lte("longitude", neLng)
+        .not("latitude", "is", null)
+        .not("longitude", "is", null);
     }
 
     const { data, count, error } = await qb;

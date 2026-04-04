@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { GalleryUploader } from "./gallery-uploader";
+import { CoordinatePicker } from "./coordinate-picker";
 
 /* ── Types ── */
 export type ListingFormData = {
@@ -20,6 +21,9 @@ export type ListingFormData = {
   description: string;
   amenities: string;
   gallery: string[];
+  latitude: string;
+  longitude: string;
+  floorPlans: string[];
 };
 
 type Props = {
@@ -70,6 +74,9 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
     description: defaultValues?.description ?? "",
     amenities: defaultValues?.amenities ?? "",
     gallery: defaultValues?.gallery ?? [],
+    latitude: defaultValues?.latitude ?? "",
+    longitude: defaultValues?.longitude ?? "",
+    floorPlans: defaultValues?.floorPlans ?? [],
   });
 
   function set<K extends keyof ListingFormData>(key: K, value: ListingFormData[K]) {
@@ -189,6 +196,26 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
             </label>
           </div>
         </div>
+        {/* Map Coordinates */}
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted mb-3">Map Coordinates <span className="font-normal opacity-60">(optional)</span></h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-1 text-xs font-semibold text-muted">
+              Latitude
+              <input type="number" value={data.latitude} onChange={(e) => set("latitude", e.target.value)} step="0.0000001" min={-90} max={90} placeholder="e.g. 5.6037" className={inputCls} />
+            </label>
+            <label className="grid gap-1 text-xs font-semibold text-muted">
+              Longitude
+              <input type="number" value={data.longitude} onChange={(e) => set("longitude", e.target.value)} step="0.0000001" min={-180} max={180} placeholder="e.g. -0.1870" className={inputCls} />
+            </label>
+          </div>
+          <CoordinatePicker
+            latitude={data.latitude}
+            longitude={data.longitude}
+            onSelect={(lat, lng) => { set("latitude", lat); set("longitude", lng); }}
+          />
+          <p className="text-[10px] text-muted/60 mt-1">Enter GPS coordinates manually or click the map to set the property location.</p>
+        </div>
         {/* Specs */}
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-muted mb-3">Specifications</h3>
@@ -263,6 +290,13 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
           label="Property Photos"
           hint="First photo will be the main image shown in search results. You can upload up to 10 photos."
         />
+        <GalleryUploader
+          value={data.floorPlans}
+          onChange={(urls) => set("floorPlans", urls)}
+          max={5}
+          label="Floor Plans"
+          hint="Upload floor plan images (optional). Up to 5 floor plans."
+        />
       </div>
     );
   }
@@ -300,6 +334,7 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
             <div className="flex gap-2"><dt className="text-muted w-28 shrink-0">Area</dt><dd className="text-foreground">{Number(data.area) ? `${Number(data.area).toLocaleString()} sq ft` : "—"}</dd></div>
             {data.furnishing && <div className="flex gap-2"><dt className="text-muted w-28 shrink-0">Furnishing</dt><dd className="text-foreground">{data.furnishing}</dd></div>}
             {data.parking && <div className="flex gap-2"><dt className="text-muted w-28 shrink-0">Parking</dt><dd className="text-foreground">{data.parking}</dd></div>}
+            {(data.latitude || data.longitude) && <div className="flex gap-2"><dt className="text-muted w-28 shrink-0">Coordinates</dt><dd className="text-foreground">{data.latitude}, {data.longitude}</dd></div>}
           </dl>
         </div>
 
@@ -329,6 +364,18 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
                   {i === 0 && <span className="absolute top-0.5 left-0.5 bg-accent text-white text-[8px] font-bold px-1 rounded">Main</span>}
                 </div>
               ))}
+            </div>
+          )}
+          {data.floorPlans.length > 0 && (
+            <div>
+              <p className="text-[10px] text-muted mb-1">{data.floorPlans.length} floor plan{data.floorPlans.length !== 1 ? "s" : ""}</p>
+              <div className="flex flex-wrap gap-2">
+                {data.floorPlans.map((url, i) => (
+                  <div key={url} className="rounded-lg overflow-hidden border border-border w-20 h-14">
+                    <img src={url} alt={`Floor plan ${i + 1}`} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

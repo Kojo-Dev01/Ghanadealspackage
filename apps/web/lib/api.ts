@@ -23,11 +23,15 @@ export type PropertyRecord = {
   furnishing: string;
   parking: string;
   agent: {
+    id: string;
     name: string;
     company: string;
     phone: string;
     color: string;
   };
+  latitude?: number;
+  longitude?: number;
+  floorPlans?: string[];
 };
 
 type PropertyListResponse = {
@@ -42,6 +46,7 @@ export type AgentRecord = {
   name: string;
   company: string;
   rating: number;
+  reviewCount: number;
   areas: string[];
   listings: number;
   years: number;
@@ -77,7 +82,7 @@ export type HomepageStats = {
 export async function fetchHomepageStats(): Promise<HomepageStats> {
   try {
     const response = await fetch(`${API_BASE}/properties/stats`, {
-      next: { revalidate: 60 }
+      cache: "no-store"
     });
     if (!response.ok) throw new Error("stats fetch failed");
     return (await response.json()) as HomepageStats;
@@ -98,6 +103,10 @@ export async function fetchProperties(params: {
   featured?: boolean;
   page?: number;
   limit?: number;
+  swLat?: string;
+  swLng?: string;
+  neLat?: string;
+  neLng?: string;
 } = {}): Promise<PropertyListResponse> {
   const query = toQueryString({
     listingType: params.listingType,
@@ -110,12 +119,16 @@ export async function fetchProperties(params: {
     minBaths: params.minBaths,
     featured: params.featured ? "true" : undefined,
     page: params.page ? String(params.page) : undefined,
-    limit: params.limit ? String(params.limit) : undefined
+    limit: params.limit ? String(params.limit) : undefined,
+    swLat: params.swLat,
+    swLng: params.swLng,
+    neLat: params.neLat,
+    neLng: params.neLng,
   });
 
   try {
     const response = await fetch(`${API_BASE}/properties${query}`, {
-      next: { revalidate: 30 }
+      cache: "no-store"
     });
     if (!response.ok) {
       throw new Error(`Failed to fetch properties: ${response.status}`);
@@ -134,7 +147,7 @@ export async function fetchProperties(params: {
 export async function fetchPropertyById(id: string): Promise<PropertyRecord | null> {
   try {
     const response = await fetch(`${API_BASE}/properties/${id}`, {
-      next: { revalidate: 30 }
+      cache: "no-store"
     });
     if (!response.ok) {
       return null;
@@ -153,7 +166,7 @@ export async function fetchAgents(params: { q?: string; area?: string } = {}): P
 
   try {
     const response = await fetch(`${API_BASE}/agents${query}`, {
-      next: { revalidate: 30 }
+      cache: "no-store"
     });
     if (!response.ok) {
       throw new Error(`Failed to fetch agents: ${response.status}`);
@@ -193,7 +206,7 @@ export async function submitInquiry(data: {
 export async function fetchAgentById(id: string): Promise<(AgentRecord & { verified?: boolean }) | null> {
   try {
     const response = await fetch(`${API_BASE}/agents/${id}`, {
-      next: { revalidate: 30 }
+      cache: "no-store"
     });
     if (!response.ok) {
       return null;
@@ -209,7 +222,7 @@ export async function fetchAgentListings(agentId: string): Promise<PropertyListR
   // For now, use a dedicated approach — the API properties endpoint doesn't support agent filter yet
   try {
     const response = await fetch(`${API_BASE}/agents/${agentId}/listings`, {
-      next: { revalidate: 30 }
+      cache: "no-store"
     });
     if (!response.ok) {
       return { items: [], total: 0, page: 1, limit: 12 };
@@ -509,4 +522,125 @@ export async function unsaveProperty(token: string, propertyId: string): Promise
     });
     return res.ok;
   } catch { return false; }
+}
+
+// ── Notifications ─────────────────────────────────────────────
+
+export type NotificationItem = {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  data: Record<string, unknown>;
+  read: boolean;
+  createdAt: string;
+};
+
+export async function fetchNotifications(
+  token: string,
+  params: { page?: number; limit?: number; unread?: boolean } = {}
+): Promise<{ items: NotificationItem[]; total: number; page: number; limit: number }> {
+  const qs = new URLSearchParams();
+  if (params.page) qs.set("page", String(params.page));
+  if (params.limit) qs.set("limit", String(params.limit));
+  if (params.unread) qs.set("unread", "true");
+  const res = await fetch(`${API_BASE}/notifications?${qs}`, {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return { items: [], total: 0, page: 1, limit: 20 };
+  return res.json();
+}
+
+export async function fetchUnreadCount(token: string): Promise<number> {
+  try {
+    const res = await fetch(`${API_BASE}/notifications/unread-count`, {
+      headers: { authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return 0;
+    const data = await res.json();
+    return data.count ?? 0;
+  } catch { return 0; }
+}
+
+export async function markNotificationRead(token: string, id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/notifications/${id}/read`, {
+      method: "PUT",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
+export async function markAllNotificationsRead(token: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/notifications/read-all`, {
+      method: "PUT",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
+export async function deleteNotification(token: string, id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/notifications/${id}`, {
+      method: "DELETE",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
+// ── Agent Reviews ──────────────────────────────────────────
+
+export type ReviewRecord = {
+  id: string;
+  agentId: string;
+  userId: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+};
+
+type ReviewListResponse = {
+  items: ReviewRecord[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
+export async function fetchAgentReviews(agentId: string, page = 1): Promise<ReviewListResponse> {
+  try {
+    const response = await fetch(`${API_BASE}/agents/${agentId}/reviews?page=${page}`, {
+      cache: "no-store",
+    });
+    if (!response.ok) return { items: [], total: 0, page: 1, limit: 20 };
+    return (await response.json()) as ReviewListResponse;
+  } catch {
+    return { items: [], total: 0, page: 1, limit: 20 };
+  }
+}
+
+export async function submitAgentReview(
+  token: string,
+  agentId: string,
+  data: { rating: number; comment?: string }
+): Promise<{ ok: boolean; message: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/agents/${agentId}/reviews`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!res.ok) return { ok: false, message: json.message ?? "Failed to submit review" };
+    return { ok: true, message: json.message ?? "Review submitted" };
+  } catch {
+    return { ok: false, message: "Network error" };
+  }
 }

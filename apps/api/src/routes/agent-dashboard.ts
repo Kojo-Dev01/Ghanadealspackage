@@ -65,6 +65,9 @@ const createListingSchema = z.object({
   amenities: z.array(z.string().max(100)).max(50).optional(),
   furnishing: z.string().max(50).optional(),
   parking: z.string().max(50).optional(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
+  floorPlans: z.array(z.string().max(500)).max(10).optional(),
 });
 
 const updateListingSchema = createListingSchema.partial();
@@ -332,6 +335,9 @@ export async function registerAgentDashboardRoutes(app: FastifyInstance) {
         amenities: d.amenities ?? [],
         furnishing: d.furnishing ?? "",
         parking: d.parking ?? "",
+        latitude: d.latitude ?? null,
+        longitude: d.longitude ?? null,
+        floor_plans: d.floorPlans ?? [],
         ref,
         photos: Math.max(d.gallery?.length ?? 0, d.image ? 1 : 0),
         moderation_status: "pending",
@@ -417,6 +423,9 @@ export async function registerAgentDashboardRoutes(app: FastifyInstance) {
     if (d.amenities !== undefined) updates.amenities = d.amenities;
     if (d.furnishing !== undefined) updates.furnishing = d.furnishing;
     if (d.parking !== undefined) updates.parking = d.parking;
+    if (d.latitude !== undefined) updates.latitude = d.latitude;
+    if (d.longitude !== undefined) updates.longitude = d.longitude;
+    if (d.floorPlans !== undefined) updates.floor_plans = d.floorPlans;
 
     // Re-submit for moderation on edit
     updates.moderation_status = "pending";
@@ -580,6 +589,9 @@ function formatProperty(row: any) {
     ref: row.ref ?? "",
     furnishing: row.furnishing ?? "",
     parking: row.parking ?? "",
+    latitude: row.latitude ?? undefined,
+    longitude: row.longitude ?? undefined,
+    floorPlans: row.floor_plans ?? [],
     featured: row.featured ?? false,
     moderationStatus: row.moderation_status ?? "pending",
     createdAt: row.created_at,

@@ -17,6 +17,7 @@
   - [Buyer (Authenticated)](#buyer-authenticated)
   - [Agent Dashboard (Agent Auth)](#agent-dashboard-agent-auth)
   - [Uploads](#uploads)
+  - [Notifications (Authenticated)](#notifications-authenticated)
 - [Data Types & Enums](#data-types--enums)
 - [Pagination](#pagination)
 - [Mobile Integration Notes](#mobile-integration-notes)
@@ -964,6 +965,160 @@ Get a pre-signed URL for uploading files to Wasabi S3.
 
 ---
 
+### Notifications (Authenticated)
+
+All notification endpoints require a valid JWT in the `Authorization: Bearer <token>` header.
+
+#### List Notifications
+
+```
+GET /v1/notifications?page=1&limit=20&unread=true
+```
+
+| Query Param | Type    | Default | Description                          |
+|-------------|---------|---------|--------------------------------------|
+| `page`      | integer | 1       | Page number                          |
+| `limit`     | integer | 20      | Items per page (max 50)              |
+| `unread`    | boolean | —       | If `true`, return only unread items  |
+
+**Response `200`:**
+```json
+{
+  "items": [
+    {
+      "id": "uuid",
+      "type": "inquiry_received",
+      "title": "New Inquiry",
+      "body": "John inquired about \"3BR in East Legon\"",
+      "data": { "propertyId": "uuid", "inquiryId": "uuid" },
+      "read": false,
+      "createdAt": "2025-01-15T10:30:00Z"
+    }
+  ],
+  "total": 42,
+  "page": 1,
+  "limit": 20
+}
+```
+
+---
+
+#### Unread Count
+
+```
+GET /v1/notifications/unread-count
+```
+
+**Response `200`:**
+```json
+{ "count": 5 }
+```
+
+---
+
+#### Mark Single Notification as Read
+
+```
+PUT /v1/notifications/:id/read
+```
+
+**Response `200`:**
+```json
+{ "message": "Notification marked as read" }
+```
+
+---
+
+#### Mark All Notifications as Read
+
+```
+PUT /v1/notifications/read-all
+```
+
+**Response `200`:**
+```json
+{ "message": "All notifications marked as read" }
+```
+
+---
+
+#### Delete Notification
+
+```
+DELETE /v1/notifications/:id
+```
+
+**Response `200`:**
+```json
+{ "message": "Notification deleted" }
+```
+
+---
+
+#### Get Notification Preferences
+
+```
+GET /v1/notifications/preferences
+```
+
+**Response `200`:**
+```json
+{
+  "emailEnabled": true,
+  "pushEnabled": true,
+  "inAppEnabled": true,
+  "mutedTypes": []
+}
+```
+
+---
+
+#### Update Notification Preferences
+
+```
+PUT /v1/notifications/preferences
+```
+
+**Request Body:**
+```json
+{
+  "emailEnabled": true,
+  "pushEnabled": false,
+  "inAppEnabled": true,
+  "mutedTypes": ["property_saved"]
+}
+```
+
+| Field          | Type     | Description                                   |
+|----------------|----------|-----------------------------------------------|
+| `emailEnabled` | boolean  | Enable/disable email notifications            |
+| `pushEnabled`  | boolean  | Enable/disable push notifications             |
+| `inAppEnabled` | boolean  | Enable/disable in-app notifications           |
+| `mutedTypes`   | string[] | Array of notification types to silence         |
+
+**Response `200`:**
+```json
+{ "message": "Preferences updated" }
+```
+
+---
+
+#### Notification Types
+
+| Type                      | Trigger                          | Recipient |
+|---------------------------|----------------------------------|-----------|
+| `inquiry_received`        | New inquiry submitted            | Agent     |
+| `inquiry_status_changed`  | Agent updates inquiry status     | Buyer     |
+| `listing_approved`        | Admin approves a listing         | Agent     |
+| `listing_flagged`         | Admin flags a listing            | Agent     |
+| `verification_approved`   | Admin approves KYC               | Agent     |
+| `verification_rejected`   | Admin rejects KYC                | Agent     |
+| `property_saved`          | User saves a property            | Agent     |
+| `welcome`                 | User signs up                    | User      |
+| `system`                  | System-wide announcements        | All       |
+
+---
+
 ## Data Types & Enums
 
 ### Listing Type
@@ -1053,13 +1208,18 @@ The API returns both `price` (number) and `priceFormatted` (string like `"GHS 45
 GHS + Intl.NumberFormat("en-GH", { maximumFractionDigits: 0 }).format(price)
 ```
 
-### Push Notifications (Future)
-Email notifications exist server-side for:
-- New inquiry received (agent)
-- Listing approved/flagged (agent)
-- Verification approved/rejected (agent)
+### Push Notifications
 
-Push notification integration can piggyback on these same events by adding a device token registration endpoint.
+In-app persistent notifications are fully implemented. The API stores notifications in the database and exposes endpoints for listing, reading, and managing them. Mobile apps should:
+
+1. **Poll** `GET /v1/notifications/unread-count` periodically (e.g. every 30s) to update badge counts
+2. **Fetch** `GET /v1/notifications` when the user opens the notification screen
+3. **Mark read** via `PUT /v1/notifications/:id/read` when tapped
+4. **Preferences** — let users mute specific notification types via `PUT /v1/notifications/preferences`
+
+For future **push notification** support, add a device token registration endpoint and dispatch push alongside in-app notifications at the existing trigger points.
+
+Notification types: `inquiry_received`, `inquiry_status_changed`, `listing_approved`, `listing_flagged`, `verification_approved`, `verification_rejected`, `property_saved`, `welcome`, `system`
 
 ### Agent Colors
 Each agent has a `color` field (hex value like `"#3B82F6"`) used as their brand accent. Use this for agent cards, profile headers, and avatars.
@@ -1102,3 +1262,142 @@ Each agent has a `color` field (hex value like `"#3B82F6"`) used as their brand 
 | Agent Dashboard | `GET /agent/stats`, `GET /agent/listings`, `GET /agent/inquiries` |
 | Create/Edit Listing | `POST /agent/listings`, `PUT /agent/listings/:id` |
 | KYC Verification | `GET /agent/verification`, `POST /agent/verification` |
+| Notifications | `GET /notifications`, `GET /notifications/unread-count`, `PUT /notifications/:id/read`, `PUT /notifications/read-all` |
+| Notification Settings | `GET /notifications/preferences`, `PUT /notifications/preferences` |
+| Agent Reviews | `GET /agents/:id/reviews`, `POST /agents/:id/reviews` |
+| Map Search | `GET /properties?swLat=...&swLng=...&neLat=...&neLng=...` |
+| Mortgage Calculator | Client-side only (no API) |
+
+---
+
+## Tier 1 Features (v2)
+
+### Map-Based Search
+
+Properties now support optional `latitude` and `longitude` fields. When present, properties can be displayed on maps and filtered by map viewport bounds.
+
+#### New Fields on Property
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `latitude` | `number \| undefined` | GPS latitude (-90 to 90) |
+| `longitude` | `number \| undefined` | GPS longitude (-180 to 180) |
+| `floorPlans` | `string[]` | Array of floor plan image URLs |
+
+#### Map Bounds Filter
+
+`GET /v1/properties?swLat={lat}&swLng={lng}&neLat={lat}&neLng={lng}`
+
+All four bounds parameters must be provided together. Only properties with non-null coordinates within the bounding box are returned.
+
+**Query Parameters:**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `swLat` | number | Southwest corner latitude |
+| `swLng` | number | Southwest corner longitude |
+| `neLat` | number | Northeast corner latitude |
+| `neLng` | number | Northeast corner longitude |
+
+These can be combined with all existing filters (region, type, price, beds, etc.).
+
+---
+
+### Floor Plans
+
+Properties can now include floor plan images uploaded by agents.
+
+**Agent Dashboard:**
+- `POST /v1/agent/listings` — accepts `floorPlans: string[]` (max 10 URLs)
+- `PUT /v1/agent/listings/:id` — accepts `floorPlans: string[]`
+
+**Response:** `floorPlans` array included in all property responses.
+
+---
+
+### Agent Reviews
+
+Authenticated users can submit reviews for agents. Each user can leave one review per agent (upsert on conflict).
+
+#### `GET /v1/agents/:id/reviews`
+
+List reviews for an agent.
+
+**Query Parameters:**
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page` | number | 1 | Page number |
+| `limit` | number | 20 | Items per page (max 50) |
+
+**Response:**
+```json
+{
+  "items": [
+    {
+      "id": "uuid",
+      "agentId": "uuid",
+      "userId": "uuid",
+      "userName": "John Doe",
+      "rating": 5,
+      "comment": "Great agent!",
+      "createdAt": "2025-01-15T..."
+    }
+  ],
+  "total": 42,
+  "page": 1,
+  "limit": 20
+}
+```
+
+#### `POST /v1/agents/:id/reviews`
+
+Submit or update a review. Requires authentication (`Authorization: Bearer <token>`).
+
+**Request Body:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `rating` | integer | Yes | 1–5 star rating |
+| `comment` | string | No | Review text (max 2000 chars) |
+
+**Response:** `{ "message": "Review submitted", "item": { ...review } }`
+
+If user already has a review for this agent, it is updated (upsert).
+
+#### `DELETE /v1/agents/:id/reviews/:reviewId`
+
+Delete a review. Only the review author or admin can delete.
+
+**Response:** `{ "message": "Review deleted" }`
+
+#### Agent Rating Computation
+
+Agent `rating` field is now computed dynamically from the average of all reviews. The `reviewCount` field is also returned. If no reviews exist, the original static `rating` from the agents table is used as fallback.
+
+**Agent Response (updated):**
+```json
+{
+  "id": "uuid",
+  "name": "Agent Name",
+  "rating": 4.3,
+  "reviewCount": 15,
+  "listings": 8,
+  ...
+}
+```
+
+---
+
+### Mortgage Calculator
+
+The mortgage calculator is a **client-side only** feature — no API endpoint required.
+
+**Formula:** Standard amortization: `P × [r(1+r)^n] / [(1+r)^n - 1]`
+
+**Defaults for Ghana market:**
+- Down payment: 20%
+- Interest rate: 27.5% (typical Ghana mortgage rate)
+- Term: 15 years
+
+Only shown on **for-sale** property detail pages.

@@ -18,6 +18,7 @@ import { registerInquiryRoutes } from "./routes/inquiries.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerAgentDashboardRoutes } from "./routes/agent-dashboard.js";
 import { registerBuyerRoutes } from "./routes/buyer.js";
+import { registerNotificationRoutes } from "./routes/notifications.js";
 
 const serverDir = path.dirname(fileURLToPath(import.meta.url));
 const rootEnvPath = path.resolve(serverDir, "../../../.env");
@@ -64,6 +65,7 @@ app.register(async (v1) => {
   v1.register(registerAuthRoutes, { prefix: "/auth" });
   v1.register(registerAgentDashboardRoutes, { prefix: "/agent" });
   v1.register(registerBuyerRoutes, { prefix: "/buyer" });
+  v1.register(registerNotificationRoutes, { prefix: "/notifications" });
   v1.register(registerUploadRoutes, { prefix: "/uploads" });
   v1.register(registerAdminAuthRoutes, { prefix: "/admin/auth" });
   v1.register(registerAdminRoutes, { prefix: "/admin" });

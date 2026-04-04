@@ -34,6 +34,17 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
     const furnishing = (formData.get("furnishing") as string) || undefined;
     const parking = (formData.get("parking") as string) || undefined;
 
+    const latRaw = formData.get("latitude") as string;
+    const lngRaw = formData.get("longitude") as string;
+    const latitude = latRaw ? Number(latRaw) : undefined;
+    const longitude = lngRaw ? Number(lngRaw) : undefined;
+
+    let floorPlans: string[] | undefined;
+    const floorPlansRaw = formData.get("floorPlans") as string;
+    if (floorPlansRaw) {
+      try { floorPlans = JSON.parse(floorPlansRaw); } catch { floorPlans = undefined; }
+    }
+
     let gallery: string[] | undefined;
     const galleryRaw = formData.get("gallery") as string;
     if (galleryRaw) {
@@ -63,6 +74,9 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
       amenities: amenities.length > 0 ? amenities : [],
       furnishing,
       parking,
+      latitude: latitude && !Number.isNaN(latitude) ? latitude : undefined,
+      longitude: longitude && !Number.isNaN(longitude) ? longitude : undefined,
+      floorPlans,
     });
 
     if (result.ok) {
@@ -113,7 +127,10 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
           parking: listing.parking ?? "",
           description: listing.description ?? "",
           amenities: listing.amenities?.join(", ") ?? "",
-          gallery: listing.gallery ?? (listing.image ? [listing.image] : []),
+          gallery: listing.gallery?.length ? listing.gallery : (listing.image ? [listing.image] : []),
+          latitude: listing.latitude != null ? String(listing.latitude) : "",
+          longitude: listing.longitude != null ? String(listing.longitude) : "",
+          floorPlans: listing.floorPlans ?? [],
         }}
       />
 

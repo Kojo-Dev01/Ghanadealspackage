@@ -25,11 +25,14 @@ import {
   Sofa,
   Star,
   Image as ImageIcon,
+  Map,
   CheckCircle2,
   AlertTriangle,
   Clock,
   ExternalLink,
 } from "lucide-react";
+import { ClickableGallery } from "@/components/clickable-gallery";
+import { AdminGallery } from "@/components/admin-gallery";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -230,46 +233,10 @@ export default async function AdminListingDetailPage({ params }: PageProps) {
         </div>
       </section>
 
-      {/* ── Image Hero ── */}
-      {mainImage && (
-        <section className="bg-panel border border-border rounded-xl shadow-sm overflow-hidden">
-          <div className="relative">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={mainImage}
-              alt={listing.title}
-              className="w-full h-72 md:h-96 object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-6">
-              <h2 className="text-white text-xl md:text-2xl font-bold drop-shadow-lg">
-                {listing.title}
-              </h2>
-              <p className="text-white/80 text-sm mt-1 flex items-center gap-1.5 drop-shadow">
-                <MapPin size={14} /> {listing.location}, {listing.region}
-              </p>
-            </div>
-          </div>
-
-          {/* Gallery thumbnails strip */}
-          {gallery.length > 0 && (
-            <div className="border-t border-border bg-panel-alt p-3">
-              <div className="flex gap-2 overflow-x-auto">
-                {gallery.map((url, i) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    key={i}
-                    src={resolveImg(url)}
-                    alt={`Photo ${i + 1}`}
-                    className="w-20 h-14 md:w-28 md:h-20 object-cover rounded-lg border border-border shrink-0 hover:opacity-80 transition-opacity"
-                  />
-                ))}
-              </div>
-              <p className="text-[11px] text-muted mt-2 flex items-center gap-1">
-                <ImageIcon size={10} /> {gallery.length} photo{gallery.length !== 1 ? "s" : ""} in gallery
-              </p>
-            </div>
-          )}
+      {/* ── Image Gallery ── */}
+      {gallery.length > 0 && (
+        <section className="bg-panel border border-border rounded-xl shadow-sm overflow-hidden p-4">
+          <AdminGallery images={gallery.map(resolveImg)} alt={listing.title} />
         </section>
       )}
 
@@ -349,6 +316,43 @@ export default async function AdminListingDetailPage({ params }: PageProps) {
                   </span>
                 ))}
               </div>
+            </section>
+          )}
+
+          {/* Floor Plans */}
+          {listing.floorPlans && listing.floorPlans.length > 0 && (
+            <section className="bg-panel border border-border rounded-xl shadow-sm p-5">
+              <h2 className="text-sm font-bold text-foreground mb-3">
+                Floor Plans ({listing.floorPlans.length})
+              </h2>
+              <ClickableGallery
+                images={listing.floorPlans.map(resolveImg)}
+                alt={`${listing.title} floor plan`}
+                columns={2}
+              />
+            </section>
+          )}
+
+          {/* Map Location */}
+          {listing.latitude != null && listing.longitude != null && (
+            <section className="bg-panel border border-border rounded-xl shadow-sm p-5">
+              <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-1.5">
+                <Map size={14} /> Location on Map
+              </h2>
+              <div className="rounded-lg overflow-hidden border border-border">
+                <iframe
+                  title="Property location"
+                  width="100%"
+                  height="250"
+                  style={{ border: 0 }}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${listing.longitude - 0.005}%2C${listing.latitude - 0.005}%2C${listing.longitude + 0.005}%2C${listing.latitude + 0.005}&layer=mapnik&marker=${listing.latitude}%2C${listing.longitude}`}
+                />
+              </div>
+              <p className="text-[11px] text-muted mt-2">
+                Coordinates: {listing.latitude.toFixed(6)}, {listing.longitude.toFixed(6)}
+              </p>
             </section>
           )}
 

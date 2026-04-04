@@ -4,6 +4,7 @@ import { getSupabaseAdminClient } from "../lib/supabase.js";
 import type { ModerationStatus } from "./properties.js";
 import { notifyAgentListingApproved, notifyAgentListingFlagged, notifyAgentVerificationApproved, notifyAgentVerificationRejected } from "../lib/email.js";
 import { hasPermission, ADMIN_ROLES, type AdminRole, type Permission } from "../lib/permissions.js";
+import { createNotification } from "../lib/notifications.js";
 
 function formatPrice(price: number): string {
   return `GHS ${new Intl.NumberFormat("en-GH", { maximumFractionDigits: 0 }).format(price)}`;
@@ -321,6 +322,9 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         ref: row.ref,
         furnishing: row.furnishing,
         parking: row.parking,
+        latitude: row.latitude != null ? Number(row.latitude) : null,
+        longitude: row.longitude != null ? Number(row.longitude) : null,
+        floorPlans: (row.floor_plans as string[] | null) ?? [],
         featured: !!row.featured,
         moderationStatus: row.moderation_status,
         moderatedAt: row.moderated_at ?? null,
@@ -390,7 +394,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     if (nextStatus === "approved" || nextStatus === "flagged") {
       const { data: agentRow } = await (supabase as any)
         .from("agents")
-        .select("id, name, email")
+        .select("id, user_id, name, email")
         .eq("id", updated.agent_id)
         .single();
 
@@ -400,6 +404,17 @@ export async function registerAdminRoutes(app: FastifyInstance) {
           { email: agentRow.email, name: agentRow.name },
           { title: updated.title, id: updated.id }
         ).catch((err) => app.log.error(err, "Failed to send moderation email"));
+
+        // In-app notification
+        if (agentRow.user_id) {
+          createNotification({
+            userId: agentRow.user_id,
+            type: nextStatus === "approved" ? "listing_approved" : "listing_flagged",
+            title: nextStatus === "approved" ? "Listing Approved" : "Listing Flagged",
+            body: `Your listing "${updated.title}" has been ${nextStatus}`,
+            data: { propertyId: updated.id },
+          }).catch((err) => app.log.error(err, "Failed to create moderation notification"));
+        }
       }
     }
 
@@ -769,6 +784,25 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         ? () => notifyAgentVerificationApproved({ email: agent.email, name: agent.name })
         : () => notifyAgentVerificationRejected({ email: agent.email, name: agent.name }, reason ?? "Verification documents not sufficient");
       notify().catch((err) => app.log.error(err, "Failed to send verification email"));
+    }
+
+    // In-app notification for agent — need user_id from agents table
+    const { data: agentFull } = await (supabase as any)
+      .from("agents")
+      .select("user_id")
+      .eq("id", id)
+      .single();
+
+    if (agentFull?.user_id) {
+      createNotification({
+        userId: agentFull.user_id,
+        type: action === "approve" ? "verification_approved" : "verification_rejected",
+        title: action === "approve" ? "Verification Approved" : "Verification Rejected",
+        body: action === "approve"
+          ? "Your agent account has been verified"
+          : `Your verification was rejected: ${reason ?? "Documents not sufficient"}`,
+        data: { agentId: id },
+      }).catch((err) => app.log.error(err, "Failed to create verification notification"));
     }
 
     return {

@@ -20,7 +20,7 @@ export default async function HomePage() {
   return (
     <ExtractedShell>
       <main>
-        <HeroSection totalProperties={stats.totalProperties} totalAgents={stats.totalAgents} />
+        <HeroSection totalProperties={stats.totalProperties} totalAgents={stats.totalAgents} totalRegions={stats.regions.length} />
 
         <section className="section">
           <div className="container">

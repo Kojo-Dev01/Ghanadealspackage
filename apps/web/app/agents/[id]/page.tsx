@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
-import { fetchAgentById, fetchAgentListings } from "../../../lib/api";
+import { fetchAgentById, fetchAgentListings, fetchAgentReviews } from "../../../lib/api";
 import { ExtractedShell } from "../../../components/extracted-shell";
 import { PropertyCard } from "../../../components/property-card";
+import { AgentReviews } from "../../../components/agent-reviews";
 
 type AgentPageProps = {
   params: Promise<{ id: string }>;
@@ -9,9 +10,10 @@ type AgentPageProps = {
 
 export default async function AgentDetailPage({ params }: AgentPageProps) {
   const { id } = await params;
-  const [agent, listings] = await Promise.all([
+  const [agent, listings, reviewData] = await Promise.all([
     fetchAgentById(id),
-    fetchAgentListings(id)
+    fetchAgentListings(id),
+    fetchAgentReviews(id),
   ]);
 
   if (!agent) {
@@ -45,7 +47,7 @@ export default async function AgentDetailPage({ params }: AgentPageProps) {
               </h1>
               <div style={{ color: "var(--text-secondary)", fontSize: 15, marginTop: 4 }}>{agent.company}</div>
               <div style={{ display: "flex", gap: 20, marginTop: 12, fontSize: 14 }}>
-                <span>★ {agent.rating.toFixed(1)} Rating</span>
+                <span>★ {agent.rating.toFixed(1)} Rating {agent.reviewCount > 0 && <span style={{ color: "var(--text-secondary)", fontSize: 12 }}>({agent.reviewCount} review{agent.reviewCount !== 1 ? "s" : ""})</span>}</span>
                 <span>{agent.listings} Listings</span>
                 <span>{agent.years} Years Experience</span>
               </div>
@@ -77,6 +79,11 @@ export default async function AgentDetailPage({ params }: AgentPageProps) {
               No approved listings at the moment.
             </p>
           )}
+
+          {/* Agent Reviews */}
+          <div style={{ marginTop: 48 }}>
+            <AgentReviews agentId={id} reviews={reviewData.items} total={reviewData.total} />
+          </div>
         </div>
       </main>
     </ExtractedShell>

@@ -94,6 +94,9 @@ export type AdminListingDetail = {
   ref: string;
   furnishing: string;
   parking: string;
+  latitude: number | null;
+  longitude: number | null;
+  floorPlans: string[];
   featured: boolean;
   moderationStatus: AdminListingStatus;
   moderatedAt: string | null;

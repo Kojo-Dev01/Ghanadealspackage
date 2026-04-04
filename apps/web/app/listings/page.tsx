@@ -5,6 +5,7 @@ import { PropertyCard } from "../../components/property-card";
 import { SectionHeader } from "../../components/section-header";
 import { ExtractedShell } from "../../components/extracted-shell";
 import { ListingsFilters } from "../../components/listings-filters";
+import { ListingsViewToggle } from "../../components/listings-view-toggle";
 
 type ListingsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -81,18 +82,25 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
               />
             </Suspense>
 
-            <div className="property-grid">
-              {result.items.map((property) => (
-                <PropertyCard key={property.id} property={property} />
-              ))}
-            </div>
+            <ListingsViewToggle
+              properties={result.items}
+              gridContent={
+                <>
+                  <div className="property-grid">
+                    {result.items.map((property) => (
+                      <PropertyCard key={property.id} property={property} />
+                    ))}
+                  </div>
 
-            {result.items.length === 0 && (
-              <div style={{ textAlign: "center", padding: "48px 0", color: "var(--text-secondary)" }}>
-                <p style={{ fontSize: 16, marginBottom: 8 }}>No properties match your filters.</p>
-                <Link href="/listings" className="btn btn-outline" style={{ marginTop: 12 }}>Clear Filters</Link>
-              </div>
-            )}
+                  {result.items.length === 0 && (
+                    <div style={{ textAlign: "center", padding: "48px 0", color: "var(--text-secondary)" }}>
+                      <p style={{ fontSize: 16, marginBottom: 8 }}>No properties match your filters.</p>
+                      <Link href="/listings" className="btn btn-outline" style={{ marginTop: 12 }}>Clear Filters</Link>
+                    </div>
+                  )}
+                </>
+              }
+            />
 
             {/* Pagination */}
             {totalPages > 1 && (
