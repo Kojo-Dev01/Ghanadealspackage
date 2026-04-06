@@ -11,7 +11,11 @@ export function AgentCard({ agent }: AgentCardProps) {
   return (
     <article className="agent-card-grid">
       <Link href={`/agents/${agent.id}`} style={{ textDecoration: "none", color: "inherit" }}>
-        <div className="agent-avatar-grid" style={{ background: agent.color }}>{initials}</div>
+        <div className="agent-avatar-grid" style={{ background: agent.avatar_url ? undefined : agent.color, overflow: "hidden" }}>
+          {agent.avatar_url
+            ? <img src={agent.avatar_url} alt={agent.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            : initials}
+        </div>
         <div className="agent-name-grid">{agent.name}</div>
         <div className="agent-company-grid">{agent.company}</div>
       </Link>

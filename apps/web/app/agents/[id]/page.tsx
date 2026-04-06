@@ -29,24 +29,28 @@ export default async function AgentDetailPage({ params }: AgentPageProps) {
           {/* Agent Profile Header */}
           <div style={{
             display: "flex", gap: 24, alignItems: "flex-start",
-            background: "var(--card-bg, #fff)", borderRadius: 12,
-            padding: 24, border: "1px solid var(--border, #e2e8f0)", marginBottom: 32
+            background: "var(--bg-card)", borderRadius: "var(--radius-lg)",
+            padding: 24, border: "1px solid var(--border-primary)", marginBottom: 32,
+            boxShadow: "var(--shadow-card)",
+            flexWrap: "wrap",
           }}>
             <div className="agent-avatar-lg" style={{
-              background: agent.color, width: 80, height: 80,
-              fontSize: 28, flexShrink: 0
+              background: agent.avatar_url ? undefined : agent.color, width: 80, height: 80,
+              fontSize: 28, flexShrink: 0, overflow: "hidden"
             }}>
-              {initials}
+              {agent.avatar_url
+                ? <img src={agent.avatar_url} alt={agent.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : initials}
             </div>
-            <div style={{ flex: 1 }}>
-              <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: "var(--text-primary)" }}>
                 {agent.name}
                 {agent.verified && (
-                  <span style={{ marginLeft: 8, fontSize: 13, color: "#10B981", fontWeight: 500 }}>✓ Verified</span>
+                  <span style={{ marginLeft: 8, fontSize: 13, color: "var(--success)", fontWeight: 500 }}>✓ Verified</span>
                 )}
               </h1>
               <div style={{ color: "var(--text-secondary)", fontSize: 15, marginTop: 4 }}>{agent.company}</div>
-              <div style={{ display: "flex", gap: 20, marginTop: 12, fontSize: 14 }}>
+              <div style={{ display: "flex", gap: 20, marginTop: 12, fontSize: 14, color: "var(--text-primary)", flexWrap: "wrap" }}>
                 <span>★ {agent.rating.toFixed(1)} Rating {agent.reviewCount > 0 && <span style={{ color: "var(--text-secondary)", fontSize: 12 }}>({agent.reviewCount} review{agent.reviewCount !== 1 ? "s" : ""})</span>}</span>
                 <span>{agent.listings} Listings</span>
                 <span>{agent.years} Years Experience</span>
@@ -64,7 +68,7 @@ export default async function AgentDetailPage({ params }: AgentPageProps) {
           </div>
 
           {/* Agent Listings */}
-          <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 16 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 16, color: "var(--text-primary)" }}>
             Listings by {agent.name} ({listings.total})
           </h2>
 

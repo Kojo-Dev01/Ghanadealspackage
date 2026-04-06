@@ -44,7 +44,8 @@ const updateProfileSchema = z.object({
   phone: z.string().max(20).optional(),
   color: z.string().max(20).optional(),
   areas: z.array(z.string().max(100)).max(20).optional(),
-  years: z.number().int().min(0).max(99).optional()
+  years: z.number().int().min(0).max(99).optional(),
+  avatar_url: z.string().url().max(500).nullable().optional(),
 });
 
 const createListingSchema = z.object({
@@ -109,6 +110,7 @@ export async function registerAgentDashboardRoutes(app: FastifyInstance) {
     if (body.data.color !== undefined) updates.color = body.data.color;
     if (body.data.areas !== undefined) updates.areas = body.data.areas;
     if (body.data.years !== undefined) updates.years = body.data.years;
+    if (body.data.avatar_url !== undefined) updates.avatar_url = body.data.avatar_url;
 
     const supabase = getSupabaseAdminClient()!;
     const { data: agent, error } = await (supabase as any)

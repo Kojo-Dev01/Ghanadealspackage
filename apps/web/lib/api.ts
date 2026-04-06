@@ -28,6 +28,7 @@ export type PropertyRecord = {
     company: string;
     phone: string;
     color: string;
+    avatar_url?: string | null;
   };
   latitude?: number;
   longitude?: number;
@@ -52,6 +53,7 @@ export type AgentRecord = {
   years: number;
   color: string;
   phone: string;
+  avatar_url?: string | null;
 };
 
 type AgentListResponse = {

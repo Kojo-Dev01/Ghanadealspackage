@@ -5,7 +5,6 @@ import { PropertyCard } from "../../components/property-card";
 import { SectionHeader } from "../../components/section-header";
 import { ExtractedShell } from "../../components/extracted-shell";
 import { ListingsFilters } from "../../components/listings-filters";
-import { ListingsViewToggle } from "../../components/listings-view-toggle";
 
 type ListingsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -82,57 +81,116 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
               />
             </Suspense>
 
-            <ListingsViewToggle
-              properties={result.items}
-              gridContent={
-                <>
-                  <div className="property-grid">
-                    {result.items.map((property) => (
-                      <PropertyCard key={property.id} property={property} />
-                    ))}
-                  </div>
+            <div className="property-grid">
+              {result.items.map((property) => (
+                <PropertyCard key={property.id} property={property} />
+              ))}
+            </div>
 
-                  {result.items.length === 0 && (
-                    <div style={{ textAlign: "center", padding: "48px 0", color: "var(--text-secondary)" }}>
-                      <p style={{ fontSize: 16, marginBottom: 8 }}>No properties match your filters.</p>
-                      <Link href="/listings" className="btn btn-outline" style={{ marginTop: 12 }}>Clear Filters</Link>
-                    </div>
-                  )}
-                </>
-              }
-            />
+            {result.items.length === 0 && (
+              <div style={{ textAlign: "center", padding: "48px 0", color: "var(--text-secondary)" }}>
+                <p style={{ fontSize: 16, marginBottom: 8 }}>No properties match your filters.</p>
+                <Link href="/listings" className="btn btn-outline" style={{ marginTop: 12 }}>Clear Filters</Link>
+              </div>
+            )}
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="pagination" style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 40, flexWrap: "wrap" }}>
-                {page > 1 && (
-                  <Link href={pageUrl(page - 1)} className="btn btn-outline" style={{ fontSize: 14 }}>← Previous</Link>
-                )}
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
-                  .reduce<(number | "...")[]>((acc, p, i, arr) => {
-                    if (i > 0 && p - (arr[i - 1] ?? 0) > 1) acc.push("...");
-                    acc.push(p);
-                    return acc;
-                  }, [])
-                  .map((p, i) =>
-                    p === "..." ? (
-                      <span key={`ellipsis-${i}`} style={{ padding: "8px 4px", color: "var(--text-secondary)" }}>…</span>
-                    ) : (
-                      <Link
-                        key={p}
-                        href={pageUrl(p)}
-                        className={p === page ? "btn btn-primary" : "btn btn-outline"}
-                        style={{ minWidth: 40, textAlign: "center", fontSize: 14 }}
-                      >
-                        {p}
-                      </Link>
-                    )
+              <nav style={{ marginTop: 40, marginBottom: 20 }}>
+                <div style={{
+                  display: "flex", justifyContent: "center", alignItems: "center",
+                  gap: 6, flexWrap: "wrap",
+                }}>
+                  {/* Previous */}
+                  {page > 1 ? (
+                    <Link
+                      href={pageUrl(page - 1)}
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: 4,
+                        padding: "8px 16px", fontSize: 14, fontWeight: 600,
+                        borderRadius: "var(--radius-md)", border: "1px solid var(--border-primary)",
+                        color: "var(--text-primary)", background: "var(--bg-card)",
+                        textDecoration: "none", transition: "var(--transition-fast)",
+                      }}
+                    >
+                      ← Prev
+                    </Link>
+                  ) : (
+                    <span style={{
+                      padding: "8px 16px", fontSize: 14, fontWeight: 600,
+                      borderRadius: "var(--radius-md)", border: "1px solid var(--border-primary)",
+                      color: "var(--text-tertiary)", background: "var(--bg-secondary)",
+                      opacity: 0.5, cursor: "not-allowed",
+                    }}>
+                      ← Prev
+                    </span>
                   )}
-                {page < totalPages && (
-                  <Link href={pageUrl(page + 1)} className="btn btn-primary" style={{ fontSize: 14 }}>Next →</Link>
-                )}
-              </div>
+
+                  {/* Page numbers */}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
+                    .reduce<(number | "...")[]>((acc, p, i, arr) => {
+                      if (i > 0 && p - (arr[i - 1] ?? 0) > 1) acc.push("...");
+                      acc.push(p);
+                      return acc;
+                    }, [])
+                    .map((p, i) =>
+                      p === "..." ? (
+                        <span key={`e-${i}`} style={{ padding: "8px 4px", color: "var(--text-tertiary)", fontSize: 14 }}>…</span>
+                      ) : (
+                        <Link
+                          key={p}
+                          href={pageUrl(p)}
+                          style={{
+                            display: "inline-flex", alignItems: "center", justifyContent: "center",
+                            minWidth: 40, padding: "8px 12px", fontSize: 14, fontWeight: 600,
+                            borderRadius: "var(--radius-md)", textDecoration: "none",
+                            transition: "var(--transition-fast)",
+                            ...(p === page
+                              ? { background: "var(--red)", color: "#fff", border: "1px solid var(--red)" }
+                              : { background: "var(--bg-card)", color: "var(--text-primary)", border: "1px solid var(--border-primary)" }
+                            ),
+                          }}
+                        >
+                          {p}
+                        </Link>
+                      )
+                    )}
+
+                  {/* Next */}
+                  {page < totalPages ? (
+                    <Link
+                      href={pageUrl(page + 1)}
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: 4,
+                        padding: "8px 16px", fontSize: 14, fontWeight: 600,
+                        borderRadius: "var(--radius-md)",
+                        background: "var(--red)", color: "#fff", border: "1px solid var(--red)",
+                        textDecoration: "none", transition: "var(--transition-fast)",
+                      }}
+                    >
+                      Next →
+                    </Link>
+                  ) : (
+                    <span style={{
+                      padding: "8px 16px", fontSize: 14, fontWeight: 600,
+                      borderRadius: "var(--radius-md)", border: "1px solid var(--border-primary)",
+                      color: "var(--text-tertiary)", background: "var(--bg-secondary)",
+                      opacity: 0.5, cursor: "not-allowed",
+                    }}>
+                      Next →
+                    </span>
+                  )}
+                </div>
+
+                {/* Page info */}
+                <div style={{
+                  textAlign: "center", marginTop: 12,
+                  fontSize: 13, color: "var(--text-tertiary)",
+                }}>
+                  Page {page} of {totalPages} · Showing {(page - 1) * limit + 1}–{Math.min(page * limit, result.total)} of {result.total} properties
+                </div>
+              </nav>
             )}
           </div>
         </section>

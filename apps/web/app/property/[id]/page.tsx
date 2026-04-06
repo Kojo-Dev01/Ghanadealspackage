@@ -120,8 +120,10 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
               <div className="detail-sidebar-inner">
                 <div className="agent-card-detail">
                   <div className="agent-card-header">
-                    <div className="agent-avatar-lg" style={{ background: property.agent.color }}>
-                      {property.agent.name.split(" ").map((part) => part[0]).join("")}
+                    <div className="agent-avatar-lg" style={{ background: property.agent.avatar_url ? undefined : property.agent.color, overflow: "hidden" }}>
+                      {property.agent.avatar_url
+                        ? <img src={property.agent.avatar_url} alt={property.agent.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        : property.agent.name.split(" ").map((part) => part[0]).join("")}
                     </div>
                     <div className="agent-details">
                       <div className="agent-name-lg">{property.agent.name}</div>

@@ -8,6 +8,7 @@ interface AgentRow {
   company: string;
   phone: string;
   color: string;
+  avatar_url?: string | null;
   rating: number;
   areas: string[];
   years: number;
@@ -31,6 +32,7 @@ function toApiAgent(row: AgentRow) {
     years: row.years,
     color: row.color,
     phone: row.phone,
+    avatar_url: row.avatar_url ?? null,
     verified: row.verified
   };
 }
@@ -166,7 +168,7 @@ export async function registerAgentRoutes(app: FastifyInstance) {
 
     const { data, count, error } = await supabase
       .from("properties")
-      .select("*, agents!inner(id, name, company, phone, color)", { count: "exact" })
+      .select("*, agents!inner(id, name, company, phone, color, avatar_url)", { count: "exact" })
       .eq("agent_id", id)
       .eq("moderation_status", "approved")
       .order("created_at", { ascending: false })
@@ -198,7 +200,8 @@ export async function registerAgentRoutes(app: FastifyInstance) {
         name: row.agents.name,
         company: row.agents.company,
         phone: row.agents.phone,
-        color: row.agents.color
+        color: row.agents.color,
+        avatar_url: row.agents.avatar_url ?? null
       }
     }));
 

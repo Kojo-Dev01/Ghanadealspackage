@@ -9,7 +9,7 @@ type Props = {
   total: number;
 };
 
-function StarRating({ value, onChange, readonly = false }: { value: number; onChange?: (v: number) => void; readonly?: boolean }) {
+function StarRating({ value, onChange, readonly = false, size = 22 }: { value: number; onChange?: (v: number) => void; readonly?: boolean; size?: number }) {
   const [hover, setHover] = useState(0);
   return (
     <div style={{ display: "flex", gap: 2 }}>
@@ -21,9 +21,10 @@ function StarRating({ value, onChange, readonly = false }: { value: number; onCh
           onMouseLeave={() => !readonly && setHover(0)}
           style={{
             cursor: readonly ? "default" : "pointer",
-            fontSize: readonly ? 14 : 22,
-            color: star <= (hover || value) ? "#f59e0b" : "#d1d5db",
-            transition: "color 0.15s",
+            fontSize: size,
+            color: star <= (hover || value) ? "#f59e0b" : "var(--text-tertiary, #d1d5db)",
+            transition: "color 0.15s, transform 0.15s",
+            transform: !readonly && star <= hover ? "scale(1.2)" : "scale(1)",
           }}
         >
           ★
@@ -43,6 +44,21 @@ function timeAgo(dateStr: string) {
   if (days < 365) return `${Math.floor(days / 30)} months ago`;
   return `${Math.floor(days / 365)} years ago`;
 }
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "10px 14px",
+  fontSize: 14,
+  lineHeight: 1.6,
+  border: "1px solid var(--border-input)",
+  borderRadius: "var(--radius-sm)",
+  background: "var(--bg-input)",
+  color: "var(--text-primary)",
+  outline: "none",
+  resize: "vertical" as const,
+  transition: "border-color var(--transition-fast), box-shadow var(--transition-fast)",
+  fontFamily: "inherit",
+};
 
 export function AgentReviews({ agentId, reviews: initialReviews, total }: Props) {
   const [reviews, setReviews] = useState(initialReviews);
@@ -78,17 +94,14 @@ export function AgentReviews({ agentId, reviews: initialReviews, total }: Props)
     });
   }
 
-  const inputCls =
-    "border border-[var(--border)] rounded-lg bg-[var(--panel-alt)] px-3 py-2 text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 w-full";
-
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>
           Reviews {total > 0 && <span style={{ fontSize: 14, fontWeight: 400, color: "var(--text-secondary)" }}>({total})</span>}
         </h2>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => { setShowForm(!showForm); setMessage(""); }}
           className="btn btn-primary"
           style={{ fontSize: 13 }}
         >
@@ -98,62 +111,134 @@ export function AgentReviews({ agentId, reviews: initialReviews, total }: Props)
 
       {/* Review Form */}
       {showForm && (
-        <div style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", borderRadius: 12, padding: 20, marginBottom: 20 }}>
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>Your Rating *</label>
-            <StarRating value={rating} onChange={setRating} />
+        <div style={{
+          background: "var(--bg-card)",
+          border: "1px solid var(--border-primary)",
+          borderRadius: "var(--radius-lg)",
+          padding: 24,
+          marginBottom: 24,
+          boxShadow: "var(--shadow-card)",
+        }}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", marginBottom: 16 }}>
+            Share your experience
+          </h3>
+
+          {/* Rating */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: 8 }}>
+              How would you rate this agent? *
+            </label>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 12,
+              background: "var(--bg-secondary)", borderRadius: "var(--radius-sm)",
+              padding: "10px 14px", border: "1px solid var(--border-primary)",
+            }}>
+              <StarRating value={rating} onChange={setRating} size={28} />
+              {rating > 0 && (
+                <span style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 500 }}>
+                  {["", "Poor", "Fair", "Good", "Very Good", "Excellent"][rating]}
+                </span>
+              )}
+            </div>
           </div>
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>Comment (optional)</label>
+
+          {/* Comment */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: 8 }}>
+              Your Review <span style={{ fontWeight: 400, color: "var(--text-tertiary)" }}>(optional)</span>
+            </label>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              rows={3}
+              rows={4}
               maxLength={2000}
-              placeholder="Share your experience with this agent..."
-              className={inputCls}
-              style={{ resize: "vertical" }}
+              placeholder="What was your experience working with this agent? Were they responsive, knowledgeable, helpful?"
+              style={inputStyle}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = "var(--border-focus)";
+                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(230,57,70,0.1)";
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = "var(--border-input)";
+                e.currentTarget.style.boxShadow = "none";
+              }}
             />
+            {comment.length > 0 && (
+              <p style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 4, textAlign: "right" }}>
+                {comment.length}/2000
+              </p>
+            )}
           </div>
-          <button
-            onClick={handleSubmit}
-            disabled={isPending}
-            className="btn btn-primary"
-            style={{ fontSize: 13 }}
-          >
-            {isPending ? "Submitting..." : "Submit Review"}
-          </button>
-          {message && (
-            <p style={{ fontSize: 12, color: message.includes("error") || message.includes("Please") ? "var(--error, #ef4444)" : "var(--accent)", marginTop: 8 }}>
-              {message}
-            </p>
-          )}
+
+          {/* Submit */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button
+              onClick={handleSubmit}
+              disabled={isPending || rating === 0}
+              className="btn btn-primary"
+              style={{ fontSize: 14, opacity: isPending || rating === 0 ? 0.6 : 1 }}
+            >
+              {isPending ? "Submitting..." : "Submit Review"}
+            </button>
+            {message && (
+              <p style={{
+                fontSize: 13,
+                color: message.includes("error") || message.includes("Please") || message.includes("log in")
+                  ? "#ef4444"
+                  : "var(--success)",
+                fontWeight: 500,
+              }}>
+                {message}
+              </p>
+            )}
+          </div>
         </div>
       )}
 
       {/* Review List */}
       {reviews.length === 0 ? (
-        <p style={{ textAlign: "center", padding: "32px 0", color: "var(--text-secondary)", fontSize: 14 }}>
-          No reviews yet. Be the first to review this agent!
-        </p>
+        <div style={{
+          textAlign: "center", padding: "40px 20px",
+          background: "var(--bg-secondary)", borderRadius: "var(--radius-lg)",
+          border: "1px solid var(--border-primary)",
+        }}>
+          <p style={{ fontSize: 32, marginBottom: 8 }}>💬</p>
+          <p style={{ fontSize: 15, color: "var(--text-secondary)", fontWeight: 500 }}>
+            No reviews yet
+          </p>
+          <p style={{ fontSize: 13, color: "var(--text-tertiary)", marginTop: 4 }}>
+            Be the first to review this agent!
+          </p>
+        </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {reviews.map((review) => (
-            <div key={review.id} style={{ background: "var(--panel)", border: "1px solid var(--border)", borderRadius: 10, padding: 16 }}>
+            <div key={review.id} style={{
+              background: "var(--bg-card)",
+              border: "1px solid var(--border-primary)",
+              borderRadius: "var(--radius-md)",
+              padding: 16,
+              transition: "box-shadow var(--transition-fast)",
+            }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 12, fontWeight: 700 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: "50%",
+                    background: "var(--red)", display: "flex",
+                    alignItems: "center", justifyContent: "center",
+                    color: "white", fontSize: 13, fontWeight: 700,
+                  }}>
                     {review.userName[0]?.toUpperCase() ?? "?"}
                   </div>
                   <div>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{review.userName}</p>
-                    <StarRating value={review.rating} readonly />
+                    <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 2 }}>{review.userName}</p>
+                    <StarRating value={review.rating} readonly size={13} />
                   </div>
                 </div>
-                <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{timeAgo(review.createdAt)}</span>
+                <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>{timeAgo(review.createdAt)}</span>
               </div>
               {review.comment && (
-                <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>{review.comment}</p>
+                <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.6, marginTop: 4 }}>{review.comment}</p>
               )}
             </div>
           ))}

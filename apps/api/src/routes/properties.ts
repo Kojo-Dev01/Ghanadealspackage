@@ -44,6 +44,7 @@ export interface AgentEmbed {
   company: string;
   phone: string;
   color: string;
+  avatar_url?: string | null;
 }
 
 export interface PropertyWithAgent extends PropertyRow {
@@ -91,7 +92,8 @@ function toApiProperty(row: PropertyWithAgent) {
       name: row.agents.name,
       company: row.agents.company,
       phone: row.agents.phone,
-      color: row.agents.color
+      color: row.agents.color,
+      avatar_url: row.agents.avatar_url ?? null
     }
   };
 }
@@ -130,7 +132,7 @@ export async function registerPropertyRoutes(app: FastifyInstance) {
 
     let qb = supabase
       .from("properties")
-      .select("*, agents!inner(id, name, company, phone, color)", { count: "exact" })
+      .select("*, agents!inner(id, name, company, phone, color, avatar_url)", { count: "exact" })
       .eq("moderation_status", "approved")
       .order("created_at", { ascending: false })
       .range(from, to);
@@ -259,7 +261,7 @@ export async function registerPropertyRoutes(app: FastifyInstance) {
 
     const { data, error } = await supabase
       .from("properties")
-      .select("*, agents!inner(id, name, company, phone, color)")
+      .select("*, agents!inner(id, name, company, phone, color, avatar_url)")
       .eq("id", id)
       .single();
 
@@ -297,7 +299,7 @@ export async function registerPropertyRoutes(app: FastifyInstance) {
     // Find properties with matching region or type, excluding source
     const { data } = await supabase
       .from("properties")
-      .select("*, agents!inner(id, name, company, phone, color)")
+      .select("*, agents!inner(id, name, company, phone, color, avatar_url)")
       .eq("moderation_status", "approved")
       .neq("id", id)
       .or(`region.eq.${src.region},type.eq.${src.type}`)

@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AgentShell } from "@/components/agent-shell";
+import { ProfileAvatarField } from "@/components/profile-avatar-field";
 import { fetchAgentProfile, updateAgentProfile } from "@/lib/api";
 
 type ProfilePageProps = {
@@ -28,6 +29,8 @@ export default async function AgentProfilePage({
     const color = String(formData.get("color") ?? "").trim();
     const areasRaw = String(formData.get("areas") ?? "").trim();
     const years = Number(formData.get("years") ?? "0") || 0;
+    const avatarRaw = String(formData.get("avatar_url") ?? "").trim();
+    const avatar_url = avatarRaw || null;
 
     const areas = areasRaw
       .split(",")
@@ -41,6 +44,7 @@ export default async function AgentProfilePage({
       color,
       areas,
       years,
+      avatar_url,
     });
 
     if (result) {
@@ -73,6 +77,15 @@ export default async function AgentProfilePage({
         )}
 
         <form className="grid gap-4" action={saveProfileAction}>
+          <div className="pb-2 border-b border-border">
+            <label className="block text-sm font-semibold text-slate-600 mb-2">Profile Photo</label>
+            <ProfileAvatarField
+              currentUrl={profile?.avatar_url}
+              agentName={profile?.name ?? "Agent"}
+              agentColor={profile?.color ?? "#3B82F6"}
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
             <label className="grid gap-1 text-sm font-semibold text-slate-600">
               Full Name

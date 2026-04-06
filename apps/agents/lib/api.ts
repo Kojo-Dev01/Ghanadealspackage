@@ -72,6 +72,7 @@ export type AgentProfile = {
   company: string;
   phone: string;
   color: string;
+  avatar_url?: string | null;
   rating: number;
   areas: string[];
   years: number;
@@ -164,6 +165,7 @@ export async function updateAgentProfile(
     color: string;
     areas: string[];
     years: number;
+    avatar_url: string | null;
   }>
 ): Promise<AgentProfile | null> {
   const token = await getSessionToken();
