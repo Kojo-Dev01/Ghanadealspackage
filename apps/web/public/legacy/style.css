@@ -1293,6 +1293,98 @@ ul, ol { list-style: none; }
 .listings-search-bar .btn-more-filters:hover { border-color: var(--border-secondary); }
 .listings-search-bar .btn-more-filters svg { width: 14px; height: 14px; }
 
+/* Price Range Widget */
+.price-range-widget {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.price-range-selects {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.price-range-selects .filter-select {
+  flex: 1;
+  min-width: 0;
+}
+.price-range-track {
+  position: relative;
+  height: 24px;
+  margin-top: 6px;
+}
+.price-range-track .track-bg {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 4px;
+  margin-top: -2px;
+  border-radius: 2px;
+  background: var(--border-primary);
+}
+.price-range-track .track-fill {
+  position: absolute;
+  top: 50%;
+  height: 4px;
+  margin-top: -2px;
+  border-radius: 2px;
+  background: var(--red);
+}
+.price-range-track input[type="range"] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  pointer-events: none;
+  z-index: 2;
+}
+.price-range-track input[type="range"]::-webkit-slider-runnable-track {
+  background: transparent;
+  height: 4px;
+}
+.price-range-track input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: var(--red);
+  border: 2.5px solid var(--bg-card);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  cursor: pointer;
+  pointer-events: auto;
+  position: relative;
+  z-index: 3;
+}
+.price-range-track input[type="range"]::-moz-range-track {
+  background: transparent;
+  height: 4px;
+  border: none;
+}
+.price-range-track input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--red);
+  border: 2.5px solid var(--bg-card);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  cursor: pointer;
+  pointer-events: auto;
+}
+.price-range-label {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
 .category-chips {
   display: flex;
   gap: 8px;

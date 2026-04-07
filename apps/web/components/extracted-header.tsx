@@ -74,7 +74,7 @@ export function ExtractedHeader({
       <div className="header-inner">
         <Link href="/" className="logo">
           <Image src="/legacy/assets/favicon.jpeg" alt="GhanaDeals Logo" width={32} height={32} style={{ objectFit: "contain", borderRadius: 4 }} />
-          Ghana<span>Deals</span>
+          <span>Ghana<span>Deals</span></span>
         </Link>
 
         <nav className="main-nav" id="mainNav">

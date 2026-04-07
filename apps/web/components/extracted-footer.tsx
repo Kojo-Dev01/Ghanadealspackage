@@ -11,7 +11,7 @@ export function ExtractedFooter() {
           <div className="footer-brand">
             <Link href="/" className="logo">
               <Image src="/legacy/assets/favicon.jpeg" alt="GhanaDeals Logo" width={32} height={32} style={{ objectFit: "contain", borderRadius: 4 }} />
-              Ghana<span>Deals</span>
+              <span>Ghana<span>Deals</span></span>
             </Link>
             <p>Ghana&apos;s premier property marketplace connecting buyers, sellers, and agents across all 16 regions.</p>
           </div>

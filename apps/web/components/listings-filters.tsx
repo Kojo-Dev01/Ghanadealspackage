@@ -13,43 +13,85 @@ type Props = {
   minBaths?: string;
 };
 
-const PRICE_OPTIONS = [
-  { label: "No Min", value: "" },
-  { label: "GH₵ 50,000", value: "50000" },
-  { label: "GH₵ 100,000", value: "100000" },
-  { label: "GH₵ 200,000", value: "200000" },
-  { label: "GH₵ 500,000", value: "500000" },
-  { label: "GH₵ 1,000,000", value: "1000000" },
-  { label: "GH₵ 2,000,000", value: "2000000" },
-  { label: "GH₵ 5,000,000", value: "5000000" },
-];
+/* Unified price stops: index 0 = "no limit", 1-8 = actual price values */
+const PRICE_STOPS = [0, 50_000, 100_000, 200_000, 500_000, 1_000_000, 2_000_000, 5_000_000, 10_000_000];
+const STOP_MAX = PRICE_STOPS.length - 1;
 
-const MAX_PRICE_OPTIONS = [
-  { label: "No Max", value: "" },
-  { label: "GH₵ 100,000", value: "100000" },
-  { label: "GH₵ 200,000", value: "200000" },
-  { label: "GH₵ 500,000", value: "500000" },
-  { label: "GH₵ 1,000,000", value: "1000000" },
-  { label: "GH₵ 2,000,000", value: "2000000" },
-  { label: "GH₵ 5,000,000", value: "5000000" },
-  { label: "GH₵ 10,000,000", value: "10000000" },
-];
+function fmtPrice(v: number): string {
+  if (v >= 1_000_000) return `GH₵ ${v / 1_000_000}M`;
+  if (v >= 1_000) return `GH₵ ${(v / 1_000).toLocaleString()}K`;
+  if (v > 0) return `GH₵ ${v.toLocaleString()}`;
+  return "Any";
+}
+
+/** Map a raw price string to the nearest stop index */
+function valToIdx(val: string | undefined, fallback: number): number {
+  if (!val) return fallback;
+  const n = Number(val);
+  if (!n) return fallback;
+  // Exact match
+  const exact = PRICE_STOPS.indexOf(n);
+  if (exact >= 0) return exact;
+  // Snap to nearest stop
+  let best = fallback;
+  let bestDist = Infinity;
+  for (let i = 0; i < PRICE_STOPS.length; i++) {
+    const dist = Math.abs(PRICE_STOPS[i] - n);
+    if (dist < bestDist) { bestDist = dist; best = i; }
+  }
+  return best;
+}
 
 export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minBeds, minBaths }: Props) {
   const searchParams = useSearchParams();
+
+  /* Read all URL params as source of truth */
+  const urlQ = searchParams.get("q") ?? "";
   const urlListingType = searchParams.get("listingType") ?? "";
   const urlType = searchParams.get("type") ?? "";
+  const urlMinPrice = searchParams.get("minPrice") ?? "";
+  const urlMaxPrice = searchParams.get("maxPrice") ?? "";
+  const urlMinBeds = searchParams.get("minBeds") ?? "";
+  const urlMinBaths = searchParams.get("minBaths") ?? "";
 
+  /* All filters are controlled state, synced from URL */
+  const [search, setSearch] = useState(urlQ);
   const [selectedListingType, setSelectedListingType] = useState(urlListingType);
   const [selectedPropertyType, setSelectedPropertyType] = useState(urlType);
+  const [minIdx, setMinIdx] = useState(() => valToIdx(urlMinPrice || minPrice, 0));
+  const [maxIdx, setMaxIdx] = useState(() => valToIdx(urlMaxPrice || maxPrice, STOP_MAX));
+  const [beds, setBeds] = useState(urlMinBeds);
+  const [baths, setBaths] = useState(urlMinBaths);
 
-  // Sync state when URL changes (e.g. navbar click)
+  /* Re-sync everything when the URL changes (e.g. navigating from home page) */
   useEffect(() => {
+    setSearch(urlQ);
     setSelectedListingType(urlListingType);
     setSelectedPropertyType(urlType);
-  }, [urlListingType, urlType]);
+    setMinIdx(valToIdx(urlMinPrice || undefined, 0));
+    setMaxIdx(valToIdx(urlMaxPrice || undefined, STOP_MAX));
+    setBeds(urlMinBeds);
+    setBaths(urlMinBaths);
+  }, [urlQ, urlListingType, urlType, urlMinPrice, urlMaxPrice, urlMinBeds, urlMinBaths]);
 
-  // Hide beds & baths for New Development, Commercial, and Land
+  /* Form values derived from slider indices */
+  const minPriceVal = minIdx === 0 ? "" : String(PRICE_STOPS[minIdx]);
+  const maxPriceVal = maxIdx === STOP_MAX ? "" : String(PRICE_STOPS[maxIdx]);
+
+  /* Track fill position */
+  const fillLeft = (minIdx / STOP_MAX) * 100;
+  const fillRight = 100 - (maxIdx / STOP_MAX) * 100;
+
+  /* Detect whether user changed anything from the current URL state */
+  const dirty =
+    search !== urlQ ||
+    selectedListingType !== urlListingType ||
+    selectedPropertyType !== urlType ||
+    minPriceVal !== urlMinPrice ||
+    maxPriceVal !== urlMaxPrice ||
+    beds !== urlMinBeds ||
+    baths !== urlMinBaths;
+
   const hideBedsBaths =
     selectedListingType === "new" ||
     selectedPropertyType === "Commercial" ||
@@ -57,6 +99,10 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
 
   return (
     <form className="listings-search-bar" action="/listings" method="get" style={{ marginBottom: 20 }}>
+      {/* Hidden price inputs for form submission */}
+      <input type="hidden" name="minPrice" value={minPriceVal} />
+      <input type="hidden" name="maxPrice" value={maxPriceVal} />
+
       {/* Row 1: Search + Category + Type */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, width: "100%" }}>
         <input
@@ -64,8 +110,8 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
           type="text"
           name="q"
           placeholder="Search location or title"
-          defaultValue={q}
-          key={`q-${q ?? ""}`}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
           style={{ flex: "1 1 200px", minWidth: 0 }}
         />
         <select
@@ -97,38 +143,73 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
         </select>
       </div>
 
-      {/* Row 2: Price + Beds/Baths + Submit */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, width: "100%", marginTop: 10 }}>
-        <select
-          className="filter-select"
-          name="minPrice"
-          defaultValue={minPrice ?? ""}
-          key={`minP-${minPrice ?? ""}`}
-          style={{ flex: "0 0 auto" }}
-        >
-          {PRICE_OPTIONS.map((opt) => (
-            <option key={`min-${opt.value}`} value={opt.value}>{opt.value ? `Min: ${opt.label}` : "Min Price"}</option>
-          ))}
-        </select>
-        <select
-          className="filter-select"
-          name="maxPrice"
-          defaultValue={maxPrice ?? ""}
-          key={`maxP-${maxPrice ?? ""}`}
-          style={{ flex: "0 0 auto" }}
-        >
-          {MAX_PRICE_OPTIONS.map((opt) => (
-            <option key={`max-${opt.value}`} value={opt.value}>{opt.value ? `Max: ${opt.label}` : "Max Price"}</option>
-          ))}
-        </select>
+      {/* Row 2: Price Range + Beds/Baths + Apply */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, width: "100%", marginTop: 10, alignItems: "flex-start" }}>
+        {/* Price Range Widget — dropdowns + synced slider */}
+        <div className="price-range-widget">
+          <div className="price-range-selects">
+            <select
+              className="filter-select"
+              value={minPriceVal}
+              onChange={(e) => {
+                const idx = valToIdx(e.target.value || undefined, 0);
+                setMinIdx(Math.min(idx, maxIdx));
+              }}
+              style={{ flex: 1, minWidth: 0 }}
+            >
+              <option value="">Min Price</option>
+              {PRICE_STOPS.slice(1).map((v) => (
+                <option key={`min-${v}`} value={String(v)}>Min: {fmtPrice(v)}</option>
+              ))}
+            </select>
+            <span style={{ color: "var(--text-tertiary)", fontSize: 14, lineHeight: 1 }}>–</span>
+            <select
+              className="filter-select"
+              value={maxPriceVal}
+              onChange={(e) => {
+                const idx = valToIdx(e.target.value || undefined, STOP_MAX);
+                setMaxIdx(Math.max(idx, minIdx));
+              }}
+              style={{ flex: 1, minWidth: 0 }}
+            >
+              <option value="">Max Price</option>
+              {PRICE_STOPS.slice(1).map((v) => (
+                <option key={`max-${v}`} value={String(v)}>Max: {fmtPrice(v)}</option>
+              ))}
+            </select>
+          </div>
+          <div className="price-range-track">
+            <div className="track-bg" />
+            <div className="track-fill" style={{ left: `${fillLeft}%`, right: `${fillRight}%` }} />
+            <input
+              type="range"
+              min={0}
+              max={STOP_MAX}
+              value={minIdx}
+              onChange={(e) => setMinIdx(Math.min(Number(e.target.value), maxIdx))}
+            />
+            <input
+              type="range"
+              min={0}
+              max={STOP_MAX}
+              value={maxIdx}
+              onChange={(e) => setMaxIdx(Math.max(Number(e.target.value), minIdx))}
+            />
+          </div>
+          {(minIdx > 0 || maxIdx < STOP_MAX) && (
+            <div className="price-range-label">
+              {minIdx === 0 ? "No Min" : fmtPrice(PRICE_STOPS[minIdx])} – {maxIdx === STOP_MAX ? "No Max" : fmtPrice(PRICE_STOPS[maxIdx])}
+            </div>
+          )}
+        </div>
 
         {!hideBedsBaths && (
           <>
             <select
               className="filter-select"
               name="minBeds"
-              defaultValue={minBeds ?? ""}
-              key={`beds-${minBeds ?? ""}`}
+              value={beds}
+              onChange={(e) => setBeds(e.target.value)}
               style={{ flex: "0 0 auto" }}
             >
               <option value="">Beds</option>
@@ -141,8 +222,8 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
             <select
               className="filter-select"
               name="minBaths"
-              defaultValue={minBaths ?? ""}
-              key={`baths-${minBaths ?? ""}`}
+              value={baths}
+              onChange={(e) => setBaths(e.target.value)}
               style={{ flex: "0 0 auto" }}
             >
               <option value="">Baths</option>
@@ -154,7 +235,14 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
           </>
         )}
 
-        <button className="btn btn-primary" type="submit" style={{ flex: "0 0 auto" }}>Apply</button>
+        <button
+          className={`btn ${dirty ? "btn-primary" : "btn-outline"}`}
+          type="submit"
+          disabled={!dirty}
+          style={{ flex: "0 0 auto", opacity: dirty ? 1 : 0.5, cursor: dirty ? "pointer" : "default" }}
+        >
+          Apply
+        </button>
       </div>
     </form>
   );
