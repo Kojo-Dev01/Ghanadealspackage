@@ -12,8 +12,8 @@ export function WhyGhanaDeals() {
     },
     {
       icon: "👥",
-      title: "Expert Agents",
-      description: "Work with Ghana's most trusted agents"
+      title: "Expert Sellers",
+      description: "Work with Ghana's most trusted sellers"
     },
     {
       icon: "📱",

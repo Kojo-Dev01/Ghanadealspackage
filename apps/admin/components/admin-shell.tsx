@@ -64,7 +64,7 @@ const navItems: Array<
 > = [
   { key: "overview", label: "Overview", href: "/", icon: <LayoutDashboard size={18} /> },
   { key: "listings", label: "Listings", href: "/listings", icon: <Building2 size={18} /> },
-  { key: "agents", label: "Agents", href: "/agents", icon: <UserCircle size={18} /> },
+  { key: "agents", label: "Sellers", href: "/agents", icon: <UserCircle size={18} /> },
   { key: "users", label: "Users", href: "/users", icon: <Users size={18} /> },
   { key: "inquiries", label: "Inquiries", href: "/inquiries", icon: <MessageSquare size={18} /> },
   { key: "metrics", label: "Metrics", href: "/metrics", icon: <BarChart3 size={18} /> },

@@ -16,7 +16,7 @@ export default async function AgentLoginPage({
     params.error === "invalid"
       ? "Invalid email or password."
       : params.error === "forbidden"
-        ? "This account does not have agent access."
+        ? "This account does not have seller access."
         : params.error === "config"
           ? "Authentication service is not available. Please try again later."
           : "";
@@ -58,7 +58,7 @@ export default async function AgentLoginPage({
     <main className="min-h-screen grid place-items-center p-6 bg-sidebar">
       <section className="w-full max-w-md bg-panel border border-border shadow-xl rounded-xl p-8">
         <p className="text-xs font-semibold uppercase tracking-wider text-accent mb-2">
-          Agent Portal
+          Seller Portal
         </p>
         <h1 className="text-[22px] font-extrabold">Sign in</h1>
         <p className="mt-2 text-sm text-muted leading-relaxed">
@@ -79,7 +79,7 @@ export default async function AgentLoginPage({
             <input
               name="email"
               type="email"
-              placeholder="agent@example.com"
+              placeholder="seller@example.com"
               autoComplete="email"
               required
               className="border border-border rounded-lg bg-panel-alt px-3.5 py-2.5 text-foreground text-sm transition-colors focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
@@ -108,7 +108,7 @@ export default async function AgentLoginPage({
 
         <p className="mt-5 pt-4 border-t border-border text-xs text-muted leading-relaxed">
           Sign in with the same credentials you used to register on the
-          GhanaDeals marketplace. Only agent accounts can access this dashboard.
+          GhanaDeals marketplace. Only seller accounts can access this dashboard.
         </p>
       </section>
     </main>

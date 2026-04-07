@@ -61,7 +61,7 @@ export default async function AgentDetailPage({ params }: AgentPageProps) {
                 ))}
               </div>
               <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-                <a className="btn btn-outline btn-sm" href={`tel:${agent.phone}`}>Call Agent</a>
+                <a className="btn btn-outline btn-sm" href={`tel:${agent.phone}`}>Call Seller</a>
                 <a className="btn btn-whatsapp btn-sm" href={`https://wa.me/${agent.phone.replace("+", "")}`} target="_blank" rel="noreferrer">WhatsApp</a>
               </div>
             </div>

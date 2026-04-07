@@ -150,10 +150,10 @@ export async function notifyAgentVerificationApproved(agent: {
 
   return sendEmail({
     to: agent.email,
-    subject: "Your agent account has been verified!",
+    subject: "Your seller account has been verified!",
     html: layout(`
       <p style="margin:0 0 16px;color:#18181b">Hi ${agent.name},</p>
-      <p style="margin:0 0 16px;color:#52525b">Congratulations! Your agent account on GhanaDeals has been verified. You now have a verified badge on your profile.</p>
+      <p style="margin:0 0 16px;color:#52525b">Congratulations! Your seller account on GhanaDeals has been verified. You now have a verified badge on your profile.</p>
       <div style="background:#f0fdf4;border-radius:6px;padding:16px;margin-bottom:16px;border:1px solid #bbf7d0;text-align:center">
         <p style="margin:0;font-size:24px">🎉</p>
         <p style="margin:8px 0 0;font-weight:600;color:#166534">Account Verified</p>
@@ -174,10 +174,10 @@ export async function notifyAgentVerificationRejected(agent: {
 
   return sendEmail({
     to: agent.email,
-    subject: "Agent verification update",
+    subject: "Seller verification update",
     html: layout(`
       <p style="margin:0 0 16px;color:#18181b">Hi ${agent.name},</p>
-      <p style="margin:0 0 16px;color:#52525b">Unfortunately, your agent verification could not be completed at this time.</p>
+      <p style="margin:0 0 16px;color:#52525b">Unfortunately, your seller verification could not be completed at this time.</p>
       <div style="background:#fef2f2;border-radius:6px;padding:16px;margin-bottom:16px;border:1px solid #fecaca">
         <p style="margin:0 0 8px;font-weight:600;color:#991b1b">Reason:</p>
         <p style="margin:0;font-size:14px;color:#374151">${reason}</p>

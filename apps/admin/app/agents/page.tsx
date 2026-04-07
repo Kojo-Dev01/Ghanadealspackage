@@ -106,16 +106,16 @@ export default async function AdminAgentsPage({
     <AdminShell
       activeNav="agents"
       eyebrow="People"
-      title="Agents"
-      description="Manage registered agents and review verification requests."
+      title="Sellers"
+      description="Manage registered sellers and review verification requests."
     >
       {/* Flash messages */}
       {params.success && (
         <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2.5 text-sm font-medium text-green-700">
           {params.success === "approved"
-            ? "Agent verified successfully."
+            ? "Seller verified successfully."
             : params.success === "rejected"
-              ? "Agent verification rejected."
+              ? "Seller verification rejected."
               : "Action completed."}
         </div>
       )}
@@ -180,7 +180,7 @@ export default async function AdminAgentsPage({
           </button>
         </form>
         <div className="mt-3 text-xs text-muted">
-          <strong className="text-foreground">{total}</strong> registered agents
+          <strong className="text-foreground">{total}</strong> registered sellers
           {query && ` matching "${query}"`}
           {area && ` in ${area}`}
           {verificationFilter && ` — ${STATUS_INFO[verificationFilter as VerificationStatus]?.label ?? verificationFilter}`}
@@ -340,7 +340,7 @@ export default async function AdminAgentsPage({
         {agents.length === 0 && (
           <div className="col-span-full bg-panel border border-border rounded-xl p-10 text-center">
             <p className="text-sm text-muted">
-              No agents found matching the current filters.
+              No sellers found matching the current filters.
             </p>
           </div>
         )}

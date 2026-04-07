@@ -59,7 +59,7 @@ export default async function VerificationPage() {
           <CheckCircle2 size={24} className="text-green-600 shrink-0 mt-0.5" />
           <div>
             <h2 className="text-sm font-bold text-green-800">
-              Verified Agent
+              Verified Seller
             </h2>
             <p className="text-sm text-green-700 mt-0.5">
               Your identity has been verified. A verification badge is displayed
@@ -132,8 +132,8 @@ export default async function VerificationPage() {
               Get Verified
             </h2>
             <p className="text-sm text-blue-700 mt-0.5">
-              Upload your identification documents to become a verified agent.
-              Verified agents receive a badge and higher visibility in search
+              Upload your identification documents to become a verified seller.
+              Verified sellers receive a badge and higher visibility in search
               results.
             </p>
           </div>

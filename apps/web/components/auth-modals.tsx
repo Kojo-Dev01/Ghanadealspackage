@@ -144,7 +144,7 @@ export function AuthModals({
           <p className="modal-subtitle">Join Ghana&apos;s largest property marketplace</p>
           <div className="account-type-toggle">
             <button className={accountType === "buyer" ? "active" : undefined} type="button" onClick={() => onSetAccountType("buyer")}>Buyer / Tenant</button>
-            <button className={accountType === "agent" ? "active" : undefined} type="button" onClick={() => onSetAccountType("agent")}>Agent / Developer</button>
+            <button className={accountType === "agent" ? "active" : undefined} type="button" onClick={() => onSetAccountType("agent")}>Seller / Developer</button>
           </div>
           <form onSubmit={handleSignup}>
             <div className="form-group">

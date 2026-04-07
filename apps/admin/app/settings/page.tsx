@@ -97,7 +97,7 @@ export default async function AdminSettingsPage() {
             />
             <SettingRow label="Public URL" value="http://localhost:3000" hint="Web-facing marketplace" />
             <SettingRow label="Admin URL" value="http://localhost:3001" hint="This admin panel" />
-            <SettingRow label="Agent Portal" value="http://localhost:3002" />
+            <SettingRow label="Seller Portal" value="http://localhost:3002" />
             <SettingRow label="Support Phone" value="+233 30 212 3456" />
           </dl>
         </SettingCard>
@@ -118,7 +118,7 @@ export default async function AdminSettingsPage() {
             <SettingRow
               label="Moderation Flow"
               value="Manual review"
-              hint="New agent listings require admin approval before going live"
+              hint="New seller listings require admin approval before going live"
             />
             <SettingRow
               label="Listing Statuses"
@@ -160,7 +160,7 @@ export default async function AdminSettingsPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[
                   { label: "Listings", value: stats.totals.listings },
-                  { label: "Agents", value: stats.totals.agents },
+                  { label: "Sellers", value: stats.totals.agents },
                   { label: "Inquiries", value: stats.totals.inquiries },
                   { label: "Pending", value: stats.totals.pending },
                   { label: "Approved", value: stats.totals.approved },

@@ -62,7 +62,7 @@ export default async function AgentProfilePage({
       activeNav="profile"
       eyebrow="Account"
       title="Profile"
-      description="Update your agent information displayed on the marketplace."
+      description="Update your seller information displayed on the marketplace."
     >
       <section className="bg-panel border border-border rounded-xl p-5 shadow-sm">
         {params.success && (
@@ -81,7 +81,7 @@ export default async function AgentProfilePage({
             <label className="block text-sm font-semibold text-slate-600 mb-2">Profile Photo</label>
             <ProfileAvatarField
               currentUrl={profile?.avatar_url}
-              agentName={profile?.name ?? "Agent"}
+              agentName={profile?.name ?? "Seller"}
               agentColor={profile?.color ?? "#3B82F6"}
             />
           </div>

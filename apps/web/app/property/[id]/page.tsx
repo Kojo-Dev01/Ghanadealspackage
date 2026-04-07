@@ -131,7 +131,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
                     </div>
                   </div>
                   <div className="agent-btn-group">
-                    <a className="btn btn-outline" href={`tel:${property.agent.phone}`}>Call Agent</a>
+                    <a className="btn btn-outline" href={`tel:${property.agent.phone}`}>Call Seller</a>
                     <a className="btn btn-whatsapp" href={`https://wa.me/${property.agent.phone.replace("+", "")}`} target="_blank" rel="noreferrer">WhatsApp</a>
                   </div>
                 </div>

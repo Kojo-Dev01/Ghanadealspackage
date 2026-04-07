@@ -123,7 +123,7 @@ export async function registerAgentRoutes(app: FastifyInstance) {
     const { data: rawData, error } = await supabase.from("agents").select("*").eq("id", id).single();
 
     if (error || !rawData) {
-      return reply.code(404).send({ message: "Agent not found" });
+      return reply.code(404).send({ message: "Seller not found" });
     }
 
     const row = rawData as unknown as AgentRow;
@@ -292,7 +292,7 @@ export async function registerAgentRoutes(app: FastifyInstance) {
     // Verify agent exists
     const { data: agent } = await supabase.from("agents").select("id").eq("id", id).single();
     if (!agent) {
-      return reply.code(404).send({ message: "Agent not found" });
+      return reply.code(404).send({ message: "Seller not found" });
     }
 
     const { data: review, error } = await (supabase as any)

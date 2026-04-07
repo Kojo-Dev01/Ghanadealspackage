@@ -130,7 +130,7 @@ export default function SavedPropertiesPage() {
                           {property.area > 0 && <span>{property.area} sqft</span>}
                         </div>
                         <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 8 }}>
-                          Agent: {property.agentName}
+                          Seller: {property.agentName}
                         </div>
                       </div>
                     </Link>

@@ -150,7 +150,7 @@ export default async function AdminListingsPage({
               name="q"
               type="search"
               defaultValue={query}
-              placeholder="Title, region, or agent…"
+              placeholder="Title, region, or seller…"
               className="border border-border rounded-lg bg-panel-alt px-3 py-2 text-sm text-foreground focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
             />
           </label>

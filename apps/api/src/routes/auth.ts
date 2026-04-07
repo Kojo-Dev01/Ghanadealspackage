@@ -79,7 +79,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         request.log.error(agentError, "Failed to create agent record");
         // Rollback: remove the auth user we just created
         await supabaseAdmin.auth.admin.deleteUser(userId);
-        return reply.code(500).send({ message: "Failed to create agent profile" });
+        return reply.code(500).send({ message: "Failed to create seller profile" });
       }
       agentRecord = agent;
     } else {

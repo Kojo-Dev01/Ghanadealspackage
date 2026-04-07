@@ -13,7 +13,7 @@ export function ExtractedFooter() {
               <Image src="/legacy/assets/favicon.jpeg" alt="GhanaDeals Logo" width={32} height={32} style={{ objectFit: "contain", borderRadius: 4 }} />
               <span>Ghana<span>Deals</span></span>
             </Link>
-            <p>Ghana&apos;s premier property marketplace connecting buyers, sellers, and agents across all 16 regions.</p>
+            <p>Ghana&apos;s premier property marketplace connecting buyers and sellers across all 16 regions.</p>
           </div>
           <div className="footer-col">
             <h4>Buy Property</h4>
@@ -30,7 +30,7 @@ export function ExtractedFooter() {
           <div className="footer-col">
             <h4>Company</h4>
             <a href={adminUrl}>Admin</a>
-            <Link href="/agents">Find Agents</Link>
+            <Link href="/agents">Find Sellers</Link>
             <Link href="/">Home</Link>
           </div>
         </div>

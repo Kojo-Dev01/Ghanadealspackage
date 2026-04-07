@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GhanaDeals Agent Dashboard",
+  title: "GhanaDeals Seller Dashboard",
   description: "Manage your property listings, inquiries, and profile",
 };
 

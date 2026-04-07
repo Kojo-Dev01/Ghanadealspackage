@@ -14,7 +14,7 @@ async function requireAgent(request: any, reply: any): Promise<{ payload: JwtPay
 
   const payload = request.user as JwtPayload;
   if (payload.role !== "agent") {
-    reply.code(403).send({ message: "Agent access required" });
+    reply.code(403).send({ message: "Seller access required" });
     return null;
   }
 
@@ -31,7 +31,7 @@ async function requireAgent(request: any, reply: any): Promise<{ payload: JwtPay
     .single();
 
   if (!agent) {
-    reply.code(404).send({ message: "Agent profile not found" });
+    reply.code(404).send({ message: "Seller profile not found" });
     return null;
   }
 
@@ -87,7 +87,7 @@ export async function registerAgentDashboardRoutes(app: FastifyInstance) {
       .single();
 
     if (error || !agent) {
-      return reply.code(404).send({ message: "Agent not found" });
+      return reply.code(404).send({ message: "Seller not found" });
     }
 
     return agent;
@@ -493,7 +493,7 @@ export async function registerAgentDashboardRoutes(app: FastifyInstance) {
       .single();
 
     if (error || !agent) {
-      return reply.code(404).send({ message: "Agent not found" });
+      return reply.code(404).send({ message: "Seller not found" });
     }
 
     return {
@@ -533,7 +533,7 @@ export async function registerAgentDashboardRoutes(app: FastifyInstance) {
       .single();
 
     if (current?.verification_status === "approved") {
-      return reply.code(400).send({ message: "Agent is already verified" });
+      return reply.code(400).send({ message: "Seller is already verified" });
     }
     if (current?.verification_status === "pending") {
       return reply.code(400).send({ message: "Verification is already pending review" });

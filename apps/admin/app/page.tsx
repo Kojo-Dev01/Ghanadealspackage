@@ -105,7 +105,7 @@ export default async function AdminOverviewPage() {
           color="#2563eb"
         />
         <StatCard
-          label="Agents"
+          label="Sellers"
           value={String(totals.agents)}
           delta={`${totals.verifiedAgents ?? 0} verified`}
           icon={<ShieldCheck size={20} className="text-white" />}
@@ -121,7 +121,7 @@ export default async function AdminOverviewPage() {
         <StatCard
           label="Total Users"
           value={String((totals.buyers ?? 0) + totals.agents)}
-          delta="Buyers + agents"
+          delta="Buyers + sellers"
           icon={<Users size={20} className="text-white" />}
           color="#6d28d9"
         />

@@ -674,7 +674,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
 
   app.get("/agents/:id", { preHandler: requirePermission("agents.read") }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    if (!id) return reply.code(400).send({ message: "Agent id is required" });
+    if (!id) return reply.code(400).send({ message: "Seller id is required" });
 
     const supabase = getSupabaseAdminClient();
     if (!supabase) return reply.code(503).send({ message: "Database not configured" });
@@ -686,7 +686,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       .single();
 
     if (error || !agent) {
-      return reply.code(404).send({ message: "Agent not found" });
+      return reply.code(404).send({ message: "Seller not found" });
     }
 
     return {
@@ -723,7 +723,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
 
   app.post("/agents/:id/verify", { preHandler: requirePermission("agents.verify") }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    if (!id) return reply.code(400).send({ message: "Agent id is required" });
+    if (!id) return reply.code(400).send({ message: "Seller id is required" });
 
     const parsed = verifyAgentSchema.safeParse(request.body);
     if (!parsed.success) {
@@ -762,7 +762,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       .single();
 
     if (error || !agent) {
-      return reply.code(404).send({ message: "Agent not found" });
+      return reply.code(404).send({ message: "Seller not found" });
     }
 
     // Write audit log
@@ -774,7 +774,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       detail: {
         status: agent.verification_status,
         reason: reason ?? null,
-        summary: `Agent "${agent.name}" ${action === "approve" ? "verified" : "rejected"}`,
+        summary: `Seller "${agent.name}" ${action === "approve" ? "verified" : "rejected"}`,
       },
     });
 
@@ -799,7 +799,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         type: action === "approve" ? "verification_approved" : "verification_rejected",
         title: action === "approve" ? "Verification Approved" : "Verification Rejected",
         body: action === "approve"
-          ? "Your agent account has been verified"
+          ? "Your seller account has been verified"
           : `Your verification was rejected: ${reason ?? "Documents not sufficient"}`,
         data: { agentId: id },
       }).catch((err) => app.log.error(err, "Failed to create verification notification"));
@@ -807,7 +807,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
 
     return {
       item: agent,
-      message: `Agent ${action === "approve" ? "approved" : "rejected"} successfully`,
+      message: `Seller ${action === "approve" ? "approved" : "rejected"} successfully`,
     };
   });
 

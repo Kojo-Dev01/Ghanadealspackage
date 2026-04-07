@@ -54,7 +54,7 @@ export async function AgentShell({
             <Image src="/logo.png" alt="GhanaDeals" width={32} height={32} className="rounded-lg shrink-0" unoptimized />
             <div>
               <span className="text-sm font-bold text-white tracking-tight">Ghana<span className="text-accent">Deals</span></span>
-              <p className="text-[11px] text-sidebar-text max-lg:hidden">Agent Dashboard</p>
+              <p className="text-[11px] text-sidebar-text max-lg:hidden">Seller Dashboard</p>
             </div>
           </div>
         </div>

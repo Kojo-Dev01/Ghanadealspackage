@@ -119,15 +119,15 @@ export default async function AdminAgentDetailPage({
   return (
     <AdminShell
       activeNav="agents"
-      eyebrow="Agent Details"
+      eyebrow="Seller Details"
       title={agent.name}
-      description={agent.company || "Independent Agent"}
+      description={agent.company || "Independent Seller"}
       actions={
         <Link
           href="/agents"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-panel-alt transition-colors"
         >
-          <ArrowLeft size={14} /> Back to Agents
+          <ArrowLeft size={14} /> Back to Sellers
         </Link>
       }
     >
@@ -135,9 +135,9 @@ export default async function AdminAgentDetailPage({
       {sp.success && (
         <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-2.5 text-sm font-medium text-green-700">
           {sp.success === "approved"
-            ? "Agent has been verified successfully."
+            ? "Seller has been verified successfully."
             : sp.success === "rejected"
-              ? "Agent verification has been rejected."
+              ? "Seller verification has been rejected."
               : "Action completed."}
         </div>
       )}
@@ -287,7 +287,7 @@ export default async function AdminAgentDetailPage({
               </div>
             ) : (
               <p className="text-sm text-muted">
-                This agent has no listings yet.
+                This seller has no listings yet.
               </p>
             )}
           </section>

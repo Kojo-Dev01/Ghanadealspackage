@@ -126,7 +126,7 @@ export function AgentReviews({ agentId, reviews: initialReviews, total }: Props)
           {/* Rating */}
           <div style={{ marginBottom: 20 }}>
             <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: 8 }}>
-              How would you rate this agent? *
+              How would you rate this seller? *
             </label>
             <div style={{
               display: "flex", alignItems: "center", gap: 12,
@@ -152,7 +152,7 @@ export function AgentReviews({ agentId, reviews: initialReviews, total }: Props)
               onChange={(e) => setComment(e.target.value)}
               rows={4}
               maxLength={2000}
-              placeholder="What was your experience working with this agent? Were they responsive, knowledgeable, helpful?"
+              placeholder="What was your experience working with this seller? Were they responsive, knowledgeable, helpful?"
               style={inputStyle}
               onFocus={(e) => {
                 e.currentTarget.style.borderColor = "var(--border-focus)";
@@ -207,7 +207,7 @@ export function AgentReviews({ agentId, reviews: initialReviews, total }: Props)
             No reviews yet
           </p>
           <p style={{ fontSize: 13, color: "var(--text-tertiary)", marginTop: 4 }}>
-            Be the first to review this agent!
+            Be the first to review this seller!
           </p>
         </div>
       ) : (

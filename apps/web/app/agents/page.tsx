@@ -21,10 +21,10 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
       <main>
         <div className="agents-hero">
           <div className="container">
-            <h1>Find Property Agents in Ghana</h1>
+            <h1>Find Property Sellers in Ghana</h1>
             <p>Connect with verified real estate professionals across Ghana</p>
             <form className="agents-search-bar" action="/agents" method="get">
-              <input type="text" name="q" placeholder="Search by agent name or company..." defaultValue={q} />
+              <input type="text" name="q" placeholder="Search by seller name or company..." defaultValue={q} />
               <input type="text" name="area" placeholder="Filter by area..." defaultValue={area} />
               <button className="btn btn-primary" type="submit">Search</button>
             </form>

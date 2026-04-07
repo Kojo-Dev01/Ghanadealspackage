@@ -83,14 +83,14 @@ export default async function MetricsPage() {
         <MetricCard
           label="Total Users"
           value={totalUsers}
-          sub={`${buyers.total} buyers · ${agents.total} agents`}
+          sub={`${buyers.total} buyers · ${agents.total} sellers`}
           icon={<Users size={20} className="text-white" />}
           color="#6d28d9"
         />
         <MetricCard
           label="New Users (7d)"
           value={buyers.newThisWeek + agents.newThisWeek}
-          sub={`${buyers.newThisWeek} buyers · ${agents.newThisWeek} agents`}
+          sub={`${buyers.newThisWeek} buyers · ${agents.newThisWeek} sellers`}
           icon={<UserPlus size={20} className="text-white" />}
           color="#0891b2"
         />
@@ -180,12 +180,12 @@ export default async function MetricsPage() {
             <DonutChart
               data={[
                 { name: "Buyers", count: buyers.total },
-                { name: "Agents", count: agents.total },
+                { name: "Sellers", count: agents.total },
               ]}
             />
             <div className="grid grid-cols-2 gap-4 text-sm mt-2 w-full">
               <div className="text-center">
-                <span className="text-muted">Verified agents:</span>{" "}
+                <span className="text-muted">Verified sellers:</span>{" "}
                 <span className="font-bold text-foreground">{agents.verified}</span>
               </div>
               <div className="text-center">

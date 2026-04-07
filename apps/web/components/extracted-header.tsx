@@ -83,7 +83,7 @@ export function ExtractedHeader({
           <Link href="/listings?listingType=new" className={newActive ? "active" : undefined}>New Developments</Link>
           <Link href="/listings?type=Commercial" className={commercialActive ? "active" : undefined}>Commercial</Link>
           <Link href="/listings?type=Land" className={landActive ? "active" : undefined}>Land</Link>
-          <Link href="/agents" className={agentsActive ? "active" : undefined}>Find Agents</Link>
+          <Link href="/agents" className={agentsActive ? "active" : undefined}>Find Sellers</Link>
         </nav>
 
         <div className="header-actions">
@@ -126,7 +126,7 @@ export function ExtractedHeader({
                       <div style={{ fontSize: 11, color: "var(--red)", marginTop: 4, textTransform: "capitalize" }}>{user.role}{agent?.verified ? " ✓" : ""}</div>
                     </div>
                     {user.role === "agent" && (
-                      <a href="http://localhost:3002" onClick={() => setProfileOpen(false)} style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--text-primary)", textDecoration: "none" }}>Agent Dashboard</a>
+                      <a href="http://localhost:3002" onClick={() => setProfileOpen(false)} style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--text-primary)", textDecoration: "none" }}>Seller Dashboard</a>
                     )}
                     {user.role === "buyer" && (
                       <>
@@ -160,7 +160,7 @@ export function ExtractedHeader({
       <Link href="/listings?listingType=new" className={newActive ? "active" : undefined} onClick={onCloseMobileNav}>New Developments</Link>
       <Link href="/listings?type=Commercial" className={commercialActive ? "active" : undefined} onClick={onCloseMobileNav}>Commercial</Link>
       <Link href="/listings?type=Land" className={landActive ? "active" : undefined} onClick={onCloseMobileNav}>Land</Link>
-      <Link href="/agents" className={agentsActive ? "active" : undefined} onClick={onCloseMobileNav}>Find Agents</Link>
+      <Link href="/agents" className={agentsActive ? "active" : undefined} onClick={onCloseMobileNav}>Find Sellers</Link>
       <div className="mobile-nav-buttons">
         {user ? (
           <button className="btn btn-outline" type="button" onClick={() => { onCloseMobileNav(); logout(); onShowToast("Signed out", "info"); }}>Sign Out</button>
