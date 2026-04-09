@@ -7,11 +7,12 @@
   --color-border: #e2e8f0;
   --color-panel: #ffffff;
   --color-panel-alt: #f1f5f9;
-  --color-accent: #16a34a;
-  --color-accent-hover: #15803d;
-  --color-sidebar: #0f172a;
-  --color-sidebar-text: #94a3b8;
-  --color-sidebar-active: #e2e8f0;
+  --color-accent: #E63946;
+  --color-accent-hover: #cf2f3c;
+  --color-accent-light: rgba(230,57,70,0.08);
+  --color-sidebar: #ffffff;
+  --color-sidebar-text: #64748b;
+  --color-sidebar-active: #0f172a;
   --color-danger: #dc2626;
   --color-warning: #d97706;
   --color-info: #2563eb;

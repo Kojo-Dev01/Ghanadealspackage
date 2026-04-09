@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { loginAdmin } from "@/lib/api";
 import { ShieldCheck } from "lucide-react";
+import { SubmitButton } from "@/components/submit-button";
 
 type LoginPageProps = {
   searchParams: Promise<{ next?: string; error?: string }>;
@@ -105,12 +106,11 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
             />
           </label>
 
-          <button
-            type="submit"
-            className="bg-accent text-white py-2.5 rounded-lg text-sm font-bold hover:bg-accent-hover transition-colors cursor-pointer"
+          <SubmitButton
+            className="bg-accent text-white py-2.5 rounded-lg text-sm font-bold hover:bg-accent-hover transition-colors cursor-pointer disabled:opacity-60"
           >
             Sign in
-          </button>
+          </SubmitButton>
         </form>
 
         <p className="text-xs text-muted mt-5 leading-relaxed">

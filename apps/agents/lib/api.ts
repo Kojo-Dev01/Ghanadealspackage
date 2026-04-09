@@ -114,6 +114,7 @@ export type DashboardListing = {
   floorPlans: string[];
   featured: boolean;
   moderationStatus: string;
+  moderationReason: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -183,13 +184,14 @@ export async function updateAgentProfile(
 }
 
 export async function fetchAgentListings(
-  params?: { status?: string; page?: number }
+  params?: { status?: string; listingType?: string; page?: number }
 ): Promise<{ items: DashboardListing[]; total: number; page: number; limit: number }> {
   const token = await getSessionToken();
   const empty = { items: [], total: 0, page: 1, limit: 12 };
   if (!token) return empty;
   const sp = new URLSearchParams();
   if (params?.status) sp.set("status", params.status);
+  if (params?.listingType) sp.set("listing_type", params.listingType);
   if (params?.page) sp.set("page", String(params.page));
   try {
     const res = await fetchEndpoint(`/v1/agent/listings?${sp}`, token);
@@ -335,7 +337,7 @@ export async function deleteListing(
 export type VerificationStatus = "unverified" | "pending" | "approved" | "rejected";
 
 export type KycDocument = {
-  type: "national_id" | "business_registration" | "proof_of_address";
+  type: "ghana_card" | "passport";
   url: string;
   name: string;
   uploadedAt: string;

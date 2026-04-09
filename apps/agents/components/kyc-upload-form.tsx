@@ -7,14 +7,12 @@ import {
   X,
   Loader2,
   CreditCard,
-  Building,
-  MapPin,
   CheckCircle2,
   Plus,
 } from "lucide-react";
 
 type DocumentEntry = {
-  type: "national_id" | "business_registration" | "proof_of_address";
+  type: "ghana_card" | "passport";
   file: File | null;
   url: string;
   name: string;
@@ -22,22 +20,16 @@ type DocumentEntry = {
 
 const DOC_TYPES = [
   {
-    value: "national_id" as const,
-    label: "National ID",
-    description: "Ghana Card, Passport, or Voter's ID",
+    value: "ghana_card" as const,
+    label: "Ghana Card",
+    description: "A clear photo or scan of your Ghana Card (front and back)",
     icon: CreditCard,
   },
   {
-    value: "business_registration" as const,
-    label: "Business Registration",
-    description: "Company certificate or sole proprietorship permit",
-    icon: Building,
-  },
-  {
-    value: "proof_of_address" as const,
-    label: "Proof of Address",
-    description: "Utility bill or bank statement",
-    icon: MapPin,
+    value: "passport" as const,
+    label: "Passport",
+    description: "Bio-data page of your valid passport",
+    icon: CreditCard,
   },
 ];
 
@@ -50,16 +42,16 @@ type Props = {
 
 export function KycUploadForm({ submitAction }: Props) {
   const [documents, setDocuments] = useState<DocumentEntry[]>([
-    { type: "national_id", file: null, url: "", name: "" },
+    { type: "ghana_card", file: null, url: "", name: "" },
   ]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
   function addDocument() {
-    if (documents.length >= 3) return;
+    if (documents.length >= 2) return;
     const usedTypes = new Set(documents.map((d) => d.type));
-    const nextType = DOC_TYPES.find((t) => !usedTypes.has(t.value))?.value ?? "national_id";
+    const nextType = DOC_TYPES.find((t) => !usedTypes.has(t.value))?.value ?? "ghana_card";
     setDocuments([...documents, { type: nextType, file: null, url: "", name: "" }]);
   }
 
@@ -249,7 +241,7 @@ export function KycUploadForm({ submitAction }: Props) {
         );
       })}
 
-      {documents.length < 3 && (
+      {documents.length < 2 && (
         <button
           type="button"
           onClick={addDocument}

@@ -5,14 +5,18 @@ import { useState } from "react";
 type Props = { price: number };
 
 export function MortgageCalculator({ price }: Props) {
-  const [downPaymentPct, setDownPaymentPct] = useState(20);
-  const [interestRate, setInterestRate] = useState(27.5);
-  const [termYears, setTermYears] = useState(15);
+  const [downPaymentPct, setDownPaymentPct] = useState<string>("20");
+  const [interestRate, setInterestRate] = useState<string>("27.5");
+  const [termYears, setTermYears] = useState<string>("15");
 
-  const downPayment = price * (downPaymentPct / 100);
+  const dpPct = Number(downPaymentPct) || 0;
+  const rate = Number(interestRate) || 0;
+  const years = Number(termYears) || 0;
+
+  const downPayment = price * (dpPct / 100);
   const loanAmount = price - downPayment;
-  const monthlyRate = interestRate / 100 / 12;
-  const numPayments = termYears * 12;
+  const monthlyRate = rate / 100 / 12;
+  const numPayments = years * 12;
 
   let monthlyPayment = 0;
   if (monthlyRate > 0 && numPayments > 0 && loanAmount > 0) {
@@ -50,7 +54,7 @@ export function MortgageCalculator({ price }: Props) {
         Mortgage Calculator
       </h2>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 16, marginBottom: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 20 }}>
         <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 600, color: "var(--text-secondary)" }}>
           Down Payment (%)
           <input
@@ -58,10 +62,10 @@ export function MortgageCalculator({ price }: Props) {
             min={0}
             max={100}
             value={downPaymentPct}
-            onChange={(e) => setDownPaymentPct(Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
+            onChange={(e) => setDownPaymentPct(e.target.value)}
+            onBlur={() => { if (downPaymentPct === "") setDownPaymentPct("0"); }}
             style={inputStyle}
           />
-          <span style={{ fontSize: 10, color: "var(--text-tertiary)" }}>{fmt(downPayment)}</span>
         </label>
 
         <label style={{ display: "grid", gap: 4, fontSize: 12, fontWeight: 600, color: "var(--text-secondary)" }}>
@@ -72,7 +76,8 @@ export function MortgageCalculator({ price }: Props) {
             max={100}
             step={0.1}
             value={interestRate}
-            onChange={(e) => setInterestRate(Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
+            onChange={(e) => setInterestRate(e.target.value)}
+            onBlur={() => { if (interestRate === "") setInterestRate("0"); }}
             style={inputStyle}
           />
         </label>
@@ -84,11 +89,16 @@ export function MortgageCalculator({ price }: Props) {
             min={1}
             max={30}
             value={termYears}
-            onChange={(e) => setTermYears(Math.min(30, Math.max(1, Number(e.target.value) || 1)))}
+            onChange={(e) => setTermYears(e.target.value)}
+            onBlur={() => { if (termYears === "" || Number(termYears) < 1) setTermYears("1"); }}
             style={inputStyle}
           />
         </label>
       </div>
+
+      <p style={{ fontSize: 11, color: "var(--text-secondary)", marginBottom: 16 }}>
+        Down payment: <strong style={{ color: "var(--text-primary)" }}>{fmt(downPayment)}</strong>
+      </p>
 
       <div style={{
         display: "grid",

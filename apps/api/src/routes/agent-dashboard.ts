@@ -133,7 +133,7 @@ export async function registerAgentDashboardRoutes(app: FastifyInstance) {
     const auth = await requireAgent(request, reply);
     if (!auth) return;
 
-    const { status, page, limit } = request.query as { status?: string; page?: string; limit?: string };
+    const { status, listing_type, page, limit } = request.query as { status?: string; listing_type?: string; page?: string; limit?: string };
     const pageNum = Math.max(1, Number(page) || 1);
     const limitNum = Math.min(50, Math.max(1, Number(limit) || 12));
     const from = (pageNum - 1) * limitNum;
@@ -148,6 +148,9 @@ export async function registerAgentDashboardRoutes(app: FastifyInstance) {
 
     if (status && ["pending", "approved", "flagged", "archived"].includes(status)) {
       query = query.eq("moderation_status", status);
+    }
+    if (listing_type && ["sale", "rent", "land", "new", "commercial"].includes(listing_type)) {
+      query = query.eq("listing_type", listing_type);
     }
 
     const { data: properties, count, error } = await query;
@@ -508,7 +511,7 @@ export async function registerAgentDashboardRoutes(app: FastifyInstance) {
   // ── POST /verification — submit KYC documents ──────────────
   const kycSubmitSchema = z.object({
     documents: z.array(z.object({
-      type: z.enum(["national_id", "business_registration", "proof_of_address"]),
+      type: z.enum(["ghana_card", "passport"]),
       url: z.string().url().max(500),
       name: z.string().max(200),
     })).min(1).max(5),
@@ -596,6 +599,7 @@ function formatProperty(row: any) {
     floorPlans: row.floor_plans ?? [],
     featured: row.featured ?? false,
     moderationStatus: row.moderation_status ?? "pending",
+    moderationReason: row.moderation_reason ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };

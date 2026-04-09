@@ -229,6 +229,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
   app.get("/listings", { preHandler: requirePermission("listings.read") }, async (request, reply) => {
     const query = request.query as {
       status?: ModerationStatus;
+      listing_type?: string;
       q?: string;
       page?: string;
       limit?: string;
@@ -246,12 +247,15 @@ export async function registerAdminRoutes(app: FastifyInstance) {
 
     let qb = supabase
       .from("properties")
-      .select("id, title, listing_type, price, region, type, moderation_status, created_at, agents!inner(name)", { count: "exact" })
+      .select("*, agents!inner(name)", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(from, to);
 
     if (query.status && ["pending", "approved", "flagged", "archived"].includes(query.status)) {
       qb = qb.eq("moderation_status", query.status);
+    }
+    if (query.listing_type && ["sale", "rent", "land", "new", "commercial"].includes(query.listing_type)) {
+      qb = qb.eq("listing_type", query.listing_type);
     }
     if (query.q) {
       qb = qb.or(`title.ilike.%${query.q}%,region.ilike.%${query.q}%`);
@@ -268,10 +272,17 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       title: row.title,
       listingType: row.listing_type,
       region: row.region,
+      location: row.location ?? "",
       type: row.type,
+      price: Number(row.price),
       priceFormatted: formatPrice(Number(row.price)),
+      beds: Number(row.beds ?? 0),
+      baths: Number(row.baths ?? 0),
+      area: Number(row.area ?? 0),
+      image: row.image ?? "",
       submittedAt: String(row.created_at),
       moderationStatus: row.moderation_status,
+      moderationReason: (row.moderation_reason as string) ?? null,
       agentName: (row.agents as { name: string })?.name ?? "Unknown"
     }));
 
@@ -342,7 +353,10 @@ export async function registerAdminRoutes(app: FastifyInstance) {
 
   app.post("/listings/:id/moderate", { preHandler: requirePermission("listings.moderate") }, async (request, reply) => {
     const params = request.params as { id?: string };
-    const moderateSchema = z.object({ status: z.enum(["pending", "approved", "flagged", "archived"]) });
+    const moderateSchema = z.object({
+      status: z.enum(["pending", "approved", "flagged", "archived"]),
+      reason: z.string().optional(),
+    });
     const parsed = moderateSchema.safeParse(request.body);
 
     if (!params.id) {
@@ -362,11 +376,14 @@ export async function registerAdminRoutes(app: FastifyInstance) {
 
     const userId = (request.user as { sub?: string }).sub ?? null;
 
+    const reason = parsed.data.reason ?? null;
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: rawData, error } = await (supabase
       .from("properties") as any)
       .update({
         moderation_status: nextStatus,
+        moderation_reason: nextStatus === "flagged" ? reason : null,
         moderated_by: userId,
         moderated_at: new Date().toISOString()
       })
@@ -656,6 +673,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       company: row.company,
       phone: row.phone,
       color: row.color,
+      avatarUrl: (row.avatar_url as string) ?? null,
       rating: Number(row.rating ?? 0),
       areas: row.areas ?? [],
       years: row.years ?? 0,
@@ -696,6 +714,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         company: agent.company,
         phone: agent.phone,
         color: agent.color,
+        avatarUrl: agent.avatar_url ?? null,
         rating: Number(agent.rating ?? 0),
         areas: agent.areas ?? [],
         years: agent.years ?? 0,

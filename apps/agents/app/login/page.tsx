@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { loginAgent } from "@/lib/api";
+import { SubmitButton } from "@/components/submit-button";
 
 type LoginPageProps = {
   searchParams: Promise<{ next?: string; error?: string }>;
@@ -55,7 +56,7 @@ export default async function AgentLoginPage({
   }
 
   return (
-    <main className="min-h-screen grid place-items-center p-6 bg-sidebar">
+    <main className="min-h-screen grid place-items-center p-6 bg-background">
       <section className="w-full max-w-md bg-panel border border-border shadow-xl rounded-xl p-8">
         <p className="text-xs font-semibold uppercase tracking-wider text-accent mb-2">
           Seller Portal
@@ -98,12 +99,11 @@ export default async function AgentLoginPage({
             />
           </label>
 
-          <button
-            type="submit"
-            className="mt-1.5 bg-accent text-white py-2.5 px-4 rounded-lg text-sm font-bold hover:bg-accent-hover transition-colors cursor-pointer"
+          <SubmitButton
+            className="mt-1.5 bg-accent text-white py-2.5 px-4 rounded-lg text-sm font-bold hover:bg-accent-hover transition-colors cursor-pointer disabled:opacity-60"
           >
             Sign in →
-          </button>
+          </SubmitButton>
         </form>
 
         <p className="mt-5 pt-4 border-t border-border text-xs text-muted leading-relaxed">

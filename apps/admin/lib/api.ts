@@ -64,10 +64,17 @@ export type AdminListing = {
   title: string;
   listingType: "sale" | "rent";
   region: string;
+  location: string;
   type: string;
+  price: number;
   priceFormatted: string;
+  beds: number;
+  baths: number;
+  area: number;
+  image: string;
   submittedAt: string;
   moderationStatus: "pending" | "approved" | "flagged";
+  moderationReason: string | null;
   agentName: string;
 };
 
@@ -99,6 +106,7 @@ export type AdminListingDetail = {
   floorPlans: string[];
   featured: boolean;
   moderationStatus: AdminListingStatus;
+  moderationReason: string | null;
   moderatedAt: string | null;
   submittedAt: string;
   agent: {
@@ -203,6 +211,7 @@ export async function fetchAdminMetrics(): Promise<AdminMetricsResponse | null> 
 
 export async function fetchAdminListings(params?: {
   status?: AdminListingStatus;
+  listingType?: string;
   q?: string;
   page?: number;
   limit?: number;
@@ -210,6 +219,7 @@ export async function fetchAdminListings(params?: {
   const token = await getToken();
   const sp = new URLSearchParams();
   if (params?.status) sp.set("status", params.status);
+  if (params?.listingType) sp.set("listing_type", params.listingType);
   if (params?.q) sp.set("q", params.q);
   if (params?.page) sp.set("page", String(params.page));
   if (params?.limit) sp.set("limit", String(params.limit));
@@ -231,7 +241,8 @@ export async function fetchAdminListingById(
 
 export async function moderateAdminListing(
   listingId: string,
-  moderationStatus: AdminListingStatus
+  moderationStatus: AdminListingStatus,
+  reason?: string
 ): Promise<AdminListing | null> {
   const token = await getToken();
   if (!token) return null;
@@ -241,7 +252,7 @@ export async function moderateAdminListing(
     {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ status: moderationStatus }),
+      body: JSON.stringify({ status: moderationStatus, reason }),
     }
   );
   if (!res?.ok) return null;
@@ -321,6 +332,7 @@ export type AdminAgent = {
   listings: number;
   years: number;
   color: string;
+  avatarUrl: string | null;
   phone: string;
   verified: boolean;
   verificationStatus: VerificationStatus;
