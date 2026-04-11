@@ -22,7 +22,7 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-export function NotificationBell({ token }: { token: string }) {
+export function NotificationBell() {
   const [count, setCount] = useState(0);
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
@@ -30,9 +30,9 @@ export function NotificationBell({ token }: { token: string }) {
   const ref = useRef<HTMLDivElement>(null);
 
   const refreshCount = useCallback(async () => {
-    const c = await fetchUnreadCount(token);
+    const c = await fetchUnreadCount();
     setCount(c);
-  }, [token]);
+  }, []);
 
   // Poll unread count
   useEffect(() => {
@@ -45,10 +45,10 @@ export function NotificationBell({ token }: { token: string }) {
   useEffect(() => {
     if (!open) return;
     setLoading(true);
-    fetchNotifications(token, { limit: 15 })
+    fetchNotifications({ limit: 15 })
       .then((res) => setItems(res.items))
       .finally(() => setLoading(false));
-  }, [open, token]);
+  }, [open]);
 
   // Close on outside click
   useEffect(() => {
@@ -61,13 +61,13 @@ export function NotificationBell({ token }: { token: string }) {
   }, [open]);
 
   const handleMarkRead = async (id: string) => {
-    await markNotificationRead(token, id);
+    await markNotificationRead(id);
     setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
     setCount((c) => Math.max(0, c - 1));
   };
 
   const handleMarkAllRead = async () => {
-    await markAllNotificationsRead(token);
+    await markAllNotificationsRead();
     setItems((prev) => prev.map((n) => ({ ...n, read: true })));
     setCount(0);
   };
@@ -124,9 +124,10 @@ export function NotificationBell({ token }: { token: string }) {
             top: "calc(100% + 8px)",
             width: 340,
             maxHeight: 420,
-            background: "var(--card-bg, #fff)",
+            background: "var(--bg-dropdown)",
+            border: "1px solid var(--border-primary)",
             borderRadius: 12,
-            boxShadow: "0 8px 32px rgba(0,0,0,.15)",
+            boxShadow: "var(--shadow-lg)",
             zIndex: 1001,
             display: "flex",
             flexDirection: "column",
@@ -140,7 +141,7 @@ export function NotificationBell({ token }: { token: string }) {
               alignItems: "center",
               justifyContent: "space-between",
               padding: "12px 16px",
-              borderBottom: "1px solid var(--border, #eee)",
+              borderBottom: "1px solid var(--border-primary)",
             }}
           >
             <span style={{ fontWeight: 600, fontSize: 15 }}>Notifications</span>
@@ -181,7 +182,7 @@ export function NotificationBell({ token }: { token: string }) {
                     textAlign: "left",
                     background: n.read ? "transparent" : "var(--notification-unread-bg, rgba(59,130,246,.06))",
                     border: "none",
-                    borderBottom: "1px solid var(--border, #f0f0f0)",
+                    borderBottom: "1px solid var(--border-primary)",
                     cursor: n.read ? "default" : "pointer",
                   }}
                 >
@@ -194,7 +195,7 @@ export function NotificationBell({ token }: { token: string }) {
                   {n.body && (
                     <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2, lineHeight: 1.4 }}>{n.body}</div>
                   )}
-                  <div style={{ fontSize: 11, color: "var(--text-tertiary, #999)", marginTop: 4 }}>{timeAgo(n.createdAt)}</div>
+                  <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 4 }}>{timeAgo(n.createdAt)}</div>
                 </button>
               ))
             )}

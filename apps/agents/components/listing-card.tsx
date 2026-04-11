@@ -14,9 +14,9 @@ function resolveImg(src: string | null | undefined): string {
 }
 
 const statusStyles: Record<string, { bg: string; color: string; border: string; label: string; icon: React.ReactNode }> = {
-  pending:  { bg: "rgba(245,158,11,0.1)", color: "#d97706", border: "#fde68a", label: "Pending Review", icon: <Clock size={12} /> },
-  approved: { bg: "rgba(34,197,94,0.1)",  color: "#16a34a", border: "#bbf7d0", label: "Approved",       icon: <CheckCircle2 size={12} /> },
-  flagged:  { bg: "rgba(239,68,68,0.1)",  color: "#dc2626", border: "#fecaca", label: "Rejected",       icon: <AlertTriangle size={12} /> },
+  pending:  { bg: "rgba(245,158,11,0.1)", color: "var(--status-warning-text, #d97706)", border: "rgba(245,158,11,0.25)", label: "Pending Review", icon: <Clock size={12} /> },
+  approved: { bg: "rgba(34,197,94,0.1)",  color: "var(--status-success-text, #16a34a)", border: "rgba(34,197,94,0.25)",  label: "Approved",       icon: <CheckCircle2 size={12} /> },
+  flagged:  { bg: "rgba(239,68,68,0.1)",  color: "var(--status-danger-text, #dc2626)",  border: "rgba(239,68,68,0.25)",  label: "Rejected",       icon: <AlertTriangle size={12} /> },
 };
 
 const typeColors: Record<string, string> = {

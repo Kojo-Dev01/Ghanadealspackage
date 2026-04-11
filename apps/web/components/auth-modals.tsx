@@ -3,29 +3,36 @@ import type { FormEvent } from "react";
 import { useAuth } from "./auth-provider";
 import { requestPasswordReset } from "../lib/api";
 
+function EyeIcon({ visible }: { visible: boolean }) {
+  if (visible) {
+    return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 18, height: 18 }}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>;
+  }
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 18, height: 18 }}><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>;
+}
+
 type AuthModalsProps = {
   activeModal: "login" | "signup" | null;
-  accountType: "buyer" | "agent";
+  authIntent: "list-property" | null;
   onCloseModal: () => void;
   onOpenLogin: () => void;
   onOpenSignup: () => void;
-  onSetAccountType: (type: "buyer" | "agent") => void;
   onShowToast: (message: string, type?: "success" | "error" | "info") => void;
 };
 
 export function AuthModals({
   activeModal,
-  accountType,
+  authIntent,
   onCloseModal,
   onOpenLogin,
   onOpenSignup,
-  onSetAccountType,
   onShowToast
 }: AuthModalsProps) {
   const { login, signup } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [showLoginPw, setShowLoginPw] = useState(false);
+  const [showSignupPw, setShowSignupPw] = useState(false);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -44,6 +51,14 @@ export function AuthModals({
 
     onCloseModal();
     onShowToast("Welcome back!", "success");
+
+    if (authIntent === "list-property") {
+      if (result.role === "agent") {
+        window.location.href = process.env.NEXT_PUBLIC_SELLERS_URL || "http://localhost:3002";
+      } else {
+        window.location.href = "/sellers/register";
+      }
+    }
   };
 
   const handleSignup = async (event: FormEvent<HTMLFormElement>) => {
@@ -54,15 +69,8 @@ export function AuthModals({
     const email = (form.elements.namedItem("email") as HTMLInputElement).value.trim();
     const phone = "+233" + (form.elements.namedItem("phone") as HTMLInputElement).value.trim();
     const password = (form.elements.namedItem("password") as HTMLInputElement).value;
-    const confirmPassword = (form.elements.namedItem("confirmPassword") as HTMLInputElement).value;
 
-    if (password !== confirmPassword) {
-      setLoading(false);
-      onShowToast("Passwords do not match", "error");
-      return;
-    }
-
-    const result = await signup({ name, email, phone, password, accountType });
+    const result = await signup({ name, email, phone, password, accountType: "buyer" });
     setLoading(false);
 
     if (!result.ok) {
@@ -72,6 +80,10 @@ export function AuthModals({
 
     onCloseModal();
     onShowToast("Account created successfully!", "success");
+
+    if (authIntent === "list-property") {
+      window.location.href = "/sellers/register";
+    }
   };
 
   const handleForgotPassword = async (event: FormEvent<HTMLFormElement>) => {
@@ -120,7 +132,12 @@ export function AuthModals({
             </div>
             <div className="form-group">
               <label>Password</label>
-              <input name="password" type="password" className="form-input" placeholder="Enter your password" required />
+              <div style={{ position: "relative" }}>
+                <input name="password" type={showLoginPw ? "text" : "password"} className="form-input" placeholder="Enter your password" required style={{ paddingRight: 40 }} />
+                <button type="button" onClick={() => setShowLoginPw((p) => !p)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-tertiary)", padding: 4, display: "flex" }} aria-label={showLoginPw ? "Hide password" : "Show password"}>
+                  <EyeIcon visible={showLoginPw} />
+                </button>
+              </div>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <label className="checkbox-wrap"><input type="checkbox" /> <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>Remember me</span></label>
@@ -142,10 +159,6 @@ export function AuthModals({
           </button>
           <h2 className="modal-title">Create Account</h2>
           <p className="modal-subtitle">Join Ghana&apos;s largest property marketplace</p>
-          <div className="account-type-toggle">
-            <button className={accountType === "buyer" ? "active" : undefined} type="button" onClick={() => onSetAccountType("buyer")}>Buyer / Tenant</button>
-            <button className={accountType === "agent" ? "active" : undefined} type="button" onClick={() => onSetAccountType("agent")}>Seller / Developer</button>
-          </div>
           <form onSubmit={handleSignup}>
             <div className="form-group">
               <label>Full Name</label>
@@ -164,11 +177,12 @@ export function AuthModals({
             </div>
             <div className="form-group">
               <label>Password</label>
-              <input name="password" type="password" className="form-input" placeholder="Min 8 characters" required minLength={8} />
-            </div>
-            <div className="form-group">
-              <label>Confirm Password</label>
-              <input name="confirmPassword" type="password" className="form-input" placeholder="Confirm your password" required minLength={8} />
+              <div style={{ position: "relative" }}>
+                <input name="password" type={showSignupPw ? "text" : "password"} className="form-input" placeholder="Min 8 characters" required minLength={8} style={{ paddingRight: 40 }} />
+                <button type="button" onClick={() => setShowSignupPw((p) => !p)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-tertiary)", padding: 4, display: "flex" }} aria-label={showSignupPw ? "Hide password" : "Show password"}>
+                  <EyeIcon visible={showSignupPw} />
+                </button>
+              </div>
             </div>
             <label className="checkbox-wrap" style={{ marginBottom: 20 }}>
               <input type="checkbox" required />

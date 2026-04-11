@@ -11,7 +11,10 @@ import {
   LogOut,
   ExternalLink,
   ShieldCheck,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useTheme } from "./theme-provider";
 
 const navItems = [
   { key: "overview", label: "Overview", href: "/", icon: <LayoutDashboard size={18} /> },
@@ -32,6 +35,7 @@ function getActiveNav(pathname: string) {
 export function AgentSidebar({ logoutAction }: { logoutAction: () => void }) {
   const pathname = usePathname();
   const activeNav = getActiveNav(pathname);
+  const { isDark, toggle } = useTheme();
 
   return (
     <aside className="sticky top-0 h-screen overflow-y-auto bg-sidebar text-sidebar-text border-r border-border flex flex-col gap-2 p-6 max-lg:static max-lg:h-auto max-lg:flex-row max-lg:flex-wrap max-lg:items-center max-lg:p-4 max-lg:gap-4">
@@ -66,6 +70,14 @@ export function AgentSidebar({ logoutAction }: { logoutAction: () => void }) {
       </nav>
 
       <div className="mt-auto pt-4 border-t border-border max-lg:mt-0 max-lg:pt-0 max-lg:border-none">
+        <button
+          type="button"
+          onClick={toggle}
+          className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[13px] font-medium text-sidebar-text hover:bg-accent/5 hover:text-foreground transition-all cursor-pointer"
+        >
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          {isDark ? "Light Mode" : "Dark Mode"}
+        </button>
         <form action={logoutAction}>
           <button
             type="submit"

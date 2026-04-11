@@ -33,7 +33,7 @@ function ToastIcon({ type }: { type: ToastType }) {
 export function ExtractedShellClient({ children }: ExtractedShellClientProps) {
   const [activeModal, setActiveModal] = useState<"login" | "signup" | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [accountType, setAccountType] = useState<"buyer" | "agent">("buyer");
+  const [authIntent, setAuthIntent] = useState<"list-property" | null>(null);
   const [toasts, setToasts] = useState<ToastRecord[]>([]);
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -90,18 +90,19 @@ export function ExtractedShellClient({ children }: ExtractedShellClientProps) {
     }, 3000);
   };
 
-  const openLogin = () => {
+  const openLogin = (intent?: "list-property") => {
+    if (intent) setAuthIntent(intent);
     setMobileOpen(false);
     setActiveModal("login");
   };
 
-  const openSignup = (defaultAccountType?: "buyer" | "agent") => {
-    if (defaultAccountType) setAccountType(defaultAccountType);
+  const openSignup = (intent?: "list-property") => {
+    if (intent) setAuthIntent(intent);
     setMobileOpen(false);
     setActiveModal("signup");
   };
 
-  const closeModal = () => setActiveModal(null);
+  const closeModal = () => { setActiveModal(null); setAuthIntent(null); };
   const toggleMobileNav = () => setMobileOpen((current) => !current);
   const closeMobileNav = () => setMobileOpen(false);
 
@@ -122,11 +123,10 @@ export function ExtractedShellClient({ children }: ExtractedShellClientProps) {
       <ExtractedFooter />
       <AuthModals
         activeModal={activeModal}
-        accountType={accountType}
+        authIntent={authIntent}
         onCloseModal={closeModal}
-        onOpenLogin={openLogin}
-        onOpenSignup={openSignup}
-        onSetAccountType={setAccountType}
+        onOpenLogin={() => openLogin(authIntent ?? undefined)}
+        onOpenSignup={() => openSignup(authIntent ?? undefined)}
         onShowToast={showToast}
       />
       <div className="toast-container" id="toastContainer">

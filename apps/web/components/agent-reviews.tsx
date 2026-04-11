@@ -74,14 +74,8 @@ export function AgentReviews({ agentId, reviews: initialReviews, total }: Props)
       return;
     }
 
-    const token = typeof window !== "undefined" ? localStorage.getItem("gd_token") : null;
-    if (!token) {
-      setMessage("Please log in to leave a review");
-      return;
-    }
-
     startTransition(async () => {
-      const result = await submitAgentReview(token, agentId, {
+      const result = await submitAgentReview(agentId, {
         rating,
         comment: comment.trim() || undefined,
       });

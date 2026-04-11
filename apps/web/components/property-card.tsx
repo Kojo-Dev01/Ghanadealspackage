@@ -18,7 +18,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
     <article className="property-card-v">
       <div className="card-img">
         <Link href={`/property/${property.id}`}>
-          <Image src={property.image} alt={property.title} width={640} height={420} />
+          <Image src={property.image} alt={property.title} width={640} height={420} unoptimized />
         </Link>
         <div className="card-badges">
           {badge ? <span className={badge.className}>{badge.label}</span> : null}

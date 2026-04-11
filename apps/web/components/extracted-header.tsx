@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "./auth-provider";
 import { NotificationBell } from "./notification-bell";
 
@@ -12,8 +12,8 @@ type ExtractedHeaderProps = {
   mobileOpen: boolean;
   onToggleMobileNav: () => void;
   onCloseMobileNav: () => void;
-  onOpenLogin: () => void;
-  onOpenSignup: (defaultAccountType?: "buyer" | "agent") => void;
+  onOpenLogin: (intent?: "list-property") => void;
+  onOpenSignup: (intent?: "list-property") => void;
   onShowToast: (message: string, type?: "success" | "error" | "info") => void;
 };
 
@@ -29,6 +29,7 @@ export function ExtractedHeader({
   const [isDark, setIsDark] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user, agent, loading: authLoading, logout } = useAuth();
@@ -53,6 +54,17 @@ export function ExtractedHeader({
       setIsDark(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (!profileOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [profileOpen]);
 
   const toggleTheme = () => {
     const nextIsDark = !isDark;
@@ -91,14 +103,8 @@ export function ExtractedHeader({
             <svg className="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
             <svg className="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
           </button>
-          <a href="tel:+233302123456" className="header-phone">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-            +233 30 212 3456
-          </a>
-          {mounted && user && (() => {
-            const t = typeof window !== "undefined" ? window.localStorage.getItem("gd_token") : null;
-            return t ? <NotificationBell token={t} /> : null;
-          })()}
+          
+          {mounted && user && <NotificationBell />}
           <div id="authButtons">
             {!mounted || authLoading ? (
               <>
@@ -106,7 +112,7 @@ export function ExtractedHeader({
                 <button className="btn-signup" type="button" style={{ visibility: "hidden" }}>Sign Up</button>
               </>
             ) : user ? (
-              <div style={{ position: "relative" }}>
+              <div ref={profileRef} style={{ position: "relative" }}>
                 <button
                   type="button"
                   className="btn-login"
@@ -119,33 +125,27 @@ export function ExtractedHeader({
                   <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.name || "Account"}</span>
                 </button>
                 {profileOpen && (
-                  <div style={{ position: "absolute", right: 0, top: "calc(100% + 8px)", background: "var(--card-bg, #fff)", borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,.12)", padding: "8px 0", minWidth: 200, zIndex: 1000 }}>
-                    <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border, #eee)" }}>
+                  <div style={{ position: "absolute", right: 0, top: "calc(100% + 8px)", background: "var(--bg-dropdown)", borderRadius: 12, boxShadow: "var(--shadow-lg)", border: "1px solid var(--border-primary)", padding: "8px 0", minWidth: 200, zIndex: 1000 }}>
+                    <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--border-primary)" }}>
                       <div style={{ fontWeight: 600, fontSize: 14 }}>{user.name}</div>
                       <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>{user.email}</div>
                       <div style={{ fontSize: 11, color: "var(--red)", marginTop: 4, textTransform: "capitalize" }}>{user.role}{agent?.verified ? " ✓" : ""}</div>
                     </div>
-                    {user.role === "agent" && (
-                      <a href="http://localhost:3002" onClick={() => setProfileOpen(false)} style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--text-primary)", textDecoration: "none" }}>Seller Dashboard</a>
-                    )}
-                    {user.role === "buyer" && (
-                      <>
-                        <a href="/account" onClick={() => setProfileOpen(false)} style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--text-primary)", textDecoration: "none" }}>My Account</a>
-                        <a href="/account/saved" onClick={() => setProfileOpen(false)} style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--text-primary)", textDecoration: "none" }}>Saved Properties</a>
-                      </>
-                    )}
-                    <button type="button" onClick={() => { setProfileOpen(false); logout(); onShowToast("Signed out", "info"); }} style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--text-primary)" }}>Sign Out</button>
+                    <Link href="/account" onClick={() => setProfileOpen(false)} style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--text-primary)", textDecoration: "none", transition: "background var(--transition-fast)" }} onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg-card-hover)"} onMouseLeave={(e) => e.currentTarget.style.background = "none"}>Dashboard</Link>
+                    <Link href="/account/saved" onClick={() => setProfileOpen(false)} style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--text-primary)", textDecoration: "none", transition: "background var(--transition-fast)" }} onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg-card-hover)"} onMouseLeave={(e) => e.currentTarget.style.background = "none"}>Saved Properties</Link>
+                    <Link href="/account/profile" onClick={() => setProfileOpen(false)} style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--text-primary)", textDecoration: "none", transition: "background var(--transition-fast)" }} onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg-card-hover)"} onMouseLeave={(e) => e.currentTarget.style.background = "none"}>My Profile</Link>
+                    <button type="button" onClick={() => { setProfileOpen(false); logout(); onShowToast("Signed out", "info"); }} style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--text-primary)", transition: "background var(--transition-fast)" }} onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg-card-hover)"} onMouseLeave={(e) => e.currentTarget.style.background = "none"}>Sign Out</button>
                   </div>
                 )}
               </div>
             ) : (
               <>
-                <button className="btn-login" type="button" onClick={onOpenLogin}>Login</button>
+                <button className="btn-login" type="button" onClick={() => onOpenLogin()}>Login</button>
                 <button className="btn-signup" type="button" onClick={() => onOpenSignup()}>Sign Up</button>
               </>
             )}
           </div>
-          <button className="btn-list-property" type="button" onClick={() => { if (user && user.role === "agent") { window.location.href = "http://localhost:3002"; } else { onOpenSignup("agent"); } }}>List Property</button>
+          <button className="btn-list-property" type="button" onClick={() => { if (user && user.role === "agent") { window.location.href = process.env.NEXT_PUBLIC_SELLERS_URL || "http://localhost:3002"; } else if (user) { window.location.href = "/sellers/register"; } else { onOpenSignup("list-property"); } }}>{user && user.role === "agent" ? "Seller Dashboard" : "List Property"}</button>
           <div className={`hamburger ${mobileOpen ? "open" : ""}`} id="hamburger" onClick={onToggleMobileNav}>
             <div className="hamburger-lines"><span /><span /><span /></div>
           </div>
@@ -166,7 +166,7 @@ export function ExtractedHeader({
           <button className="btn btn-outline" type="button" onClick={() => { onCloseMobileNav(); logout(); onShowToast("Signed out", "info"); }}>Sign Out</button>
         ) : (
           <>
-            <button className="btn btn-outline" type="button" onClick={onOpenLogin}>Login</button>
+            <button className="btn btn-outline" type="button" onClick={() => onOpenLogin()}>Login</button>
             <button className="btn btn-primary" type="button" onClick={() => onOpenSignup()}>Sign Up</button>
           </>
         )}

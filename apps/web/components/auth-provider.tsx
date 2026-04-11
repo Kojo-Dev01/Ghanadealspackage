@@ -2,10 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import type { AuthUser, AgentProfile, UserProfile, AuthResponse } from "../lib/api";
-import { fetchMe, loginUser, signupUser } from "../lib/api";
-
-const TOKEN_KEY = "gd_token";
+import type { AuthUser, AgentProfile, UserProfile } from "../lib/api";
 
 type AuthState = {
   user: AuthUser | null;
@@ -15,74 +12,101 @@ type AuthState = {
 };
 
 type AuthContextValue = AuthState & {
-  login: (email: string, password: string) => Promise<{ ok: true } | { ok: false; message: string }>;
+  login: (email: string, password: string) => Promise<{ ok: true; role: string } | { ok: false; message: string }>;
   signup: (data: { name: string; email: string; phone: string; password: string; accountType: "buyer" | "agent" }) => Promise<{ ok: true } | { ok: false; message: string }>;
   logout: () => void;
+  upgrade: (data: { company?: string; phone?: string; areas?: string[] }) => Promise<{ ok: true } | { ok: false; message: string }>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function setSession(data: AuthResponse) {
-  localStorage.setItem(TOKEN_KEY, data.token);
-}
-
-function clearSession() {
-  localStorage.removeItem(TOKEN_KEY);
-}
-
-function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY);
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ user: null, agent: null, profile: null, loading: true });
 
-  // Restore session on mount
+  // Restore session on mount via httpOnly cookie
   useEffect(() => {
-    const token = getToken();
-    if (!token) {
-      setState({ user: null, agent: null, profile: null, loading: false });
-      return;
-    }
-
-    fetchMe(token).then((result) => {
-      if (result) {
-        setState({ user: result.user, agent: result.agent, profile: result.profile ?? null, loading: false });
-      } else {
-        clearSession();
+    fetch("/api/auth/me", { credentials: "same-origin" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) {
+          setState({ user: data.user, agent: data.agent, profile: data.profile ?? null, loading: false });
+        } else {
+          setState({ user: null, agent: null, profile: null, loading: false });
+        }
+      })
+      .catch(() => {
         setState({ user: null, agent: null, profile: null, loading: false });
-      }
-    });
+      });
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const result = await loginUser(email, password);
-    if (!result.ok) {
-      return { ok: false as const, message: result.message };
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email, password }),
+        credentials: "same-origin",
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        return { ok: false as const, message: json.message ?? "Login failed" };
+      }
+      setState({ user: json.data.user, agent: json.data.agent, profile: json.data.profile ?? null, loading: false });
+      return { ok: true as const, role: json.data.user.role as string };
+    } catch {
+      return { ok: false as const, message: "Network error — please try again" };
     }
-    setSession(result.data);
-    setState({ user: result.data.user, agent: result.data.agent, profile: result.data.profile ?? null, loading: false });
-    return { ok: true as const };
   }, []);
 
   const signup = useCallback(async (data: { name: string; email: string; phone: string; password: string; accountType: "buyer" | "agent" }) => {
-    const result = await signupUser(data);
-    if (!result.ok) {
-      return { ok: false as const, message: result.message };
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "same-origin",
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        return { ok: false as const, message: json.message ?? "Signup failed" };
+      }
+      setState({ user: json.data.user, agent: json.data.agent, profile: json.data.profile ?? null, loading: false });
+      return { ok: true as const };
+    } catch {
+      return { ok: false as const, message: "Network error — please try again" };
     }
-    setSession(result.data);
-    setState({ user: result.data.user, agent: result.data.agent, profile: result.data.profile ?? null, loading: false });
-    return { ok: true as const };
   }, []);
 
-  const logout = useCallback(() => {
-    clearSession();
+  const logout = useCallback(async () => {
+    await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" }).catch(() => {});
     setState({ user: null, agent: null, profile: null, loading: false });
   }, []);
 
+  const upgrade = useCallback(async (data: { company?: string; phone?: string; areas?: string[] }) => {
+    try {
+      const res = await fetch("/api/auth/upgrade", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "same-origin",
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        return { ok: false as const, message: json.message ?? "Upgrade failed" };
+      }
+      setState((prev) => ({
+        ...prev,
+        user: json.data.user,
+        agent: json.data.agent,
+      }));
+      return { ok: true as const };
+    } catch {
+      return { ok: false as const, message: "Network error — please try again" };
+    }
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ ...state, login, signup, logout }}>
+    <AuthContext.Provider value={{ ...state, login, signup, logout, upgrade }}>
       {children}
     </AuthContext.Provider>
   );

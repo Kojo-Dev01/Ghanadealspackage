@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { NavigationProgress } from "@/components/navigation-progress";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -24,10 +25,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `try{if(localStorage.getItem("gh-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}` }} />
+      </head>
       <body className="min-h-screen bg-background text-foreground font-sans antialiased">
-        <NavigationProgress />
-        {children}
+        <ThemeProvider>
+          <NavigationProgress />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

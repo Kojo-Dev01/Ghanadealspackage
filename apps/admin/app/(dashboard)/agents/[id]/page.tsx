@@ -24,6 +24,9 @@ import {
   Calendar,
   User,
   Briefcase,
+  Bed,
+  Bath,
+  Ruler,
 } from "lucide-react";
 
 type PageProps = {
@@ -262,25 +265,201 @@ export default async function AdminAgentDetailPage({
 
           {/* Agent Listings */}
           <section className="bg-panel border border-border rounded-xl shadow-sm p-5">
-            <h3 className="text-[15px] font-bold text-foreground mb-3 flex items-center gap-2">
+            <h3 className="text-[15px] font-bold text-foreground mb-4 flex items-center gap-2">
               <Building2 size={16} className="text-accent" />
-              Listings
+              Listed Properties
               <span className="text-xs font-normal text-muted">
                 ({agent.listings.length})
               </span>
             </h3>
             {agent.listings.length > 0 ? (
-              <div className="grid gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {agent.listings.map((listing) => (
                   <Link
                     key={listing.id}
                     href={`/listings/${listing.id}`}
-                    className="flex items-center justify-between gap-3 bg-panel-alt border border-border rounded-lg px-4 py-3 hover:border-accent/40 transition-colors"
+                    className="bg-panel-alt border border-border rounded-xl overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all group"
                   >
-                    <span className="text-sm font-medium text-foreground truncate">
-                      {listing.title}
-                    </span>
-                    <ModerationPill status={listing.moderationStatus} />
+                    {/* Image */}
+                    <div
+                      style={{
+                        position: "relative",
+                        overflow: "hidden",
+                        aspectRatio: "16/10",
+                        backgroundColor: "var(--color-border, #e2e8f0)",
+                      }}
+                    >
+                      {listing.image ? (
+                        <img
+                          src={
+                            listing.image.startsWith("http")
+                              ? listing.image
+                              : `${process.env.NEXT_PUBLIC_WEB_URL ?? "http://localhost:3000"}${listing.image.startsWith("/") ? "" : "/"}${listing.image}`
+                          }
+                          alt={listing.title}
+                          style={{
+                            position: "absolute",
+                            inset: 0,
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            transition: "transform 500ms",
+                          }}
+                          className="group-hover:scale-105"
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 12,
+                            color: "var(--color-muted, #64748b)",
+                          }}
+                        >
+                          No image
+                        </div>
+                      )}
+                      {/* Listing type badge */}
+                      <div style={{ position: "absolute", top: 8, left: 8 }}>
+                        <span
+                          style={{
+                            padding: "3px 8px",
+                            fontSize: 10,
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.05em",
+                            borderRadius: 9999,
+                            color: "#fff",
+                            backdropFilter: "blur(4px)",
+                            background:
+                              listing.listingType === "rent"
+                                ? "rgba(139,92,246,0.9)"
+                                : "rgba(59,130,246,0.9)",
+                          }}
+                        >
+                          {listing.listingType === "sale" ? "Buy" : listing.listingType}
+                        </span>
+                      </div>
+                      {/* Status badge */}
+                      <div style={{ position: "absolute", top: 8, right: 8 }}>
+                        <ModerationPill status={listing.moderationStatus} />
+                      </div>
+                    </div>
+
+                    {/* Body */}
+                    <div style={{ padding: 12 }}>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 500,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.04em",
+                          color: "var(--color-muted, #64748b)",
+                          marginBottom: 2,
+                        }}
+                      >
+                        {listing.type}{listing.region ? ` · ${listing.region}` : ""}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 15,
+                          fontWeight: 700,
+                          color: "var(--color-foreground, #0f172a)",
+                          marginBottom: 2,
+                        }}
+                      >
+                        {listing.priceFormatted}
+                      </div>
+                      <h4
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "var(--color-foreground, #0f172a)",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          marginBottom: 4,
+                        }}
+                      >
+                        {listing.title}
+                      </h4>
+                      {listing.location && (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                            fontSize: 11,
+                            color: "var(--color-muted, #64748b)",
+                            marginBottom: 8,
+                          }}
+                        >
+                          <MapPin size={11} />
+                          <span
+                            style={{
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {listing.location}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Specs */}
+                      <div
+                        className="border-t border-border"
+                        style={{
+                          display: "flex",
+                          gap: 12,
+                          paddingTop: 8,
+                        }}
+                      >
+                        {listing.beds > 0 && (
+                          <span
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 3,
+                              fontSize: 11,
+                              color: "var(--color-muted, #64748b)",
+                            }}
+                          >
+                            <Bed size={12} /> {listing.beds} Beds
+                          </span>
+                        )}
+                        {listing.baths > 0 && (
+                          <span
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 3,
+                              fontSize: 11,
+                              color: "var(--color-muted, #64748b)",
+                            }}
+                          >
+                            <Bath size={12} /> {listing.baths} Baths
+                          </span>
+                        )}
+                        {listing.area > 0 && (
+                          <span
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 3,
+                              fontSize: 11,
+                              color: "var(--color-muted, #64748b)",
+                            }}
+                          >
+                            <Ruler size={12} /> {listing.area} sqm
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </Link>
                 ))}
               </div>

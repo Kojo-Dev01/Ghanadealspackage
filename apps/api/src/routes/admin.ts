@@ -699,7 +699,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
 
     const { data: agent, error } = await (supabase as any)
       .from("agents")
-      .select("*, properties(id, title, moderation_status)")
+      .select("*, properties(id, title, listing_type, price, region, location, type, beds, baths, area, image, moderation_status, moderation_reason, created_at)")
       .eq("id", id)
       .single();
 
@@ -728,7 +728,19 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         listings: (agent.properties ?? []).map((p: any) => ({
           id: p.id,
           title: p.title,
-          moderationStatus: p.moderation_status,
+          listingType: p.listing_type ?? "sale",
+          price: Number(p.price ?? 0),
+          priceFormatted: formatPrice(Number(p.price ?? 0)),
+          region: p.region ?? "",
+          location: p.location ?? "",
+          type: p.type ?? "",
+          beds: Number(p.beds ?? 0),
+          baths: Number(p.baths ?? 0),
+          area: Number(p.area ?? 0),
+          image: p.image ?? "",
+          moderationStatus: p.moderation_status ?? "pending",
+          moderationReason: p.moderation_reason ?? null,
+          submittedAt: p.created_at ?? agent.created_at,
         })),
         createdAt: agent.created_at,
       },

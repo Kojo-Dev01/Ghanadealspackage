@@ -7,9 +7,10 @@ import {
   moderateAdminListing,
   type AdminListingStatus,
 } from "@/lib/api";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search } from "lucide-react";
 import { AdminListingCard } from "@/components/admin-listing-card";
 import { RejectModal } from "@/components/reject-modal";
+import { Pagination } from "@/components/pagination";
 
 type ListingsPageProps = {
   searchParams: Promise<{ tab?: string; type?: string; q?: string; page?: string }>;
@@ -210,32 +211,14 @@ export default async function AdminListingsPage({
       </section>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <nav className="flex items-center justify-between gap-4">
-          <p className="text-sm text-muted">
-            Page <strong className="text-foreground">{listings.page}</strong> of{" "}
-            <strong className="text-foreground">{totalPages}</strong>
-          </p>
-          <div className="flex gap-2">
-            {page > 1 && (
-              <Link
-                href={buildHref({ page: page - 1 })}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-panel-alt transition-colors"
-              >
-                <ChevronLeft size={14} /> Prev
-              </Link>
-            )}
-            {page < totalPages && (
-              <Link
-                href={buildHref({ page: page + 1 })}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-panel-alt transition-colors"
-              >
-                Next <ChevronRight size={14} />
-              </Link>
-            )}
-          </div>
-        </nav>
-      )}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={listings.total}
+        limit={listings.limit}
+        buildHref={(p) => buildHref({ page: p })}
+        noun="listings"
+      />
 
       {/* Reject Modal */}
       <RejectModal

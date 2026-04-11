@@ -41,14 +41,29 @@ export async function registerInquiryRoutes(app: FastifyInstance) {
 
     const prop = property as { id: string; title: string; agent_id: string; agents: { id: string; user_id: string; name: string; email: string } };
 
+    // If the caller is logged in, capture their user_id for "my enquiries"
+    let userId: string | null = null;
+    try {
+      await request.jwtVerify();
+      userId = (request.user as { sub: string }).sub ?? null;
+    } catch {
+      // anonymous inquiry — that's fine
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase.from("inquiries") as any).insert({
+    const insertPayload: Record<string, unknown> = {
       property_id: body.propertyId,
       name: body.name,
       email: body.email,
       phone: body.phone,
-      message: body.message
-    }).select("id").single();
+      message: body.message,
+    };
+    if (userId) insertPayload.user_id = userId;
+
+    const { data, error } = await (supabase.from("inquiries") as any)
+      .insert(insertPayload)
+      .select("id")
+      .single();
 
     if (error) {
       app.log.error(error, "Failed to create inquiry");

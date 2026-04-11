@@ -151,7 +151,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const role = String(meta.role ?? "buyer");
     const name = String(meta.name ?? "");
 
-    // If agent, fetch agent record
+    // Fetch agent record if agent, always fetch profile (dual-role: agents are also buyers)
     let agentRecord = null;
     let profileRecord = null;
     if (role === "agent") {
@@ -161,14 +161,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         .eq("user_id", userId)
         .single();
       agentRecord = agent;
-    } else {
-      const { data: profile } = await (supabaseAdmin as any)
-        .from("profiles")
-        .select("id, name, email, phone, avatar_url, saved_properties, search_preferences")
-        .eq("user_id", userId)
-        .single();
-      profileRecord = profile;
     }
+    // Always fetch profile (buyers always have one; upgraded agents keep theirs)
+    const { data: profile } = await (supabaseAdmin as any)
+      .from("profiles")
+      .select("id, name, email, phone, avatar_url, saved_properties, search_preferences")
+      .eq("user_id", userId)
+      .single();
+    profileRecord = profile ?? null;
 
     const token = app.jwt.sign(
       { sub: userId, email, role, name },
@@ -203,13 +203,15 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         .eq("user_id", payload.sub)
         .single();
       agentRecord = agent;
-    } else if (supabaseAdmin) {
+    }
+    // Always fetch profile (dual-role: agents keep buyer profile)
+    if (supabaseAdmin) {
       const { data: profile } = await (supabaseAdmin as any)
         .from("profiles")
         .select("id, name, email, phone, avatar_url, saved_properties, search_preferences")
         .eq("user_id", payload.sub)
         .single();
-      profileRecord = profile;
+      profileRecord = profile ?? null;
     }
 
     return {

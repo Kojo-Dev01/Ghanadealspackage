@@ -32,9 +32,9 @@ function resolveImg(src: string | null | undefined): string {
 }
 
 const statusMeta: Record<string, { label: string; color: string; bg: string; border: string; icon: React.ReactNode }> = {
-  pending:  { label: "Pending Review", color: "#b45309", bg: "#fef3c7", border: "#fde68a", icon: <Clock size={14} /> },
-  approved: { label: "Approved",       color: "#15803d", bg: "#dcfce7", border: "#bbf7d0", icon: <CheckCircle2 size={14} /> },
-  flagged:  { label: "Rejected",       color: "#dc2626", bg: "#fee2e2", border: "#fecaca", icon: <AlertTriangle size={14} /> },
+  pending:  { label: "Pending Review", color: "var(--status-warning-text, #b45309)", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.25)", icon: <Clock size={14} /> },
+  approved: { label: "Approved",       color: "var(--status-success-text, #15803d)", bg: "rgba(34,197,94,0.12)",  border: "rgba(34,197,94,0.25)",  icon: <CheckCircle2 size={14} /> },
+  flagged:  { label: "Rejected",       color: "var(--status-danger-text, #dc2626)",  bg: "rgba(239,68,68,0.12)",  border: "rgba(239,68,68,0.25)",  icon: <AlertTriangle size={14} /> },
 };
 
 export default async function SellerListingDetailPage({ params }: PageProps) {
@@ -89,7 +89,7 @@ export default async function SellerListingDetailPage({ params }: PageProps) {
           </span>
 
           {listing.featured && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#a16207", background: "#fefce8", border: "1px solid #fde68a" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--status-warning-text, #a16207)", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)" }}>
               ★ Featured
             </span>
           )}
@@ -104,8 +104,8 @@ export default async function SellerListingDetailPage({ params }: PageProps) {
           <div
             style={{
               marginTop: 12, padding: "10px 14px", borderRadius: 8,
-              background: "#fef2f2", border: "1px solid #fecaca",
-              fontSize: 13, color: "#991b1b", lineHeight: 1.5,
+              background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
+              fontSize: 13, color: "var(--status-danger-text, #991b1b)", lineHeight: 1.5,
             }}
           >
             <strong style={{ fontWeight: 700 }}>Rejection reason:</strong> {listing.moderationReason}
@@ -166,7 +166,7 @@ export default async function SellerListingDetailPage({ params }: PageProps) {
               <h2 className="text-sm font-bold text-foreground mb-3">Amenities ({amenities.length})</h2>
               <div className="flex flex-wrap gap-2">
                 {amenities.map((item, i) => (
-                  <span key={i} style={{ padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 500, background: "rgba(230,57,70,0.08)", color: "#E63946", border: "1px solid rgba(230,57,70,0.15)" }}>
+                  <span key={i} style={{ padding: "5px 12px", borderRadius: 8, fontSize: 12, fontWeight: 500, background: "var(--color-accent-light)", color: "var(--color-accent)", border: "1px solid rgba(230,57,70,0.15)" }}>
                     {item}
                   </span>
                 ))}

@@ -205,6 +205,69 @@ export async function submitInquiry(data: {
   }
 }
 
+// ── Buyer Enquiries ────────────────────────────────────────
+
+export type BuyerEnquiryItem = {
+  id: string;
+  propertyId: string;
+  propertyTitle: string;
+  propertyImage: string;
+  propertyRegion: string;
+  propertyType: string;
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  status: string;
+  createdAt: string;
+};
+
+type BuyerEnquiriesResponse = {
+  items: BuyerEnquiryItem[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
+export async function fetchBuyerEnquiries(
+  page = 1,
+  status?: string
+): Promise<BuyerEnquiriesResponse> {
+  try {
+    const params = new URLSearchParams({ page: String(page) });
+    if (status) params.set("status", status);
+    const res = await authFetch(`/buyer/inquiries?${params}`);
+    if (!res.ok) return { items: [], total: 0, page: 1, limit: 20 };
+    return (await res.json()) as BuyerEnquiriesResponse;
+  } catch {
+    return { items: [], total: 0, page: 1, limit: 20 };
+  }
+}
+
+// ── Buyer → Seller Upgrade ─────────────────────────────────
+
+export async function upgradeToSeller(data: {
+  company?: string;
+  phone?: string;
+  areas?: string[];
+}): Promise<{ ok: boolean; message: string; data?: { user: AuthUser; agent: AgentProfile } }> {
+  try {
+    const res = await fetch("/api/auth/upgrade", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(data),
+      credentials: "same-origin",
+    });
+    const json = await res.json();
+    if (!res.ok || !json.ok) {
+      return { ok: false, message: json.message ?? "Upgrade failed" };
+    }
+    return { ok: true, message: "Account upgraded successfully", data: json.data };
+  } catch {
+    return { ok: false, message: "Network error — please try again" };
+  }
+}
+
 export async function fetchAgentById(id: string): Promise<(AgentRecord & { verified?: boolean }) | null> {
   try {
     const response = await fetch(`${API_BASE}/agents/${id}`, {
@@ -364,6 +427,12 @@ export async function fetchMe(
   }
 }
 
+// ── Authenticated fetch (via httpOnly cookie proxy) ────────
+
+function authFetch(path: string, init?: RequestInit): Promise<Response> {
+  return fetch(`/api/v1${path}`, { ...init, credentials: "same-origin" });
+}
+
 // ── Agent Dashboard ────────────────────────────────────────
 
 function authHeaders(token: string) {
@@ -458,22 +527,21 @@ export async function fetchDashboardInquiries(
 
 // ── Buyer Account ──────────────────────────────────────────
 
-export async function fetchBuyerProfile(token: string): Promise<UserProfile | null> {
+export async function fetchBuyerProfile(): Promise<UserProfile | null> {
   try {
-    const res = await fetch(`${API_BASE}/buyer/profile`, { headers: authHeaders(token) });
+    const res = await authFetch("/buyer/profile");
     if (!res.ok) return null;
     return await res.json();
   } catch { return null; }
 }
 
 export async function updateBuyerProfile(
-  token: string,
   data: Partial<{ name: string; phone: string }>
 ): Promise<UserProfile | null> {
   try {
-    const res = await fetch(`${API_BASE}/buyer/profile`, {
+    const res = await authFetch("/buyer/profile", {
       method: "PUT",
-      headers: authHeaders(token),
+      headers: { "content-type": "application/json" },
       body: JSON.stringify(data)
     });
     if (!res.ok) return null;
@@ -496,32 +564,24 @@ export type SavedPropertyItem = {
   agentName: string;
 };
 
-export async function fetchSavedProperties(token: string): Promise<{ items: SavedPropertyItem[]; total: number }> {
+export async function fetchSavedProperties(): Promise<{ items: SavedPropertyItem[]; total: number }> {
   try {
-    const res = await fetch(`${API_BASE}/buyer/saved`, { headers: authHeaders(token) });
+    const res = await authFetch("/buyer/saved");
     if (!res.ok) return { items: [], total: 0 };
     return await res.json();
   } catch { return { items: [], total: 0 }; }
 }
 
-export async function saveProperty(token: string, propertyId: string): Promise<boolean> {
+export async function saveProperty(propertyId: string): Promise<boolean> {
   try {
-    const url = `${API_BASE}/buyer/saved/${propertyId}`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { authorization: `Bearer ${token}` },
-    });
+    const res = await authFetch(`/buyer/saved/${propertyId}`, { method: "POST" });
     return res.ok;
   } catch { return false; }
 }
 
-export async function unsaveProperty(token: string, propertyId: string): Promise<boolean> {
+export async function unsaveProperty(propertyId: string): Promise<boolean> {
   try {
-    const url = `${API_BASE}/buyer/saved/${propertyId}`;
-    const res = await fetch(url, {
-      method: "DELETE",
-      headers: { authorization: `Bearer ${token}` },
-    });
+    const res = await authFetch(`/buyer/saved/${propertyId}`, { method: "DELETE" });
     return res.ok;
   } catch { return false; }
 }
@@ -539,57 +599,43 @@ export type NotificationItem = {
 };
 
 export async function fetchNotifications(
-  token: string,
   params: { page?: number; limit?: number; unread?: boolean } = {}
 ): Promise<{ items: NotificationItem[]; total: number; page: number; limit: number }> {
   const qs = new URLSearchParams();
   if (params.page) qs.set("page", String(params.page));
   if (params.limit) qs.set("limit", String(params.limit));
   if (params.unread) qs.set("unread", "true");
-  const res = await fetch(`${API_BASE}/notifications?${qs}`, {
-    headers: { authorization: `Bearer ${token}` },
-  });
+  const res = await authFetch(`/notifications?${qs}`);
   if (!res.ok) return { items: [], total: 0, page: 1, limit: 20 };
   return res.json();
 }
 
-export async function fetchUnreadCount(token: string): Promise<number> {
+export async function fetchUnreadCount(): Promise<number> {
   try {
-    const res = await fetch(`${API_BASE}/notifications/unread-count`, {
-      headers: { authorization: `Bearer ${token}` },
-    });
+    const res = await authFetch("/notifications/unread-count");
     if (!res.ok) return 0;
     const data = await res.json();
     return data.count ?? 0;
   } catch { return 0; }
 }
 
-export async function markNotificationRead(token: string, id: string): Promise<boolean> {
+export async function markNotificationRead(id: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/notifications/${id}/read`, {
-      method: "PUT",
-      headers: { authorization: `Bearer ${token}` },
-    });
+    const res = await authFetch(`/notifications/${id}/read`, { method: "PUT" });
     return res.ok;
   } catch { return false; }
 }
 
-export async function markAllNotificationsRead(token: string): Promise<boolean> {
+export async function markAllNotificationsRead(): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/notifications/read-all`, {
-      method: "PUT",
-      headers: { authorization: `Bearer ${token}` },
-    });
+    const res = await authFetch("/notifications/read-all", { method: "PUT" });
     return res.ok;
   } catch { return false; }
 }
 
-export async function deleteNotification(token: string, id: string): Promise<boolean> {
+export async function deleteNotification(id: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/notifications/${id}`, {
-      method: "DELETE",
-      headers: { authorization: `Bearer ${token}` },
-    });
+    const res = await authFetch(`/notifications/${id}`, { method: "DELETE" });
     return res.ok;
   } catch { return false; }
 }
@@ -626,17 +672,13 @@ export async function fetchAgentReviews(agentId: string, page = 1): Promise<Revi
 }
 
 export async function submitAgentReview(
-  token: string,
   agentId: string,
   data: { rating: number; comment?: string }
 ): Promise<{ ok: boolean; message: string }> {
   try {
-    const res = await fetch(`${API_BASE}/agents/${agentId}/reviews`, {
+    const res = await authFetch(`/agents/${agentId}/reviews`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        authorization: `Bearer ${token}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     const json = await res.json();

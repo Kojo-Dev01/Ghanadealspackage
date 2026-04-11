@@ -394,7 +394,19 @@ export type AdminAgentDetail = AdminAgent & {
   listings: Array<{
     id: string;
     title: string;
+    listingType: string;
+    price: number;
+    priceFormatted: string;
+    region: string;
+    location: string;
+    type: string;
+    beds: number;
+    baths: number;
+    area: number;
+    image: string;
     moderationStatus: string;
+    moderationReason: string | null;
+    submittedAt: string;
   }>;
 };
 

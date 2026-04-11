@@ -4,8 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "./auth-provider";
 import { saveProperty, unsaveProperty } from "../lib/api";
 
-const TOKEN_KEY = "gd_token";
-
 type SaveButtonProps = {
   propertyId: string;
   variant?: "card" | "detail";
@@ -27,20 +25,17 @@ export function SaveButton({ propertyId, variant = "card" }: SaveButtonProps) {
       e.preventDefault();
       e.stopPropagation();
 
-      if (!user || user.role !== "buyer") {
+      if (!user) {
         window.dispatchEvent(new Event("gd:open-login"));
         return;
       }
 
-      const token = localStorage.getItem(TOKEN_KEY);
-      if (!token) return;
-
       setBusy(true);
       if (saved) {
-        const ok = await unsaveProperty(token, propertyId);
+        const ok = await unsaveProperty(propertyId);
         if (ok) setSaved(false);
       } else {
-        const ok = await saveProperty(token, propertyId);
+        const ok = await saveProperty(propertyId);
         if (ok) setSaved(true);
       }
       setBusy(false);
