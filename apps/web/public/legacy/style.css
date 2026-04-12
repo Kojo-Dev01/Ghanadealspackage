@@ -2408,6 +2408,7 @@ ul, ol { list-style: none; }
   .btn-login { display: none; }
   .btn-signup { display: none; }
   .btn-profile-name { display: none; }
+  .notif-bell-wrap { display: none; }
   .btn-profile { padding: 4px; border-width: 0; }
 
   .modal { padding: 24px; margin: 10px; }
