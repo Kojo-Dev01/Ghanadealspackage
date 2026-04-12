@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Menu } from "lucide-react";
+import { Menu, Bell } from "lucide-react";
 import Image from "next/image";
 import { AgentSidebar } from "./agent-sidebar";
 
@@ -32,6 +32,14 @@ export function DashboardShell({
           <span className="text-accent">Ghana</span>
           <span className="text-foreground">Deals</span>
         </span>
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent("gd:open-notifications"))}
+          className="ml-auto relative flex items-center justify-center w-9 h-9 rounded-lg text-sidebar-text hover:bg-accent/10 hover:text-accent transition-all cursor-pointer border-none bg-transparent"
+          aria-label="Notifications"
+        >
+          <Bell size={20} />
+        </button>
       </div>
 
       <AgentSidebar logoutAction={logoutAction} isOpen={sidebarOpen} onClose={closeSidebar} />

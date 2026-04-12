@@ -148,9 +148,31 @@ export function AgentSidebar({
     return () => window.removeEventListener("gd:messages-read", handler);
   }, [refreshUnreadMessages]);
 
+  // Listen for mobile top bar bell tap
+  useEffect(() => {
+    const handler = () => { openNotificationsDirectly(); };
+    window.addEventListener("gd:open-notifications", handler);
+    return () => window.removeEventListener("gd:open-notifications", handler);
+  }); // intentionally no deps — always uses latest openNotificationsDirectly
+
   const openNotifications = useCallback(async () => {
     if (notifOpen) { setNotifOpen(false); return; }
     if (notifLoading) return;
+    setNotifOpen(true);
+    setNotifLoading(true);
+    try {
+      const res = await apiFetch("/v1/notifications?limit=15");
+      if (res && res.ok) {
+        const data = await res.json();
+        setNotifItems(data.items ?? []);
+      }
+    } catch { /* silent */ }
+    setNotifLoading(false);
+  }, [notifOpen, notifLoading]);
+
+  // Direct open (for mobile top bar bell — always opens, never toggles)
+  const openNotificationsDirectly = useCallback(async () => {
+    if (notifOpen || notifLoading) return;
     setNotifOpen(true);
     setNotifLoading(true);
     try {
@@ -191,44 +213,8 @@ export function AgentSidebar({
           onClick={onClose}
         />
       )}
-      <aside className={`sticky top-0 h-screen overflow-y-auto bg-sidebar text-sidebar-text border-r border-border flex flex-col gap-2 p-6 max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-[70] max-lg:w-[280px] max-lg:shadow-2xl max-lg:transition-transform max-lg:duration-200 max-lg:ease-out ${isOpen ? "max-lg:translate-x-0" : "max-lg:-translate-x-full"}`}>
-      {/* Mobile close button */}
-      <button
-        type="button"
-        onClick={onClose}
-        className="hidden max-lg:flex items-center justify-center w-8 h-8 rounded-lg text-muted hover:text-foreground hover:bg-panel-alt transition-colors cursor-pointer border-none bg-transparent self-end -mr-1 -mt-1"
-        aria-label="Close menu"
-      >
-        <X size={18} />
-      </button>
-      {/* Logo + Bell */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2.5 px-2 mb-1">
-          <Image src="/logo.png" alt="GhanaDeals" width={32} height={32} className="rounded-lg shrink-0" unoptimized />
-          <div className="flex-1">
-            <span className="text-sm font-bold tracking-tight"><span className="text-accent">Ghana</span><span className="text-foreground">Deals</span></span>
-            <p className="text-[11px] text-muted">Seller Dashboard</p>
-          </div>
-          {/* Notification bell */}
-          <div ref={panelRef}>
-            <button
-              type="button"
-              onClick={openNotifications}
-              className="relative flex items-center justify-center w-8 h-8 rounded-lg text-sidebar-text hover:bg-accent/10 hover:text-accent transition-all cursor-pointer border-none bg-transparent"
-              aria-label="Notifications"
-            >
-              <Bell size={18} />
-              {unreadNotifs > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">
-                  {unreadNotifs > 9 ? "9+" : unreadNotifs}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
 
-      {/* Notifications Slide-in Panel */}
+      {/* Notifications Slide-in Panel — rendered OUTSIDE aside so transforms don't trap it */}
       {notifOpen && (
         <div className="fixed inset-0 z-[80]" onClick={() => setNotifOpen(false)}>
           {/* Backdrop */}
@@ -236,7 +222,6 @@ export function AgentSidebar({
 
           {/* Panel */}
           <aside
-            ref={panelRef}
             onClick={(e) => e.stopPropagation()}
             className="absolute top-0 right-0 h-full w-[360px] max-w-[90vw] bg-panel border-l border-border shadow-2xl flex flex-col animate-slide-in-right"
           >
@@ -335,6 +320,43 @@ export function AgentSidebar({
           `}</style>
         </div>
       )}
+
+      <aside className={`sticky top-0 h-screen overflow-y-auto bg-sidebar text-sidebar-text border-r border-border flex flex-col gap-2 p-6 max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-[70] max-lg:w-[280px] max-lg:shadow-2xl max-lg:transition-transform max-lg:duration-200 max-lg:ease-out ${isOpen ? "max-lg:translate-x-0" : "max-lg:-translate-x-full"}`}>
+      {/* Mobile close button */}
+      <button
+        type="button"
+        onClick={onClose}
+        className="hidden max-lg:flex items-center justify-center w-8 h-8 rounded-lg text-muted hover:text-foreground hover:bg-panel-alt transition-colors cursor-pointer border-none bg-transparent self-end -mr-1 -mt-1"
+        aria-label="Close menu"
+      >
+        <X size={18} />
+      </button>
+      {/* Logo + Bell */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2.5 px-2 mb-1">
+          <Image src="/logo.png" alt="GhanaDeals" width={32} height={32} className="rounded-lg shrink-0" unoptimized />
+          <div className="flex-1">
+            <span className="text-sm font-bold tracking-tight"><span className="text-accent">Ghana</span><span className="text-foreground">Deals</span></span>
+            <p className="text-[11px] text-muted">Seller Dashboard</p>
+          </div>
+          {/* Notification bell */}
+          <div ref={panelRef}>
+            <button
+              type="button"
+              onClick={openNotifications}
+              className="relative flex items-center justify-center w-8 h-8 rounded-lg text-sidebar-text hover:bg-accent/10 hover:text-accent transition-all cursor-pointer border-none bg-transparent"
+              aria-label="Notifications"
+            >
+              <Bell size={18} />
+              {unreadNotifs > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1">
+                  {unreadNotifs > 9 ? "9+" : unreadNotifs}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
 
       <p className="px-2 pt-4 pb-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted/60">
         Navigation
