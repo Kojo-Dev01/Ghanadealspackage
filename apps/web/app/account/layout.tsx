@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../../components/auth-provider";
 import { AccountSidebar } from "../../components/account-sidebar";
+import { WsProvider } from "../../components/ws-provider";
 
 function ThemeToggle() {
   const [isDark, setIsDark] = useState(false);
@@ -156,14 +157,36 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
   }
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", minHeight: "100vh" }}>
-      <AccountSidebar />
-      <div style={{ display: "flex", flexDirection: "column", background: "var(--bg-secondary)" }}>
-        <DashboardHeader />
-        <main style={{ padding: "32px 40px", overflowX: "hidden", flex: 1 }}>
-          {children}
-        </main>
+    <WsProvider userId={user.id}>
+      <style>{`
+        .acct-grid {
+          display: grid;
+          grid-template-columns: 260px 1fr;
+          min-height: 100vh;
+        }
+        @media (max-width: 1024px) {
+          .acct-grid { grid-template-columns: 1fr; }
+          .acct-grid > aside { display: none; }
+        }
+        .acct-main {
+          display: flex; flex-direction: column; background: var(--bg-secondary);
+        }
+        .acct-content {
+          padding: 32px 40px; overflow-x: hidden; flex: 1;
+        }
+        @media (max-width: 640px) {
+          .acct-content { padding: 20px 16px; }
+        }
+      `}</style>
+      <div className="acct-grid">
+        <AccountSidebar />
+        <div className="acct-main">
+          <DashboardHeader />
+          <main className="acct-content">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </WsProvider>
   );
 }

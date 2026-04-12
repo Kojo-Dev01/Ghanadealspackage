@@ -6,7 +6,7 @@ const SESSION_COOKIE = "gd_agent_session";
 function getApiBaseUrl() {
   if (process.env.API_INTERNAL_URL) return process.env.API_INTERNAL_URL;
   if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
-  return "http://localhost:4000";
+  return "http://127.0.0.1:4000";
 }
 
 export async function PUT(

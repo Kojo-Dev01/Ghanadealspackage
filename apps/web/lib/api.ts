@@ -44,6 +44,7 @@ type PropertyListResponse = {
 
 export type AgentRecord = {
   id: string;
+  userId: string | null;
   name: string;
   company: string;
   rating: number;
@@ -686,5 +687,177 @@ export async function submitAgentReview(
     return { ok: true, message: json.message ?? "Review submitted" };
   } catch {
     return { ok: false, message: "Network error" };
+  }
+}
+
+// ── Conversations / Chat ─────────────────────────────────
+
+export type ConversationListItem = {
+  id: string;
+  propertyId: string | null;
+  property: { id: string; title: string; image: string | null } | null;
+  otherUser: { user_id: string; name: string; email: string; avatar_url: string | null } | null;
+  lastMessage: { id: string; content: string; message_type: string; sender_id: string; created_at: string } | null;
+  unreadCount: number;
+  lastMessageAt: string;
+  createdAt: string;
+};
+
+export type ConversationDetail = {
+  id: string;
+  propertyId: string | null;
+  buyerId: string;
+  sellerId: string;
+  property: { id: string; title: string; image: string; gallery: string[]; price: number; location: string } | null;
+  buyer: { user_id: string; name: string; email: string; avatar_url: string | null } | null;
+  seller: { user_id: string; name: string; email: string; avatar_url: string | null } | null;
+  lastMessageAt: string;
+  createdAt: string;
+};
+
+export type PropertyRefData = {
+  id: string;
+  title: string;
+  image: string | null;
+  price: number;
+  location: string;
+  listingType: string;
+};
+
+export type ChatMessage = {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  message_type: string;
+  attachment_url: string | null;
+  attachment_name: string | null;
+  property_ref_id: string | null;
+  property_ref: PropertyRefData | null;
+  read_at: string | null;
+  created_at: string;
+};
+
+export async function fetchConversations(): Promise<ConversationListItem[]> {
+  try {
+    const res = await authFetch("/conversations");
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchConversation(id: string): Promise<ConversationDetail | null> {
+  try {
+    const res = await authFetch(`/conversations/${id}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchMessages(
+  conversationId: string,
+  cursor?: string
+): Promise<{ messages: ChatMessage[]; hasMore: boolean }> {
+  try {
+    const params = new URLSearchParams();
+    if (cursor) params.set("cursor", cursor);
+    const res = await authFetch(`/conversations/${conversationId}/messages?${params}`);
+    if (!res.ok) return { messages: [], hasMore: false };
+    return await res.json();
+  } catch {
+    return { messages: [], hasMore: false };
+  }
+}
+
+export async function sendMessage(
+  conversationId: string,
+  content: string,
+  messageType = "text",
+  opts?: { attachmentUrl?: string; attachmentName?: string; propertyRefId?: string }
+): Promise<ChatMessage | null> {
+  try {
+    const res = await authFetch(`/conversations/${conversationId}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content,
+        messageType,
+        ...(opts?.attachmentUrl && { attachmentUrl: opts.attachmentUrl }),
+        ...(opts?.attachmentName && { attachmentName: opts.attachmentName }),
+        ...(opts?.propertyRefId && { propertyRefId: opts.propertyRefId }),
+      }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function markConversationRead(conversationId: string): Promise<void> {
+  try {
+    await authFetch(`/conversations/${conversationId}/read`, { method: "PATCH" });
+  } catch {
+    // silent
+  }
+}
+
+export async function startConversation(
+  propertyId: string,
+  sellerId: string,
+  message: string
+): Promise<{ conversationId: string } | null> {
+  try {
+    const payload: Record<string, string> = { message };
+    if (propertyId) payload.propertyId = propertyId;
+    if (sellerId) payload.sellerId = sellerId;
+    const res = await authFetch("/conversations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchUnreadConversationCount(): Promise<number> {
+  try {
+    const res = await authFetch("/conversations/unread-count");
+    if (!res.ok) return 0;
+    const data = await res.json();
+    return data.count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+export async function uploadChatImage(file: File): Promise<{ url: string; key: string } | null> {
+  try {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch("/api/upload-chat-image", { method: "POST", body: form, credentials: "same-origin" });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchSellerProperties(
+  conversationId: string
+): Promise<{ id: string; title: string; image: string | null; price: number; location: string; listingType: string }[]> {
+  try {
+    const res = await authFetch(`/conversations/${conversationId}/seller-properties`);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
   }
 }

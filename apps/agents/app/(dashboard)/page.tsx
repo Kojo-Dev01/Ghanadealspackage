@@ -5,15 +5,19 @@ import {
   fetchAgentListings,
   fetchAgentInquiries,
   fetchVerificationStatus,
+  fetchSavedCount,
+  fetchNotificationUnreadCount,
 } from "@/lib/api";
 import { ShieldCheck, ShieldAlert, Clock, XCircle, ArrowRight } from "lucide-react";
 
 export default async function AgentOverviewPage() {
-  const [stats, listingsData, inquiriesData, verification] = await Promise.all([
+  const [stats, listingsData, inquiriesData, verification, savedCount, notifCount] = await Promise.all([
     fetchAgentStats(),
     fetchAgentListings({ page: 1 }),
     fetchAgentInquiries({ page: 1 }),
     fetchVerificationStatus(),
+    fetchSavedCount(),
+    fetchNotificationUnreadCount(),
   ]);
 
   const vStatus = verification?.verificationStatus ?? "unverified";
@@ -42,6 +46,18 @@ export default async function AgentOverviewPage() {
       value: stats?.totalInquiries ?? 0,
       delta: `${stats?.newInquiries ?? 0} new`,
       color: "bg-red-500",
+    },
+    {
+      label: "Saved Properties",
+      value: savedCount,
+      delta: "Properties bookmarked",
+      color: "bg-purple-500",
+    },
+    {
+      label: "Notifications",
+      value: notifCount,
+      delta: "Unread alerts",
+      color: "bg-indigo-500",
     },
   ];
 
@@ -127,7 +143,7 @@ export default async function AgentOverviewPage() {
       )}
 
       {/* Stats */}
-      <section className="grid grid-cols-4 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
+      <section className="grid grid-cols-3 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
         {statCards.map((s) => (
           <article
             key={s.label}

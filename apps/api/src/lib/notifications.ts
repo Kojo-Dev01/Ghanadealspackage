@@ -3,6 +3,7 @@ import { getSupabaseAdminClient } from "./supabase.js";
 export type NotificationType =
   | "inquiry_received"
   | "inquiry_status_changed"
+  | "message_received"
   | "listing_approved"
   | "listing_flagged"
   | "verification_approved"

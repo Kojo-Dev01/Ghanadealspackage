@@ -3,6 +3,7 @@ import { fetchAgentById, fetchAgentListings, fetchAgentReviews } from "../../../
 import { ExtractedShell } from "../../../components/extracted-shell";
 import { PropertyCard } from "../../../components/property-card";
 import { AgentReviews } from "../../../components/agent-reviews";
+import { MessageSellerButton } from "../../../components/message-seller-button";
 
 type AgentPageProps = {
   params: Promise<{ id: string }>;
@@ -60,9 +61,10 @@ export default async function AgentDetailPage({ params }: AgentPageProps) {
                   <span key={area} className="area-tag">{area}</span>
                 ))}
               </div>
-              <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+              <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap" }}>
                 <a className="btn btn-outline btn-sm" href={`tel:${agent.phone}`}>Call Seller</a>
                 <a className="btn btn-whatsapp btn-sm" href={`https://wa.me/${agent.phone.replace("+", "")}`} target="_blank" rel="noreferrer">WhatsApp</a>
+                {agent.userId && <MessageSellerButton sellerId={agent.userId} sellerName={agent.name} />}
               </div>
             </div>
           </div>

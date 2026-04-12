@@ -4,6 +4,7 @@ import { getSupabaseAdminClient } from "../lib/supabase.js";
 
 interface AgentRow {
   id: string;
+  user_id: string | null;
   name: string;
   company: string;
   phone: string;
@@ -23,6 +24,7 @@ interface AgentRow {
 function toApiAgent(row: AgentRow) {
   return {
     id: row.id,
+    userId: row.user_id ?? null,
     name: row.name,
     company: row.company,
     rating: row.avg_rating ?? Number(row.rating),

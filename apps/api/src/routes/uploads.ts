@@ -38,6 +38,22 @@ export async function registerUploadRoutes(app: FastifyInstance) {
       return reply.code(403).send({ message: "Upload access denied" });
     }
 
+    return handleUpload(request, reply);
+  });
+
+  // Chat image upload — any authenticated user can upload to "chat" folder
+  app.post("/chat-image", async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      return reply.code(401).send({ message: "Not authenticated" });
+    }
+
+    return handleUpload(request, reply, "chat");
+  });
+}
+
+async function handleUpload(request: any, reply: any, forceFolder?: string) {
     const data = await request.file();
     if (!data) {
       return reply.code(400).send({ message: "No file provided" });
@@ -53,7 +69,7 @@ export async function registerUploadRoutes(app: FastifyInstance) {
     }
 
     // Build object key: folder/timestamp-random.ext
-    const folder = (data.fields.folder as any)?.value || "properties";
+    const folder = forceFolder ?? (data.fields.folder as any)?.value ?? "properties";
     const ext = data.filename.split(".").pop() ?? "jpg";
     const key = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
@@ -71,5 +87,4 @@ export async function registerUploadRoutes(app: FastifyInstance) {
     const url = `${endpoint}/${bucket}/${key}`;
 
     return { url, key };
-  });
 }

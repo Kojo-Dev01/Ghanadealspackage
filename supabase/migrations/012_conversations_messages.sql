@@ -4,8 +4,8 @@
 CREATE TABLE conversations (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   property_id uuid NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
-  buyer_id    uuid NOT NULL,          -- profiles.user_id of the buyer
-  seller_id   uuid NOT NULL,          -- profiles.user_id of the seller (agent)
+  buyer_id    uuid NOT NULL REFERENCES profiles(user_id),
+  seller_id   uuid NOT NULL REFERENCES profiles(user_id),
   last_message_at timestamptz NOT NULL DEFAULT now(),
   created_at  timestamptz NOT NULL DEFAULT now(),
   UNIQUE (property_id, buyer_id, seller_id)

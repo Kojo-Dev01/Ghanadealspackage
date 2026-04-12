@@ -5,7 +5,7 @@ const SESSION_COOKIE = "gd_agent_session";
 function getApiBaseUrl() {
   if (process.env.API_INTERNAL_URL) return process.env.API_INTERNAL_URL;
   if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
-  return "http://localhost:4000";
+  return "http://127.0.0.1:4000";
 }
 
 async function fetchEndpoint(
@@ -378,5 +378,113 @@ export async function submitVerification(
   } catch {
     return { ok: false, message: "Network error" };
   }
+}
+
+// ── Conversations / Chat ───────────────────────────────────
+
+export type ConversationListItem = {
+  id: string;
+  propertyId: string | null;
+  property: { id: string; title: string; image: string | null } | null;
+  otherUser: { user_id: string; name: string; email: string; avatar_url: string | null } | null;
+  lastMessage: { id: string; content: string; message_type: string; sender_id: string; created_at: string } | null;
+  unreadCount: number;
+  lastMessageAt: string;
+  createdAt: string;
+};
+
+export type ConversationDetail = {
+  id: string;
+  propertyId: string | null;
+  buyerId: string;
+  sellerId: string;
+  property: { id: string; title: string; image: string | null; gallery: string[]; price: number; location: string } | null;
+  buyer: { user_id: string; name: string; email: string; avatar_url: string | null } | null;
+  seller: { user_id: string; name: string; email: string; avatar_url: string | null } | null;
+  lastMessageAt: string;
+  createdAt: string;
+};
+
+export type ChatMessage = {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  message_type: string;
+  attachment_url: string | null;
+  attachment_name: string | null;
+  read_at: string | null;
+  created_at: string;
+};
+
+export async function fetchConversations(): Promise<ConversationListItem[]> {
+  const token = await getSessionToken();
+  if (!token) return [];
+  try {
+    const res = await fetchEndpoint("/v1/conversations", token);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchConversation(id: string): Promise<ConversationDetail | null> {
+  const token = await getSessionToken();
+  if (!token) return null;
+  try {
+    const res = await fetchEndpoint(`/v1/conversations/${encodeURIComponent(id)}`, token);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchUnreadConversationCount(): Promise<number> {
+  const token = await getSessionToken();
+  if (!token) return 0;
+  try {
+    const res = await fetchEndpoint("/v1/conversations/unread-count", token);
+    if (!res.ok) return 0;
+    const data = await res.json();
+    return data.count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Returns the raw session token for WebSocket auth on the client side.
+ */
+export async function getWsToken(): Promise<string | null> {
+  const token = await getSessionToken();
+  return token ?? null;
+}
+
+// ── Saved Properties (buyer feature) ──────────────────────────
+
+export async function fetchSavedCount(): Promise<number> {
+  const token = await getSessionToken();
+  if (!token) return 0;
+  try {
+    const res = await fetchEndpoint("/v1/buyer/saved", token);
+    if (!res.ok) return 0;
+    const data = await res.json();
+    return data.total ?? 0;
+  } catch { return 0; }
+}
+
+// ── Notifications ─────────────────────────────────────────────
+
+export async function fetchNotificationUnreadCount(): Promise<number> {
+  const token = await getSessionToken();
+  if (!token) return 0;
+  try {
+    const res = await fetchEndpoint("/v1/notifications/unread-count", token);
+    if (!res.ok) return 0;
+    const data = await res.json();
+    return data.count ?? 0;
+  } catch { return 0; }
 }
 

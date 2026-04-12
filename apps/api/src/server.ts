@@ -19,6 +19,8 @@ import { registerAuthRoutes } from "./routes/auth.js";
 import { registerAgentDashboardRoutes } from "./routes/agent-dashboard.js";
 import { registerBuyerRoutes } from "./routes/buyer.js";
 import { registerNotificationRoutes } from "./routes/notifications.js";
+import { registerWebSocketPlugin } from "./plugins/websocket.js";
+import { registerConversationRoutes } from "./routes/conversations.js";
 
 const serverDir = path.dirname(fileURLToPath(import.meta.url));
 const rootEnvPath = path.resolve(serverDir, "../../../.env");
@@ -57,6 +59,9 @@ await app.register(multipart, {
   limits: { fileSize: 5 * 1024 * 1024 }
 });
 
+// WebSocket – must be registered on the root app before routes
+await registerWebSocketPlugin(app);
+
 app.register(async (v1) => {
   v1.register(registerHealthRoutes, { prefix: "/health" });
   v1.register(registerPropertyRoutes, { prefix: "/properties" });
@@ -66,6 +71,7 @@ app.register(async (v1) => {
   v1.register(registerAgentDashboardRoutes, { prefix: "/agent" });
   v1.register(registerBuyerRoutes, { prefix: "/buyer" });
   v1.register(registerNotificationRoutes, { prefix: "/notifications" });
+  v1.register(registerConversationRoutes, { prefix: "/conversations" });
   v1.register(registerUploadRoutes, { prefix: "/uploads" });
   v1.register(registerAdminAuthRoutes, { prefix: "/admin/auth" });
   v1.register(registerAdminRoutes, { prefix: "/admin" });
