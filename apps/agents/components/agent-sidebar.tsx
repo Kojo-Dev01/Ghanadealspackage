@@ -68,7 +68,15 @@ function getActiveNav(pathname: string) {
   return "overview";
 }
 
-export function AgentSidebar({ logoutAction }: { logoutAction: () => void }) {
+export function AgentSidebar({
+  logoutAction,
+  isOpen,
+  onClose,
+}: {
+  logoutAction: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
+}) {
   const pathname = usePathname();
   const activeNav = getActiveNav(pathname);
   const { isDark, toggle } = useTheme();
@@ -79,6 +87,11 @@ export function AgentSidebar({ logoutAction }: { logoutAction: () => void }) {
   const [notifItems, setNotifItems] = useState<NotificationItem[]>([]);
   const [notifLoading, setNotifLoading] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  // Close sidebar on navigation (mobile)
+  useEffect(() => {
+    onClose?.();
+  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch unread counts (messages + notifications)
   useEffect(() => {
@@ -170,14 +183,31 @@ export function AgentSidebar({ logoutAction }: { logoutAction: () => void }) {
   }, [notifItems]);
 
   return (
-    <aside className="sticky top-0 h-screen overflow-y-auto bg-sidebar text-sidebar-text border-r border-border flex flex-col gap-2 p-6 max-lg:static max-lg:h-auto max-lg:flex-row max-lg:flex-wrap max-lg:items-center max-lg:p-4 max-lg:gap-4">
+    <>
+      {/* Mobile backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+      <aside className={`sticky top-0 h-screen overflow-y-auto bg-sidebar text-sidebar-text border-r border-border flex flex-col gap-2 p-6 max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-[70] max-lg:w-[280px] max-lg:shadow-2xl max-lg:transition-transform max-lg:duration-200 max-lg:ease-out ${isOpen ? "max-lg:translate-x-0" : "max-lg:-translate-x-full"}`}>
+      {/* Mobile close button */}
+      <button
+        type="button"
+        onClick={onClose}
+        className="hidden max-lg:flex items-center justify-center w-8 h-8 rounded-lg text-muted hover:text-foreground hover:bg-panel-alt transition-colors cursor-pointer border-none bg-transparent self-end -mr-1 -mt-1"
+        aria-label="Close menu"
+      >
+        <X size={18} />
+      </button>
       {/* Logo + Bell */}
-      <div className="mb-6 max-lg:mb-0 max-lg:flex-1">
+      <div className="mb-6">
         <div className="flex items-center gap-2.5 px-2 mb-1">
           <Image src="/logo.png" alt="GhanaDeals" width={32} height={32} className="rounded-lg shrink-0" unoptimized />
           <div className="flex-1">
             <span className="text-sm font-bold tracking-tight"><span className="text-accent">Ghana</span><span className="text-foreground">Deals</span></span>
-            <p className="text-[11px] text-muted max-lg:hidden">Seller Dashboard</p>
+            <p className="text-[11px] text-muted">Seller Dashboard</p>
           </div>
           {/* Notification bell */}
           <div ref={panelRef}>
@@ -306,10 +336,10 @@ export function AgentSidebar({ logoutAction }: { logoutAction: () => void }) {
         </div>
       )}
 
-      <p className="px-2 pt-4 pb-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted/60 max-lg:hidden">
+      <p className="px-2 pt-4 pb-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted/60">
         Navigation
       </p>
-      <nav className="grid gap-0.5 max-lg:flex max-lg:flex-wrap max-lg:gap-1">
+      <nav className="grid gap-0.5">
         {navItems.map((item) => (
           <Link
             key={item.key}
@@ -331,7 +361,7 @@ export function AgentSidebar({ logoutAction }: { logoutAction: () => void }) {
         ))}
       </nav>
 
-      <div className="mt-auto pt-4 border-t border-border max-lg:mt-0 max-lg:pt-0 max-lg:border-none">
+      <div className="mt-auto pt-4 border-t border-border">
         <button
           type="button"
           onClick={toggle}
@@ -360,5 +390,6 @@ export function AgentSidebar({ logoutAction }: { logoutAction: () => void }) {
         </a>
       </div>
     </aside>
+    </>
   );
 }

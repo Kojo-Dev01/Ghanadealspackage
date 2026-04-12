@@ -340,7 +340,7 @@ export default function SellerChatPage() {
   }
 
   return (
-    <div className="flex flex-col relative -m-6 sm:-m-8 h-screen max-lg:fixed max-lg:inset-0 max-lg:z-50 max-lg:bg-background">
+    <div className="flex flex-col relative -m-6 sm:-m-8 h-[calc(100vh-1px)] max-lg:fixed max-lg:inset-0 max-lg:z-50 max-lg:bg-background max-lg:h-[100dvh] max-lg:m-0">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-panel flex-shrink-0">
         <Link
@@ -451,7 +451,7 @@ export default function SellerChatPage() {
       )}
 
       {/* Input area */}
-      <div className="border-t border-border bg-panel flex-shrink-0 relative">
+      <div className="border-t border-border bg-panel flex-shrink-0 relative pb-[env(safe-area-inset-bottom)]">
         {/* @ mention popup */}
         {showMentions && (
           <PropertyMentionPopup

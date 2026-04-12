@@ -115,14 +115,13 @@ export function ExtractedHeader({
               <div ref={profileRef} style={{ position: "relative" }}>
                 <button
                   type="button"
-                  className="btn-login"
-                  style={{ display: "flex", alignItems: "center", gap: 8 }}
+                  className="btn-profile"
                   onClick={() => setProfileOpen((p) => !p)}
                 >
-                  <span style={{ width: 28, height: 28, borderRadius: "50%", background: agent?.color ?? "#3B82F6", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 600 }}>
+                  <span className="btn-profile-avatar" style={{ background: agent?.color ?? "#3B82F6" }}>
                     {(user.name || user.email)[0].toUpperCase()}
                   </span>
-                  <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.name || "Account"}</span>
+                  <span className="btn-profile-name">{user.name || "Account"}</span>
                 </button>
                 {profileOpen && (
                   <div style={{ position: "absolute", right: 0, top: "calc(100% + 8px)", background: "var(--bg-dropdown)", borderRadius: 12, boxShadow: "var(--shadow-lg)", border: "1px solid var(--border-primary)", padding: "8px 0", minWidth: 200, zIndex: 1000 }}>
@@ -167,7 +166,25 @@ export function ExtractedHeader({
       <Link href="/agents" className={agentsActive ? "active" : undefined} onClick={onCloseMobileNav}>Find Sellers</Link>
       <div className="mobile-nav-buttons">
         {user ? (
-          <button className="btn btn-outline" type="button" onClick={() => { onCloseMobileNav(); logout(); onShowToast("Signed out", "info"); }}>Sign Out</button>
+          <>
+            <div style={{ padding: "8px 0 12px", borderBottom: "1px solid var(--border-primary)", marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ width: 32, height: 32, borderRadius: "50%", background: agent?.color ?? "#3B82F6", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 600, flexShrink: 0 }}>
+                {(user.name || user.email)[0].toUpperCase()}
+              </span>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>{user.name}</div>
+                <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>{user.email}</div>
+              </div>
+            </div>
+            {user.role === "agent" ? (
+              <a href={process.env.NEXT_PUBLIC_SELLERS_URL || "http://localhost:3002"} onClick={onCloseMobileNav} className="mobile-nav-link">Dashboard</a>
+            ) : (
+              <Link href="/account" onClick={onCloseMobileNav} className="mobile-nav-link">Dashboard</Link>
+            )}
+            <Link href="/account/saved" onClick={onCloseMobileNav} className="mobile-nav-link">Saved Properties</Link>
+            <Link href="/account/profile" onClick={onCloseMobileNav} className="mobile-nav-link">My Profile</Link>
+            <button className="btn btn-outline" type="button" onClick={() => { onCloseMobileNav(); logout(); onShowToast("Signed out", "info"); }}>Sign Out</button>
+          </>
         ) : (
           <>
             <button className="btn btn-outline" type="button" onClick={() => onOpenLogin()}>Login</button>
