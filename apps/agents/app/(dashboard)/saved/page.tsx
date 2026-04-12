@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Bookmark, Trash2 } from "lucide-react";
+import { AgentShell } from "@/components/agent-shell";
 import { apiFetch } from "@/lib/client-api";
 
 type SavedPropertyItem = {
@@ -60,14 +61,11 @@ export default function SavedPropertiesPage() {
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-foreground">Saved Properties</h1>
-        <p className="text-sm text-muted mt-1">
-          {total} {total === 1 ? "property" : "properties"} saved
-        </p>
-      </div>
-
+    <AgentShell
+      eyebrow="Properties"
+      title="Saved Properties"
+      description={`${total} ${total === 1 ? "property" : "properties"} saved`}
+    >
       {properties.length === 0 ? (
         <div className="text-center py-16 bg-panel border border-border rounded-xl">
           <Bookmark size={48} className="mx-auto text-muted mb-4" />
@@ -146,6 +144,6 @@ export default function SavedPropertiesPage() {
           ))}
         </div>
       )}
-    </div>
+    </AgentShell>
   );
 }

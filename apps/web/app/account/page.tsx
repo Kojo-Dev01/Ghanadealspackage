@@ -58,7 +58,8 @@ export default function AccountDashboardPage() {
           </div>
 
           {/* Stat cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 28 }}>
+          <div className="acct-stat-grid" style={{ display: "grid", gap: 16, marginBottom: 28 }}>
+            <style>{`.acct-stat-grid { grid-template-columns: repeat(3, 1fr); } @media (max-width: 640px) { .acct-stat-grid { grid-template-columns: 1fr !important; } }`}</style>
             <Link href="/account/saved" style={{
               background: "var(--bg-card)",
               border: "1px solid var(--border-primary)",

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Search, MessageSquare, Filter } from "lucide-react";
+import { AgentShell } from "@/components/agent-shell";
 import type { ConversationListItem } from "@/lib/api";
 import { apiFetch } from "@/lib/client-api";
 
@@ -87,17 +88,11 @@ export default function SellerMessagesPage() {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-xl font-bold">Messages</h1>
-          <p className="text-sm text-muted mt-0.5">
-            {conversations.length} {conversations.length === 1 ? "conversation" : "conversations"}
-          </p>
-        </div>
-      </div>
-
+    <AgentShell
+      eyebrow="Communication"
+      title="Messages"
+      description={`${conversations.length} ${conversations.length === 1 ? "conversation" : "conversations"}`}
+    >
       {/* Search & Filters — always visible when conversations exist */}
       {conversations.length > 0 && (
         <div className="flex flex-col gap-3">
@@ -223,6 +218,6 @@ export default function SellerMessagesPage() {
           </div>
         </>
       )}
-    </div>
+    </AgentShell>
   );
 }

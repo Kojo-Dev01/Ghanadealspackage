@@ -24,7 +24,7 @@ function getActiveKey(pathname: string) {
   return "overview";
 }
 
-export function AccountSidebar() {
+export function AccountSidebar({ className, onClose }: { className?: string; onClose?: () => void }) {
   const pathname = usePathname();
   const activeKey = getActiveKey(pathname);
   const { user, logout } = useAuth();
@@ -40,7 +40,7 @@ export function AccountSidebar() {
   }, [user]);
 
   return (
-    <aside style={{
+    <aside className={className} style={{
       position: "sticky",
       top: 0,
       height: "100vh",
@@ -51,6 +51,34 @@ export function AccountSidebar() {
       flexDirection: "column",
       padding: "24px 16px",
     }}>
+      {/* Mobile close button */}
+      {onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close menu"
+          style={{
+            display: "none",
+            alignItems: "center",
+            justifyContent: "center",
+            alignSelf: "flex-end",
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            border: "none",
+            background: "rgba(255,255,255,0.08)",
+            color: "rgba(255,255,255,0.6)",
+            cursor: "pointer",
+            marginBottom: 8,
+            transition: "background 0.15s, color 0.15s",
+          }}
+          className="acct-sidebar-close"
+        >
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      )}
       {/* Brand */}
       <div style={{ padding: "0 8px", marginBottom: 28 }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>

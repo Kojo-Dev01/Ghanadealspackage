@@ -16,7 +16,7 @@ export function DashboardShell({
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
   return (
-    <div className="min-h-screen grid grid-cols-[260px_1fr] max-lg:grid-cols-1">
+    <div className="min-h-screen lg:grid lg:grid-cols-[260px_1fr]">
       {/* Mobile top bar */}
       <div className="hidden max-lg:flex items-center gap-3 px-4 py-3 bg-sidebar border-b border-border sticky top-0 z-40">
         <button
