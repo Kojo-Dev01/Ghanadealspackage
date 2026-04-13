@@ -94,9 +94,9 @@ export default async function AdminSettingsPage() {
               label="Description"
               value="Ghana's Premier Property Marketplace"
             />
-            <SettingRow label="Public URL" value="http://localhost:3000" hint="Web-facing marketplace" />
-            <SettingRow label="Admin URL" value="http://localhost:3001" hint="This admin panel" />
-            <SettingRow label="Seller Portal" value="http://localhost:3002" />
+            <SettingRow label="Public URL" value={process.env.NEXT_PUBLIC_WEB_URL ?? "http://localhost:3000"} hint="Web-facing marketplace" />
+            <SettingRow label="Admin URL" value={process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3001"} hint="This admin panel" />
+            <SettingRow label="Seller Portal" value={process.env.NEXT_PUBLIC_SELLERS_URL ?? "http://localhost:3002"} />
             <SettingRow label="Support Phone" value="+233 30 212 3456" />
           </dl>
         </SettingCard>
@@ -113,7 +113,7 @@ export default async function AdminSettingsPage() {
               value={adminRoles}
               hint="Comma-separated list of roles allowed to access admin panel"
             />
-            <SettingRow label="CORS Origins" value={corsOrigins} hint="Allowed cross-origin origins for the API" />
+
             <SettingRow
               label="Moderation Flow"
               value="Manual review"
@@ -138,18 +138,7 @@ export default async function AdminSettingsPage() {
         >
           <dl className="space-y-3">
             <SettingRow label="Provider" value="Supabase (PostgreSQL)" />
-            <SettingRow label="Project Ref" value={supabaseRef} />
-            <SettingRow label="URL" value={supabaseUrl} />
-            <SettingRow
-              label="Service Role Key"
-              value="••••••••••••••••"
-              hint="Stored in .env — never exposed to client"
-            />
-            <SettingRow
-              label="RLS"
-              value="Enabled"
-              hint="Row-Level Security active on all tables"
-            />
+            <SettingRow label="RLS" value="Enabled" hint="Row-Level Security active on all tables" />
           </dl>
           {stats && (
             <div className="mt-4 pt-4 border-t border-border">
@@ -186,14 +175,7 @@ export default async function AdminSettingsPage() {
         >
           <dl className="space-y-3">
             <SettingRow label="Framework" value="Fastify 5" />
-            <SettingRow label="Port" value={apiPort} />
-            <SettingRow label="Base URL" value={`http://localhost:${apiPort}/v1`} />
-            <SettingRow
-              label="JWT Secret"
-              value="••••••••••••••••"
-              hint="Stored in .env — used for auth token signing"
-            />
-            <SettingRow label="Auth" value="JWT Bearer tokens via @fastify/jwt" />
+            <SettingRow label="Auth" value="JWT Bearer tokens" />
           </dl>
         </SettingCard>
 
@@ -204,15 +186,7 @@ export default async function AdminSettingsPage() {
           icon={<Cloud size={16} />}
         >
           <dl className="space-y-3">
-            <SettingRow label="Provider" value="Wasabi" />
-            <SettingRow label="Bucket" value={wasabiBucket} />
-            <SettingRow label="Region" value={wasabiRegion} />
-            <SettingRow label="Endpoint" value={wasabiEndpoint} />
-            <SettingRow
-              label="Access Key"
-              value="••••••••••••••••"
-              hint="Stored in .env"
-            />
+            <SettingRow label="Provider" value="Wasabi (S3-compatible)" />
           </dl>
         </SettingCard>
 

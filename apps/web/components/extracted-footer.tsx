@@ -30,7 +30,7 @@ export function ExtractedFooter() {
           <div className="footer-col">
             <h4>Company</h4>
             <a href={adminUrl}>Admin</a>
-            <Link href="/agents">Find Sellers</Link>
+            <Link href="/agents">Find Agents</Link>
             <Link href="/">Home</Link>
           </div>
         </div>

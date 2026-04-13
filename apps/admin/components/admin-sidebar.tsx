@@ -142,7 +142,7 @@ export function AdminSidebar({
 
       <div className="max-lg:hidden mt-auto px-3 pb-5 flex flex-col gap-1">
         <a
-          href="http://localhost:3000"
+          href={process.env.NEXT_PUBLIC_WEB_URL ?? "http://localhost:3000"}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm hover:bg-white/5 hover:text-sidebar-active transition-colors"

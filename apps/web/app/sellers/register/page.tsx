@@ -78,6 +78,7 @@ export default function SellerRegisterPage() {
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const justUpgraded = useRef(false);
 
   // KYC state
   const [documents, setDocuments] = useState<DocEntry[]>([
@@ -87,8 +88,8 @@ export default function SellerRegisterPage() {
   const [kycError, setKycError] = useState("");
   const fileRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Already a seller
-  if (user?.role === "agent" || agent) {
+  // Already a seller (but not if we just upgraded and are on step 2)
+  if ((user?.role === "agent" || agent) && !justUpgraded.current) {
     return (
       <CenteredCard>
         <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
@@ -153,6 +154,7 @@ export default function SellerRegisterPage() {
       return;
     }
 
+    justUpgraded.current = true;
     setSubmitting(false);
     setStep(2);
   };
@@ -274,7 +276,7 @@ export default function SellerRegisterPage() {
 
               <div style={{ marginBottom: 20 }}>
                 <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 6 }}>
-                  Phone Number <span style={{ color: "var(--text-tertiary)", fontWeight: 400 }}>(optional — uses your current number if blank)</span>
+                  Phone Number <span style={{ color: "var(--text-tertiary)", fontWeight: 400 }}>(client will reach you with this)</span>
                 </label>
                 <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="e.g. 024 123 4567" disabled={busy}
                   style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" }} />

@@ -400,7 +400,7 @@ export function AgentSidebar({
         </form>
         <a
           className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[13px] font-medium text-sidebar-text hover:bg-accent/5 hover:text-foreground transition-all mt-0.5"
-          href="http://localhost:3000"
+          href={process.env.NEXT_PUBLIC_WEB_URL ?? "http://localhost:3000"}
           target="_blank"
           rel="noopener noreferrer"
         >

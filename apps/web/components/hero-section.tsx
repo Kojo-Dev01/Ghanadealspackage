@@ -291,7 +291,7 @@ export function HeroSection({ totalProperties = 0, totalAgents = 0, totalRegions
         <p>Ghana&apos;s Premier Property Marketplace</p>
         <div className="hero-stats">
           <div className="stat"><strong>{fmt(totalProperties)}</strong> Properties</div>
-          <div className="stat"><strong>{fmt(totalAgents)}</strong> Verified Sellers</div>
+          <div className="stat"><strong>{fmt(totalAgents)}</strong> Verified Agents</div>
           <div className="stat"><strong>{fmt(totalRegions)}</strong> Regions</div>
         </div>
 

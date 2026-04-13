@@ -143,14 +143,6 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
     setSidebarOpen(false);
   }, [pathname]);
 
-  /* Restore dark-mode from localStorage (ExtractedHeader normally does this) */
-  useEffect(() => {
-    const saved = window.localStorage.getItem("gh-theme");
-    if (saved === "dark") {
-      document.documentElement.setAttribute("data-theme", "dark");
-    }
-  }, []);
-
   /* Still resolving session — show spinner */
   if (loading) {
     return (

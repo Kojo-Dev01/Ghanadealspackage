@@ -14,11 +14,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("gh-theme");
-    if (saved === "dark") {
-      document.documentElement.setAttribute("data-theme", "dark");
-      setIsDark(true);
-    }
+    // Theme is already set by blocking script in <head>; just sync local state
+    setIsDark(document.documentElement.getAttribute("data-theme") === "dark");
   }, []);
 
   const toggle = useCallback(() => {

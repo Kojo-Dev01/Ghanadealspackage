@@ -16,7 +16,15 @@ export function AgentCard({ agent }: AgentCardProps) {
             ? <img src={agent.avatar_url} alt={agent.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             : initials}
         </div>
-        <div className="agent-name-grid">{agent.name}</div>
+        <div className="agent-name-grid">
+          {agent.name}
+          {agent.verified && (
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" style={{ marginLeft: 4, verticalAlign: "middle", display: "inline", flexShrink: 0 }}>
+              <circle cx="12" cy="12" r="10" fill="var(--red, #dc2626)" />
+              <path d="M8 12.5l2.5 2.5 5-5" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </div>
         <div className="agent-company-grid">{agent.company}</div>
       </Link>
       <div className="agent-rating">★ {agent.rating.toFixed(1)}</div>

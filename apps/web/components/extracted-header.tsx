@@ -48,11 +48,8 @@ export function ExtractedHeader({
 
   useEffect(() => {
     setMounted(true);
-    const saved = window.localStorage.getItem("gh-theme");
-    if (saved === "dark") {
-      document.documentElement.setAttribute("data-theme", "dark");
-      setIsDark(true);
-    }
+    // Theme is already set by blocking script in <head>; just sync local state
+    setIsDark(document.documentElement.getAttribute("data-theme") === "dark");
   }, []);
 
   useEffect(() => {
@@ -95,7 +92,7 @@ export function ExtractedHeader({
           <Link href="/listings?listingType=new" className={newActive ? "active" : undefined}>New Developments</Link>
           <Link href="/listings?type=Commercial" className={commercialActive ? "active" : undefined}>Commercial</Link>
           <Link href="/listings?type=Land" className={landActive ? "active" : undefined}>Land</Link>
-          <Link href="/agents" className={agentsActive ? "active" : undefined}>Find Sellers</Link>
+          <Link href="/agents" className={agentsActive ? "active" : undefined}>Find Agents</Link>
         </nav>
 
         <div className="header-actions">
@@ -163,7 +160,7 @@ export function ExtractedHeader({
       <Link href="/listings?listingType=new" className={newActive ? "active" : undefined} onClick={onCloseMobileNav}>New Developments</Link>
       <Link href="/listings?type=Commercial" className={commercialActive ? "active" : undefined} onClick={onCloseMobileNav}>Commercial</Link>
       <Link href="/listings?type=Land" className={landActive ? "active" : undefined} onClick={onCloseMobileNav}>Land</Link>
-      <Link href="/agents" className={agentsActive ? "active" : undefined} onClick={onCloseMobileNav}>Find Sellers</Link>
+      <Link href="/agents" className={agentsActive ? "active" : undefined} onClick={onCloseMobileNav}>Find Agents</Link>
       <div className="mobile-nav-buttons">
         {user ? (
           <>

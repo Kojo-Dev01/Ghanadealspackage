@@ -1707,32 +1707,49 @@ ul, ol { list-style: none; }
   background: var(--bg-card);
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-lg);
-  padding: 24px;
-  text-align: center;
+  overflow: hidden;
   cursor: pointer;
   transition: all var(--transition-base);
+  text-decoration: none;
+  color: inherit;
 }
 .ptype-card:hover {
   border-color: var(--red);
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
+.ptype-card .ptype-img {
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+}
+.ptype-card .ptype-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .3s ease;
+}
+.ptype-card:hover .ptype-img img {
+  transform: scale(1.05);
+}
+.ptype-card .ptype-body {
+  padding: 14px 16px;
+}
 .ptype-card .ptype-icon {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto 12px;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--red-light);
+  background: var(--bg-secondary);
   border-radius: var(--radius-md);
-  color: var(--red);
+  color: var(--text-secondary);
 }
-.ptype-card .ptype-icon svg { width: 24px; height: 24px; }
+.ptype-card .ptype-icon svg { width: 20px; height: 20px; }
 .ptype-card .ptype-name {
   font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 4px;
+  font-size: 15px;
+  margin-bottom: 2px;
   color: var(--text-primary);
 }
 .ptype-card .ptype-count {
@@ -1789,19 +1806,24 @@ ul, ol { list-style: none; }
   background: var(--bg-card);
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-lg);
+  transition: all var(--transition-base);
+}
+.why-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 .why-card .why-icon {
   width: 56px; height: 56px;
   margin: 0 auto 16px;
-  background: var(--red-light);
+  background: var(--bg-secondary);
   border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--red);
+  color: var(--text-secondary);
 }
 .why-card .why-icon svg { width: 28px; height: 28px; }
-.why-card h3 { font-size: 18px; margin-bottom: 8px; }
+.why-card h3 { font-size: 18px; margin-bottom: 8px; color: var(--text-primary); }
 .why-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
 
 /* ---------- CTA BANNER ---------- */

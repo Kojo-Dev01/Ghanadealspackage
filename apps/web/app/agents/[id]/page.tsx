@@ -44,10 +44,13 @@ export default async function AgentDetailPage({ params }: AgentPageProps) {
                 : initials}
             </div>
             <div style={{ flex: 1, minWidth: 200 }}>
-              <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: "var(--text-primary)" }}>
+              <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 8 }}>
                 {agent.name}
                 {agent.verified && (
-                  <span style={{ marginLeft: 8, fontSize: 13, color: "var(--success)", fontWeight: 500 }}>✓ Verified</span>
+                  <svg width={22} height={22} viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+                    <circle cx="12" cy="12" r="10" fill="var(--red, #dc2626)" />
+                    <path d="M8 12.5l2.5 2.5 5-5" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                 )}
               </h1>
               <div style={{ color: "var(--text-secondary)", fontSize: 15, marginTop: 4 }}>{agent.company}</div>
