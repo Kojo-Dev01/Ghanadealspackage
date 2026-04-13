@@ -285,7 +285,7 @@ export function HeroSection({ totalProperties = 0, totalAgents = 0, totalRegions
 
   return (
     <section className="hero">
-      <div className="hero-bg" style={{ backgroundImage: "url('/legacy/assets/properties/large_property-villa-1.jpg')" }} />
+      <div className="hero-bg" style={{ backgroundImage: "url('/legacy/assets/properties/dominik-mCQ-ykj6tQk-unsplash.jpg')" }} />
       <div className="hero-content">
         <h1>Find Your Dream Property in Ghana</h1>
         <p>Ghana&apos;s Premier Property Marketplace</p>

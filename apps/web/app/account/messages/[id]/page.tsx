@@ -36,7 +36,7 @@ function formatPrice(n: number) {
 function PropertyCard({ prop, isMine }: { prop: PropertyRefData; isMine: boolean }) {
   return (
     <Link
-      href={`/properties/${prop.id}`}
+      href={`/property/${prop.id}`}
       style={{
         display: "flex", gap: 10, padding: 8,
         borderRadius: 12, border: `1px solid ${isMine ? "rgba(255,255,255,.2)" : "var(--border-primary)"}`,

@@ -408,6 +408,7 @@ ul, ol { list-style: none; }
   color: var(--text-primary);
   background: transparent;
   transition: all var(--transition-fast);
+  margin-right: 8px;
 }
 .btn-login:hover { border-color: var(--text-primary); background: var(--bg-secondary); }
 
