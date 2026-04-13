@@ -11,7 +11,7 @@ type Props = {
   hint?: string;
 };
 
-const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp"];
 const DEFAULT_MAX = 10;
 
@@ -27,7 +27,7 @@ export function GalleryUploader({ value, onChange, max = DEFAULT_MAX, label = "P
       return null;
     }
     if (file.size > MAX_SIZE) {
-      setError("Each image must be under 5 MB.");
+      setError("Each image must be under 50 MB.");
       return null;
     }
 
@@ -181,7 +181,7 @@ export function GalleryUploader({ value, onChange, max = DEFAULT_MAX, label = "P
                   or <span className="text-accent font-semibold">click to browse</span>
                 </p>
               </div>
-              <p className="text-[10px] text-muted/60">JPG, PNG or WebP · max 5 MB each · up to {max} photos</p>
+              <p className="text-[10px] text-muted/60">JPG, PNG or WebP · max 50 MB each · up to {max} photos</p>
             </>
           )}
         </div>

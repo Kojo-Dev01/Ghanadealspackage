@@ -10,7 +10,7 @@ type Props = {
   hint?: string;
 };
 
-const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp"];
 
 export function ImageUploader({ value, onChange, label = "Property Image", hint }: Props) {
@@ -25,7 +25,7 @@ export function ImageUploader({ value, onChange, label = "Property Image", hint 
       return;
     }
     if (file.size > MAX_SIZE) {
-      setError("Image must be under 5 MB.");
+      setError("Image must be under 50 MB.");
       return;
     }
 
@@ -127,7 +127,7 @@ export function ImageUploader({ value, onChange, label = "Property Image", hint 
                   or <span className="text-accent font-semibold">click to browse</span>
                 </p>
               </div>
-              <p className="text-[10px] text-muted/60">JPG, PNG or WebP · max 5 MB</p>
+              <p className="text-[10px] text-muted/60">JPG, PNG or WebP · max 50 MB</p>
             </>
           )}
         </div>

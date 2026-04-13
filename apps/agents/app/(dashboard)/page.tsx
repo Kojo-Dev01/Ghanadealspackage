@@ -27,37 +27,37 @@ export default async function AgentOverviewPage() {
       label: "Total Listings",
       value: stats?.totalListings ?? 0,
       delta: `${stats?.approvedListings ?? 0} approved`,
-      color: "bg-blue-500",
+      color: "bg-gray-400",
     },
     {
       label: "Approved",
       value: stats?.approvedListings ?? 0,
       delta: "Live on marketplace",
-      color: "bg-green-500",
+      color: "bg-gray-400",
     },
     {
       label: "Pending Review",
       value: stats?.pendingListings ?? 0,
       delta: "Awaiting moderation",
-      color: "bg-amber-500",
+      color: "bg-gray-400",
     },
     {
       label: "Messages",
       value: conversations.length,
       delta: `${conversations.filter((c) => c.unreadCount > 0).length} unread`,
-      color: "bg-red-500",
+      color: "bg-gray-400",
     },
     {
       label: "Saved Properties",
       value: savedCount,
       delta: "Properties bookmarked",
-      color: "bg-purple-500",
+      color: "bg-gray-400",
     },
     {
       label: "Notifications",
       value: notifCount,
       delta: "Unread alerts",
-      color: "bg-indigo-500",
+      color: "bg-gray-400",
     },
   ];
 
