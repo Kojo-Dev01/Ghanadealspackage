@@ -55,6 +55,7 @@ export type AgentRecord = {
   color: string;
   phone: string;
   avatar_url?: string | null;
+  verified?: boolean;
 };
 
 type AgentListResponse = {
