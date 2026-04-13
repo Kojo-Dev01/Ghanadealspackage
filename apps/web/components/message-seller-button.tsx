@@ -17,8 +17,7 @@ export function MessageSellerButton({ sellerId, sellerName }: Props) {
 
   async function handleClick() {
     if (!user) {
-      // Redirect to account page which will prompt login
-      router.push("/account");
+      window.dispatchEvent(new Event("gd:open-login"));
       return;
     }
 
