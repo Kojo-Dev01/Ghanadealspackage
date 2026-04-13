@@ -11,7 +11,7 @@ type Props = {
 };
 
 const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
-const ACCEPTED = ["image/jpeg", "image/png", "image/webp"];
+const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/heif", "image/heic"];
 
 export function ImageUploader({ value, onChange, label = "Property Image", hint }: Props) {
   const [uploading, setUploading] = useState(false);
@@ -21,7 +21,7 @@ export function ImageUploader({ value, onChange, label = "Property Image", hint 
 
   const uploadFile = useCallback(async (file: File) => {
     if (!ACCEPTED.includes(file.type)) {
-      setError("Only JPG, PNG, and WebP images are allowed.");
+      setError("Only JPG, PNG, WebP, and HEIF images are allowed.");
       return;
     }
     if (file.size > MAX_SIZE) {
@@ -127,7 +127,7 @@ export function ImageUploader({ value, onChange, label = "Property Image", hint 
                   or <span className="text-accent font-semibold">click to browse</span>
                 </p>
               </div>
-              <p className="text-[10px] text-muted/60">JPG, PNG or WebP · max 50 MB</p>
+              <p className="text-[10px] text-muted/60">JPG, PNG, WebP or HEIF · max 50 MB</p>
             </>
           )}
         </div>
