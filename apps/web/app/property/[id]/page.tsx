@@ -7,6 +7,7 @@ import { InquiryForm } from "../../../components/inquiry-form";
 import { SaveButton } from "../../../components/save-button";
 import { GalleryLightbox } from "../../../components/gallery-lightbox";
 import { MortgageCalculator } from "../../../components/mortgage-calculator";
+import { PropertyMessageButton } from "../../../components/property-message-button";
 
 type PropertyPageProps = {
   params: Promise<{ id: string }>;
@@ -133,6 +134,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
                   <div className="agent-btn-group">
                     <a className="btn btn-outline" href={`tel:${property.agent.phone}`}>Call Seller</a>
                     <a className="btn btn-whatsapp" href={`https://wa.me/${property.agent.phone.replace("+", "")}`} target="_blank" rel="noreferrer">WhatsApp</a>
+                    <PropertyMessageButton propertyId={id} />
                   </div>
                 </div>
 

@@ -274,6 +274,19 @@ export async function toggleAdminListingFeatured(
   return (await res.json()) as { featured: boolean; message: string };
 }
 
+export async function deleteAdminListing(
+  listingId: string
+): Promise<boolean> {
+  const token = await getToken();
+  if (!token) return false;
+  const res = await apiFetch(
+    `/v1/admin/listings/${encodeURIComponent(listingId)}`,
+    token,
+    { method: "DELETE" }
+  );
+  return !!res?.ok;
+}
+
 // ---- Inquiries ----
 
 export async function fetchAdminInquiries(params?: {

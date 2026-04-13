@@ -7,10 +7,12 @@ import {
   Clock,
   Star,
   XCircle,
+  Trash2,
 } from "lucide-react";
 
 type Props = {
   listingId: string;
+  listingTitle?: string;
   status: string;
   listingType: string;
   featured: boolean;
@@ -18,6 +20,7 @@ type Props = {
   moderationReason: string | null;
   moderateAction: (formData: FormData) => Promise<void>;
   toggleFeaturedAction: () => Promise<void>;
+  deleteAction?: () => Promise<void>;
 };
 
 const statusMeta: Record<
@@ -57,6 +60,7 @@ const typeMeta: Record<string, { label: string; color: string; bg: string }> = {
 
 export function ModerationBar({
   listingId,
+  listingTitle,
   status,
   listingType,
   featured,
@@ -64,6 +68,7 @@ export function ModerationBar({
   moderationReason,
   moderateAction,
   toggleFeaturedAction,
+  deleteAction,
 }: Props) {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [reason, setReason] = useState(moderationReason ?? "");
@@ -258,6 +263,36 @@ export function ModerationBar({
               >
                 <Clock size={14} /> Set Pending
               </button>
+            )}
+
+            {deleteAction && (
+              <form
+                action={deleteAction}
+                onSubmit={(e) => {
+                  if (!confirm(`Permanently delete "${listingTitle || "this listing"}"? This cannot be undone.`)) e.preventDefault();
+                }}
+                style={{ display: "inline" }}
+              >
+                <button
+                  type="submit"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                    padding: "6px 14px",
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    border: "1px solid #fecaca",
+                    background: "#fce4ec",
+                    color: "#7f1d1d",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  <Trash2 size={14} /> Delete
+                </button>
+              </form>
             )}
           </div>
         </div>

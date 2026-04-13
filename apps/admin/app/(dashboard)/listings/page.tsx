@@ -5,6 +5,7 @@ import { AdminShell } from "@/components/admin-shell";
 import {
   fetchAdminListings,
   moderateAdminListing,
+  deleteAdminListing,
   type AdminListingStatus,
 } from "@/lib/api";
 import { Search } from "lucide-react";
@@ -59,6 +60,34 @@ export default async function AdminListingsPage({
 
     if (listingId && nextStatus) {
       await moderateAdminListing(listingId, nextStatus, reason);
+    }
+
+    revalidatePath("/");
+    revalidatePath("/listings");
+
+    const sp = new URLSearchParams();
+    sp.set("tab", currentTab);
+    if (currentQuery) sp.set("q", currentQuery);
+    if (currentPage > 1) sp.set("page", String(currentPage));
+    const currentType = String(formData.get("currentType") ?? "").trim();
+    if (currentType) sp.set("type", currentType);
+    const dest = sp.toString();
+    redirect(`/listings?${dest}`);
+  }
+
+  async function deleteAction(formData: FormData) {
+    "use server";
+
+    const listingId = String(formData.get("listingId") ?? "").trim();
+    const currentTab = String(formData.get("currentStatus") ?? "pending");
+    const currentQuery = String(formData.get("currentQuery") ?? "").trim();
+    const currentPage = Math.max(
+      1,
+      Number(formData.get("currentPage") ?? "1") || 1
+    );
+
+    if (listingId) {
+      await deleteAdminListing(listingId);
     }
 
     revalidatePath("/");
@@ -192,6 +221,7 @@ export default async function AdminListingsPage({
             key={listing.id}
             listing={listing}
             moderateAction={moderateAction}
+            deleteAction={deleteAction}
             status={tab}
             query={query}
             page={page}

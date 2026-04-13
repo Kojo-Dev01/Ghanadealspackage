@@ -3,7 +3,7 @@ import { AgentShell } from "@/components/agent-shell";
 import {
   fetchAgentStats,
   fetchAgentListings,
-  fetchAgentInquiries,
+  fetchConversations,
   fetchVerificationStatus,
   fetchSavedCount,
   fetchNotificationUnreadCount,
@@ -11,10 +11,10 @@ import {
 import { ShieldCheck, ShieldAlert, Clock, XCircle, ArrowRight } from "lucide-react";
 
 export default async function AgentOverviewPage() {
-  const [stats, listingsData, inquiriesData, verification, savedCount, notifCount] = await Promise.all([
+  const [stats, listingsData, conversations, verification, savedCount, notifCount] = await Promise.all([
     fetchAgentStats(),
     fetchAgentListings({ page: 1 }),
-    fetchAgentInquiries({ page: 1 }),
+    fetchConversations(),
     fetchVerificationStatus(),
     fetchSavedCount(),
     fetchNotificationUnreadCount(),
@@ -42,9 +42,9 @@ export default async function AgentOverviewPage() {
       color: "bg-amber-500",
     },
     {
-      label: "Inquiries",
-      value: stats?.totalInquiries ?? 0,
-      delta: `${stats?.newInquiries ?? 0} new`,
+      label: "Messages",
+      value: conversations.length,
+      delta: `${conversations.filter((c) => c.unreadCount > 0).length} unread`,
       color: "bg-red-500",
     },
     {
@@ -62,13 +62,13 @@ export default async function AgentOverviewPage() {
   ];
 
   const recentListings = listingsData.items.slice(0, 5);
-  const recentInquiries = inquiriesData.items.slice(0, 5);
+  const recentConversations = conversations.slice(0, 5);
 
   return (
     <AgentShell
       eyebrow="Dashboard"
       title="Overview"
-      description="Your listings and inquiries at a glance."
+      description="Your listings and messages at a glance."
       actions={
         <Link
           className="inline-flex items-center gap-1.5 bg-accent text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-accent-hover transition-colors"
@@ -199,35 +199,42 @@ export default async function AgentOverviewPage() {
           </div>
         </div>
 
-        {/* Recent Inquiries */}
+        {/* Recent Messages */}
         <div className="bg-panel border border-border rounded-xl p-5 shadow-sm">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-[15px] font-bold">Recent Inquiries</h2>
+            <h2 className="text-[15px] font-bold">Recent Messages</h2>
             <Link
               className="text-accent text-[13px] font-semibold hover:text-accent-hover transition-colors"
-              href="/inquiries"
+              href="/messages"
             >
               View all →
             </Link>
           </div>
           <div className="grid gap-2">
-            {recentInquiries.map((inquiry) => (
-              <div
-                key={inquiry.id}
-                className="bg-panel-alt border border-border rounded-lg px-3.5 py-3"
+            {recentConversations.map((conv) => (
+              <Link
+                key={conv.id}
+                href={`/messages/${conv.id}`}
+                className="bg-panel-alt border border-border rounded-lg px-3.5 py-3 block hover:border-accent/40 transition-colors"
               >
                 <div className="flex justify-between items-start gap-3">
-                  <h3 className="text-[13px] font-bold">{inquiry.name}</h3>
-                  <StatusPill status={inquiry.status} />
+                  <h3 className="text-[13px] font-bold truncate">
+                    {conv.otherUser?.name ?? "Unknown"}
+                  </h3>
+                  {conv.unreadCount > 0 && (
+                    <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold shrink-0 bg-accent/10 text-accent">
+                      {conv.unreadCount} new
+                    </span>
+                  )}
                 </div>
-                <p className="mt-1 text-[13px] text-muted">
-                  Re: {inquiry.propertyTitle}
+                <p className="mt-1 text-[13px] text-muted truncate">
+                  {conv.property?.title ? `Re: ${conv.property.title}` : (conv.lastMessage?.content ?? "No messages yet")}
                 </p>
-              </div>
+              </Link>
             ))}
-            {recentInquiries.length === 0 && (
+            {recentConversations.length === 0 && (
               <p className="text-[13px] text-muted">
-                No inquiries received yet.
+                No messages yet.
               </p>
             )}
           </div>

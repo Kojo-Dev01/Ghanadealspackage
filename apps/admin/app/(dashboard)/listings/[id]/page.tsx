@@ -6,6 +6,7 @@ import {
   fetchAdminListingById,
   moderateAdminListing,
   toggleAdminListingFeatured,
+  deleteAdminListing,
   type AdminListingStatus,
 } from "@/lib/api";
 import {
@@ -84,6 +85,14 @@ export default async function AdminListingDetailPage({ params }: PageProps) {
     redirect(`/listings/${id}`);
   }
 
+  async function deleteListingAction() {
+    "use server";
+    await deleteAdminListing(id);
+    revalidatePath("/");
+    revalidatePath("/listings");
+    redirect("/listings");
+  }
+
   const gallery = listing.gallery ?? [];
   const amenities = listing.amenities ?? [];
   const mainImage = resolveImg(listing.imageLg ?? listing.image);
@@ -105,6 +114,7 @@ export default async function AdminListingDetailPage({ params }: PageProps) {
       {/* ── Moderation Bar ── */}
       <ModerationBar
         listingId={listing.id}
+        listingTitle={listing.title}
         status={listing.moderationStatus}
         listingType={listing.listingType}
         featured={listing.featured}
@@ -112,6 +122,7 @@ export default async function AdminListingDetailPage({ params }: PageProps) {
         moderationReason={listing.moderationReason}
         moderateAction={moderateAction}
         toggleFeaturedAction={toggleFeaturedAction}
+        deleteAction={deleteListingAction}
       />
 
       {/* ── Image Gallery ── */}

@@ -489,6 +489,53 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     };
   });
 
+  // ---- Delete listing ----
+
+  app.delete("/listings/:id", { preHandler: requirePermission("listings.delete") }, async (request, reply) => {
+    const { id } = request.params as { id?: string };
+    if (!id) return reply.code(400).send({ message: "Listing id is required" });
+
+    const supabase = getSupabaseAdminClient();
+    if (!supabase) return reply.code(503).send({ message: "Database not configured" });
+
+    // Fetch title for audit log before deleting
+    const { data: current, error: fetchErr } = await supabase
+      .from("properties")
+      .select("id, title, agent_id")
+      .eq("id", id)
+      .single();
+
+    if (fetchErr || !current) {
+      return reply.code(404).send({ message: "Listing not found" });
+    }
+
+    const listing = current as unknown as { id: string; title: string; agent_id: string };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: deleteErr } = await (supabase.from("properties") as any)
+      .delete()
+      .eq("id", id);
+
+    if (deleteErr) {
+      app.log.error(deleteErr, "Failed to delete listing");
+      return reply.code(500).send({ message: "Failed to delete listing" });
+    }
+
+    const userId = (request.user as { sub?: string }).sub ?? null;
+
+    // Write audit log
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from("audit_log") as any).insert({
+      user_id: userId,
+      action: "delete_listing",
+      target_type: "property",
+      target_id: id,
+      detail: { summary: `Listing "${listing.title}" permanently deleted` }
+    });
+
+    return { message: `Listing "${listing.title}" deleted` };
+  });
+
   // ---- Inquiries management ----
 
   app.get("/inquiries", { preHandler: requirePermission("inquiries.read") }, async (request, reply) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { MapPin, Bed, Bath, Ruler, User } from "lucide-react";
+import { MapPin, Bed, Bath, Ruler, User, Trash2 } from "lucide-react";
 import type { AdminListing } from "@/lib/api";
 
 const WEB_URL = process.env.NEXT_PUBLIC_WEB_URL ?? "http://localhost:3000";
@@ -15,6 +15,7 @@ function resolveImg(src: string | null | undefined): string {
 export function AdminListingCard({
   listing,
   moderateAction,
+  deleteAction,
   status,
   query,
   page,
@@ -22,6 +23,7 @@ export function AdminListingCard({
 }: {
   listing: AdminListing;
   moderateAction: (formData: FormData) => Promise<void>;
+  deleteAction: (formData: FormData) => Promise<void>;
   status: string;
   query: string;
   page: number;
@@ -164,6 +166,22 @@ export function AdminListingCard({
               Reject
             </button>
           )}
+          <form action={deleteAction} onSubmit={(e) => { if (!confirm(`Permanently delete "${listing.title}"?`)) e.preventDefault(); }}>
+            <input type="hidden" name="listingId" value={listing.id} />
+            <input type="hidden" name="currentStatus" value={status} />
+            <input type="hidden" name="currentQuery" value={query} />
+            <input type="hidden" name="currentPage" value={String(page)} />
+            <input type="hidden" name="currentType" value={currentType} />
+            <button
+              type="submit"
+              className="px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all flex items-center gap-1"
+              style={{ background: '#fce4ec', color: '#7f1d1d' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#991b1b'; e.currentTarget.style.color = '#fff'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#fce4ec'; e.currentTarget.style.color = '#7f1d1d'; }}
+            >
+              <Trash2 size={12} /> Delete
+            </button>
+          </form>
         </div>
       </div>
 

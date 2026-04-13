@@ -19,6 +19,7 @@ export type Permission =
   | "listings.read"
   | "listings.moderate"
   | "listings.featured"
+  | "listings.delete"
   | "agents.read"
   | "agents.verify"
   | "users.read"
@@ -37,6 +38,7 @@ const ROLE_PERMISSIONS: Record<AdminRole, ReadonlySet<Permission>> = {
     "listings.read",
     "listings.moderate",
     "listings.featured",
+    "listings.delete",
     "agents.read",
     "agents.verify",
     "users.read",
@@ -55,6 +57,7 @@ const ROLE_PERMISSIONS: Record<AdminRole, ReadonlySet<Permission>> = {
     "listings.read",
     "listings.moderate",
     "listings.featured",
+    "listings.delete",
     "agents.read",
     "agents.verify",
   ]),

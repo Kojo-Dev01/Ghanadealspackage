@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Building2,
   MessageSquare,
-  Mail,
   UserCircle,
   LogOut,
   ExternalLink,
@@ -52,7 +51,6 @@ const navItems = [
   { key: "overview", label: "Overview", href: "/", icon: <LayoutDashboard size={18} /> },
   { key: "listings", label: "My Listings", href: "/listings", icon: <Building2 size={18} /> },
   { key: "messages", label: "Messages", href: "/messages", icon: <MessageSquare size={18} /> },
-  { key: "inquiries", label: "Inquiries", href: "/inquiries", icon: <Mail size={18} /> },
   { key: "saved", label: "Saved Properties", href: "/saved", icon: <Bookmark size={18} /> },
   { key: "verification", label: "Verification", href: "/verification", icon: <ShieldCheck size={18} /> },
   { key: "profile", label: "Profile", href: "/profile", icon: <UserCircle size={18} /> },
@@ -61,7 +59,6 @@ const navItems = [
 function getActiveNav(pathname: string) {
   if (pathname.startsWith("/listings")) return "listings";
   if (pathname.startsWith("/messages")) return "messages";
-  if (pathname.startsWith("/inquiries")) return "inquiries";
   if (pathname.startsWith("/saved")) return "saved";
   if (pathname.startsWith("/verification")) return "verification";
   if (pathname.startsWith("/profile")) return "profile";
