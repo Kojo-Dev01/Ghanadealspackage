@@ -814,6 +814,30 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     const userId = (request.user as { sub?: string }).sub ?? null;
     const { action, reason } = parsed.data;
 
+    /* For approval, enforce required fields */
+    if (action === "approve") {
+      const { data: current } = await (supabase as any)
+        .from("agents")
+        .select("phone, kyc_documents")
+        .eq("id", id)
+        .single();
+
+      if (!current) {
+        return reply.code(404).send({ message: "Seller not found" });
+      }
+
+      const kycDocs = Array.isArray(current.kyc_documents) ? current.kyc_documents : [];
+      const missing: string[] = [];
+      if (!current.phone) missing.push("phone number");
+      if (kycDocs.length === 0) missing.push("KYC documents");
+
+      if (missing.length > 0) {
+        return reply.code(400).send({
+          message: `Cannot approve: seller is missing ${missing.join(" and ")}`,
+        });
+      }
+    }
+
     const updates: Record<string, unknown> = {
       updated_at: new Date().toISOString(),
     };

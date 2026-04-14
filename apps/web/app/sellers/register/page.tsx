@@ -239,8 +239,45 @@ export default function SellerRegisterPage() {
   const busy = submitting || uploading;
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg-secondary)", display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
-      <div style={{ maxWidth: 560, width: "100%", background: "var(--bg-card)", borderRadius: 16, padding: "40px 36px", border: "1px solid var(--border-primary)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-secondary)" }}>
+      {/* ─── Page Header ─── */}
+      <div style={{
+        background: "linear-gradient(135deg, rgba(230,57,70,0.06) 0%, rgba(230,57,70,0.02) 100%)",
+        borderBottom: "1px solid var(--border-primary)",
+        padding: "36px 20px 40px",
+        textAlign: "center",
+        position: "relative",
+        overflow: "hidden",
+      }}>
+        {/* Decorative accent */}
+        <div style={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, borderRadius: "50%", background: "rgba(230,57,70,0.05)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: -40, left: -40, width: 160, height: 160, borderRadius: "50%", background: "rgba(230,57,70,0.04)", pointerEvents: "none" }} />
+
+        <div style={{ position: "relative", zIndex: 1, maxWidth: 520, margin: "0 auto" }}>
+          <span style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            padding: "5px 14px", borderRadius: 999,
+            background: "rgba(230,57,70,0.1)", color: "var(--red)",
+            fontSize: 12, fontWeight: 600, letterSpacing: "0.03em",
+            marginBottom: 14,
+          }}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 6.91-1.01z" />
+            </svg>
+            Upgrade Your Account
+          </span>
+          <h1 style={{ fontSize: 26, fontWeight: 800, margin: "0 0 8px", lineHeight: 1.25, color: "var(--text-primary)" }}>
+            Start Selling on GhanaDeals
+          </h1>
+          <p style={{ fontSize: 14, color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
+            Reach thousands of property buyers across Ghana. List your properties, connect with clients, and grow your business.
+          </p>
+        </div>
+      </div>
+
+      {/* ─── Form Card ─── */}
+      <div style={{ display: "flex", justifyContent: "center", padding: "32px 20px 60px" }}>
+        <div style={{ maxWidth: 560, width: "100%", background: "var(--bg-card)", borderRadius: 16, padding: "40px 36px", border: "1px solid var(--border-primary)" }}>
 
         <StepIndicator current={step} />
 
@@ -443,6 +480,7 @@ export default function SellerRegisterPage() {
             </form>
           </>
         )}
+      </div>
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ import { SaveButton } from "../../../components/save-button";
 import { GalleryLightbox } from "../../../components/gallery-lightbox";
 import { MortgageCalculator } from "../../../components/mortgage-calculator";
 import { PropertyMessageButton } from "../../../components/property-message-button";
+import { PropertyDescription } from "../../../components/property-description";
 
 type PropertyPageProps = {
   params: Promise<{ id: string }>;
@@ -52,7 +53,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
 
               <div className="detail-section">
                 <h3 className="detail-section-title">Description</h3>
-                <div className="detail-description">{property.description}</div>
+                <PropertyDescription text={property.description} />
               </div>
 
               <div className="detail-section">

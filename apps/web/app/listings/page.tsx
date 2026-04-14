@@ -25,7 +25,7 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
   const minBeds = firstParam(sp.minBeds);
   const minBaths = firstParam(sp.minBaths);
   const page = Math.max(1, Number(firstParam(sp.page) ?? "1") || 1);
-  const limit = 24;
+  const limit = 50;
 
   const result = await fetchProperties({
     listingType,

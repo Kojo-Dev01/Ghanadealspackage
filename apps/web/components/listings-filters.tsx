@@ -13,33 +13,50 @@ type Props = {
   minBaths?: string;
 };
 
-/* Unified price stops: index 0 = "no limit", 1-8 = actual price values */
-const PRICE_STOPS = [0, 50_000, 100_000, 200_000, 500_000, 1_000_000, 2_000_000, 5_000_000, 10_000_000];
-const STOP_MAX = PRICE_STOPS.length - 1;
+/* Preset price suggestions shown in datalist */
+const PRICE_PRESETS = [50_000, 100_000, 200_000, 500_000, 1_000_000, 2_000_000, 5_000_000, 10_000_000];
 
+/* Continuous logarithmic slider mapping */
+const SLIDER_MAX = 1000;
+const LOG_MIN = 10_000;
+const LOG_MAX = 20_000_000;
+const LOG_RATIO = Math.log(LOG_MAX / LOG_MIN);
+
+/** Map slider position (0–1000) → price. 0 means "no limit". */
+function sliderToPrice(step: number): number {
+  if (step <= 0) return 0;
+  if (step >= SLIDER_MAX) return LOG_MAX;
+  const raw = LOG_MIN * Math.exp(LOG_RATIO * (step / SLIDER_MAX));
+  if (raw >= 1_000_000) return Math.round(raw / 100_000) * 100_000;
+  if (raw >= 100_000) return Math.round(raw / 10_000) * 10_000;
+  if (raw >= 10_000) return Math.round(raw / 5_000) * 5_000;
+  return Math.round(raw / 1_000) * 1_000;
+}
+
+/** Map price → slider position (0–1000). 0 means "no limit". */
+function priceToSlider(price: number): number {
+  if (price <= 0) return 0;
+  const clamped = Math.max(LOG_MIN, Math.min(LOG_MAX, price));
+  return Math.round(SLIDER_MAX * Math.log(clamped / LOG_MIN) / LOG_RATIO);
+}
+
+/** Compact label for the range summary below slider */
 function fmtPrice(v: number): string {
-  if (v >= 1_000_000) return `GH₵ ${v / 1_000_000}M`;
-  if (v >= 1_000) return `GH₵ ${(v / 1_000).toLocaleString()}K`;
+  if (v >= 1_000_000) return `GH₵ ${(v / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 2 })}M`;
+  if (v >= 1_000) return `GH₵ ${(v / 1_000).toLocaleString(undefined, { maximumFractionDigits: 1 })}K`;
   if (v > 0) return `GH₵ ${v.toLocaleString()}`;
   return "Any";
 }
 
-/** Map a raw price string to the nearest stop index */
-function valToIdx(val: string | undefined, fallback: number): number {
-  if (!val) return fallback;
-  const n = Number(val);
-  if (!n) return fallback;
-  // Exact match
-  const exact = PRICE_STOPS.indexOf(n);
-  if (exact >= 0) return exact;
-  // Snap to nearest stop
-  let best = fallback;
-  let bestDist = Infinity;
-  for (let i = 0; i < PRICE_STOPS.length; i++) {
-    const dist = Math.abs(PRICE_STOPS[i] - n);
-    if (dist < bestDist) { bestDist = dist; best = i; }
-  }
-  return best;
+/** Display price in the text input (full number with commas) */
+function displayPrice(v: number): string {
+  return v > 0 ? v.toLocaleString() : "";
+}
+
+/** Parse a price string (strips non-numeric chars) */
+function parsePrice(s: string): number {
+  const n = Number(s.replace(/[^0-9]/g, ""));
+  return Number.isFinite(n) ? n : 0;
 }
 
 export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minBeds, minBaths }: Props) {
@@ -58,8 +75,8 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
   const [search, setSearch] = useState(urlQ);
   const [selectedListingType, setSelectedListingType] = useState(urlListingType);
   const [selectedPropertyType, setSelectedPropertyType] = useState(urlType);
-  const [minIdx, setMinIdx] = useState(() => valToIdx(urlMinPrice || minPrice, 0));
-  const [maxIdx, setMaxIdx] = useState(() => valToIdx(urlMaxPrice || maxPrice, STOP_MAX));
+  const [minPriceRaw, setMinPriceRaw] = useState(urlMinPrice || minPrice || "");
+  const [maxPriceRaw, setMaxPriceRaw] = useState(urlMaxPrice || maxPrice || "");
   const [beds, setBeds] = useState(urlMinBeds);
   const [baths, setBaths] = useState(urlMinBaths);
 
@@ -68,27 +85,33 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
     setSearch(urlQ);
     setSelectedListingType(urlListingType);
     setSelectedPropertyType(urlType);
-    setMinIdx(valToIdx(urlMinPrice || undefined, 0));
-    setMaxIdx(valToIdx(urlMaxPrice || undefined, STOP_MAX));
+    setMinPriceRaw(urlMinPrice);
+    setMaxPriceRaw(urlMaxPrice);
     setBeds(urlMinBeds);
     setBaths(urlMinBaths);
   }, [urlQ, urlListingType, urlType, urlMinPrice, urlMaxPrice, urlMinBeds, urlMinBaths]);
 
-  /* Form values derived from slider indices */
-  const minPriceVal = minIdx === 0 ? "" : String(PRICE_STOPS[minIdx]);
-  const maxPriceVal = maxIdx === STOP_MAX ? "" : String(PRICE_STOPS[maxIdx]);
+  /* Track which price input is focused (show raw number while editing) */
+  const [minFocused, setMinFocused] = useState(false);
+  const [maxFocused, setMaxFocused] = useState(false);
+
+  /* Derived values */
+  const minVal = parsePrice(minPriceRaw);
+  const maxVal = parsePrice(maxPriceRaw);
+  const minSlider = priceToSlider(minVal);
+  const maxSlider = maxVal > 0 ? priceToSlider(maxVal) : SLIDER_MAX;
 
   /* Track fill position */
-  const fillLeft = (minIdx / STOP_MAX) * 100;
-  const fillRight = 100 - (maxIdx / STOP_MAX) * 100;
+  const fillLeft = (minSlider / SLIDER_MAX) * 100;
+  const fillRight = 100 - (maxSlider / SLIDER_MAX) * 100;
 
   /* Detect whether user changed anything from the current URL state */
   const dirty =
     search !== urlQ ||
     selectedListingType !== urlListingType ||
     selectedPropertyType !== urlType ||
-    minPriceVal !== urlMinPrice ||
-    maxPriceVal !== urlMaxPrice ||
+    minPriceRaw !== urlMinPrice ||
+    maxPriceRaw !== urlMaxPrice ||
     beds !== urlMinBeds ||
     baths !== urlMinBaths;
 
@@ -100,8 +123,8 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
   return (
     <form className="listings-search-bar" action="/listings" method="get" style={{ marginBottom: 20 }}>
       {/* Hidden price inputs for form submission */}
-      <input type="hidden" name="minPrice" value={minPriceVal} />
-      <input type="hidden" name="maxPrice" value={maxPriceVal} />
+      <input type="hidden" name="minPrice" value={minPriceRaw} />
+      <input type="hidden" name="maxPrice" value={maxPriceRaw} />
 
       {/* Row 1: Search + Category + Type */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, width: "100%" }}>
@@ -138,45 +161,67 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
           <option value="House">House</option>
           <option value="Villa">Villa</option>
           <option value="Townhouse">Townhouse</option>
-          <option value="Commercial">Commercial</option>
+          <option value="Penthouse">Penthouse</option>
+          <option value="Compound">Compound</option>
+          <option value="Duplex">Duplex</option>
+          <option value="Bungalow">Bungalow</option>
+          <option value="Full Floor">Full Floor</option>
+          <option value="Half Floor">Half Floor</option>
+          <option value="Whole Building">Whole Building</option>
           <option value="Land">Land</option>
+          <option value="Commercial">Commercial</option>
+          <option value="Office">Office</option>
+          <option value="Bulk Sale Unit">Bulk Sale Unit</option>
+          <option value="Hotel & Hotel Apartment">Hotel & Hotel Apartment</option>
         </select>
       </div>
 
       {/* Row 2: Price Range + Beds/Baths + Apply */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, width: "100%", marginTop: 10, alignItems: "flex-start" }}>
-        {/* Price Range Widget — dropdowns + synced slider */}
+        {/* Price Range Widget — combo inputs + synced slider */}
         <div className="price-range-widget">
           <div className="price-range-selects">
-            <select
+            <input
+              type="text"
+              inputMode="numeric"
+              list="gd-min-presets"
               className="filter-select"
-              value={minPriceVal}
+              placeholder="Min Price"
+              value={minFocused ? minPriceRaw : displayPrice(minVal)}
               onChange={(e) => {
-                const idx = valToIdx(e.target.value || undefined, 0);
-                setMinIdx(Math.min(idx, maxIdx));
+                const raw = e.target.value.replace(/[^0-9]/g, "");
+                setMinPriceRaw(raw);
               }}
+              onFocus={() => setMinFocused(true)}
+              onBlur={() => setMinFocused(false)}
               style={{ flex: 1, minWidth: 0 }}
-            >
-              <option value="">Min Price</option>
-              {PRICE_STOPS.slice(1).map((v) => (
-                <option key={`min-${v}`} value={String(v)}>Min: {fmtPrice(v)}</option>
+            />
+            <datalist id="gd-min-presets">
+              {PRICE_PRESETS.map((v) => (
+                <option key={v} value={String(v)} />
               ))}
-            </select>
+            </datalist>
             <span style={{ color: "var(--text-tertiary)", fontSize: 14, lineHeight: 1 }}>–</span>
-            <select
+            <input
+              type="text"
+              inputMode="numeric"
+              list="gd-max-presets"
               className="filter-select"
-              value={maxPriceVal}
+              placeholder="Max Price"
+              value={maxFocused ? maxPriceRaw : displayPrice(maxVal)}
               onChange={(e) => {
-                const idx = valToIdx(e.target.value || undefined, STOP_MAX);
-                setMaxIdx(Math.max(idx, minIdx));
+                const raw = e.target.value.replace(/[^0-9]/g, "");
+                setMaxPriceRaw(raw);
               }}
+              onFocus={() => setMaxFocused(true)}
+              onBlur={() => setMaxFocused(false)}
               style={{ flex: 1, minWidth: 0 }}
-            >
-              <option value="">Max Price</option>
-              {PRICE_STOPS.slice(1).map((v) => (
-                <option key={`max-${v}`} value={String(v)}>Max: {fmtPrice(v)}</option>
+            />
+            <datalist id="gd-max-presets">
+              {PRICE_PRESETS.map((v) => (
+                <option key={v} value={String(v)} />
               ))}
-            </select>
+            </datalist>
           </div>
           <div className="price-range-track">
             <div className="track-bg" />
@@ -184,21 +229,29 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
             <input
               type="range"
               min={0}
-              max={STOP_MAX}
-              value={minIdx}
-              onChange={(e) => setMinIdx(Math.min(Number(e.target.value), maxIdx))}
+              max={SLIDER_MAX}
+              value={minSlider}
+              onChange={(e) => {
+                const step = Math.min(Number(e.target.value), maxSlider);
+                const price = sliderToPrice(step);
+                setMinPriceRaw(price > 0 ? String(price) : "");
+              }}
             />
             <input
               type="range"
               min={0}
-              max={STOP_MAX}
-              value={maxIdx}
-              onChange={(e) => setMaxIdx(Math.max(Number(e.target.value), minIdx))}
+              max={SLIDER_MAX}
+              value={maxSlider}
+              onChange={(e) => {
+                const step = Math.max(Number(e.target.value), minSlider);
+                const price = sliderToPrice(step);
+                setMaxPriceRaw(step < SLIDER_MAX ? String(price) : "");
+              }}
             />
           </div>
-          {(minIdx > 0 || maxIdx < STOP_MAX) && (
+          {(minVal > 0 || maxVal > 0) && (
             <div className="price-range-label">
-              {minIdx === 0 ? "No Min" : fmtPrice(PRICE_STOPS[minIdx])} – {maxIdx === STOP_MAX ? "No Max" : fmtPrice(PRICE_STOPS[maxIdx])}
+              {minVal > 0 ? fmtPrice(minVal) : "No Min"} – {maxVal > 0 ? fmtPrice(maxVal) : "No Max"}
             </div>
           )}
         </div>

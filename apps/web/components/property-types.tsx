@@ -1,4 +1,4 @@
-import { Building2, Home, Castle, Warehouse, Store, Mountain, Landmark, HardHat } from "lucide-react";
+import { Building2, Home, Castle, Warehouse, Store, Mountain, Landmark, HardHat, Hotel, Layers, LayoutGrid, Columns2, Building, ArrowUpDown } from "lucide-react";
 import type { ReactNode } from "react";
 
 const TYPE_DATA: Record<string, { icon: ReactNode; image: string }> = {
@@ -6,9 +6,18 @@ const TYPE_DATA: Record<string, { icon: ReactNode; image: string }> = {
   House: { icon: <Home size={20} />, image: "/legacy/assets/properties/property-villa-1.jpg" },
   Villa: { icon: <Castle size={20} />, image: "/legacy/assets/properties/property-villa-2.jpg" },
   Townhouse: { icon: <Warehouse size={20} />, image: "/legacy/assets/properties/property-townhouse-1.jpg" },
-  Commercial: { icon: <Store size={20} />, image: "/legacy/assets/properties/large_property-commercial-1.jpg" },
+  Penthouse: { icon: <ArrowUpDown size={20} />, image: "/legacy/assets/properties/property-apartment-1.jpg" },
+  Compound: { icon: <LayoutGrid size={20} />, image: "/legacy/assets/properties/property-villa-1.jpg" },
+  Duplex: { icon: <Columns2 size={20} />, image: "/legacy/assets/properties/property-townhouse-1.jpg" },
+  Bungalow: { icon: <Home size={20} />, image: "/legacy/assets/properties/property-villa-2.jpg" },
+  "Full Floor": { icon: <Layers size={20} />, image: "/legacy/assets/properties/large_property-commercial-1.jpg" },
+  "Half Floor": { icon: <Layers size={20} />, image: "/legacy/assets/properties/large_property-commercial-1.jpg" },
+  "Whole Building": { icon: <Building size={20} />, image: "/legacy/assets/properties/large_property-commercial-1.jpg" },
   Land: { icon: <Mountain size={20} />, image: "/legacy/assets/properties/property-land-1.jpg" },
+  Commercial: { icon: <Store size={20} />, image: "/legacy/assets/properties/large_property-commercial-1.jpg" },
   Office: { icon: <Landmark size={20} />, image: "/legacy/assets/properties/large_property-interior-1.jpg" },
+  "Bulk Sale Unit": { icon: <Warehouse size={20} />, image: "/legacy/assets/properties/large_property-commercial-1.jpg" },
+  "Hotel & Hotel Apartment": { icon: <Hotel size={20} />, image: "/legacy/assets/properties/large_property-interior-1.jpg" },
 };
 
 const FALLBACK = { icon: <HardHat size={20} />, image: "/legacy/assets/properties/property-villa-1.jpg" };

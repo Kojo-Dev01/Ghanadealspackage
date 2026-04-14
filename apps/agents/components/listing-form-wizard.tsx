@@ -1,8 +1,45 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useCallback, useRef, useEffect } from "react";
 import { GalleryUploader } from "./gallery-uploader";
 import { CoordinatePicker } from "./coordinate-picker";
+
+/* ── Formatted number input helper ──
+   Shows commas (e.g. "1,250,000") while storing the raw numeric string in form state.
+   Strips non-numeric chars on change (keeps one decimal point for prices). */
+function useFormattedNumber(
+  value: string,
+  onChange: (raw: string) => void,
+  opts?: { allowDecimal?: boolean },
+) {
+  const [focused, setFocused] = useState(false);
+
+  const display = focused
+    ? value
+    : value
+      ? Number(value).toLocaleString("en-GH", {
+          maximumFractionDigits: opts?.allowDecimal ? 2 : 0,
+        })
+      : "";
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      let raw = e.target.value.replace(/,/g, "");
+      if (opts?.allowDecimal) {
+        // allow digits and one decimal point
+        raw = raw.replace(/[^\d.]/g, "");
+        const parts = raw.split(".");
+        if (parts.length > 2) raw = parts[0] + "." + parts.slice(1).join("");
+      } else {
+        raw = raw.replace(/\D/g, "");
+      }
+      onChange(raw);
+    },
+    [onChange, opts?.allowDecimal],
+  );
+
+  return { display, handleChange, setFocused };
+}
 
 /* ── Types ── */
 export type ListingFormData = {
@@ -46,7 +83,9 @@ const REGIONS = [
 ];
 
 const PROPERTY_TYPES = [
-  "Apartment", "House", "Villa", "Townhouse", "Land", "Commercial", "Office",
+  "Apartment", "House", "Villa", "Townhouse", "Penthouse", "Compound",
+  "Duplex", "Bungalow", "Full Floor", "Half Floor", "Whole Building",
+  "Land", "Commercial", "Office", "Bulk Sale Unit", "Hotel & Hotel Apartment",
 ];
 
 const inputCls =
@@ -166,7 +205,7 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
         </label>
         <label className="grid gap-1 text-xs font-semibold text-muted">
           Price (GHS) *
-          <input type="number" value={data.price} onChange={(e) => set("price", e.target.value)} min={0} step="0.01" placeholder="e.g. 250000" className={inputCls} />
+          <PriceInput value={data.price} onChange={(v) => set("price", v)} placeholder="e.g. 250,000" className={inputCls} />
         </label>
         <label className="grid gap-1 text-xs font-semibold text-muted">
           Price Label <span className="font-normal opacity-60">(optional)</span>
@@ -230,7 +269,7 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
             </label>
             <label className="grid gap-1 text-xs font-semibold text-muted">
               Area (sq ft)
-              <input type="number" value={data.area} onChange={(e) => set("area", e.target.value)} min={0} step="0.01" className={inputCls} />
+              <AreaInput value={data.area} onChange={(v) => set("area", v)} placeholder="e.g. 2,500" className={inputCls} />
             </label>
             <label className="grid gap-1 text-xs font-semibold text-muted">
               Furnishing
@@ -259,6 +298,9 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
   }
 
   function renderMedia() {
+    const mainImage = data.gallery[0] ?? "";
+    const otherImages = data.gallery.slice(1);
+
     return (
       <div className="grid gap-4">
         <label className="grid gap-1 text-xs font-semibold text-muted">
@@ -272,30 +314,36 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
             className={inputCls + " resize-y"}
           />
         </label>
-        <label className="grid gap-1 text-xs font-semibold text-muted">
-          Amenities
-          <input
-            value={data.amenities}
-            onChange={(e) => set("amenities", e.target.value)}
-            maxLength={1000}
-            placeholder="Swimming Pool, Gym, Security, Garden (comma-separated)"
-            className={inputCls}
-          />
-          <span className="text-[10px] text-muted/60">Separate amenities with commas</span>
-        </label>
-        <GalleryUploader
-          value={data.gallery}
-          onChange={(urls) => set("gallery", urls)}
-          max={10}
-          label="Property Photos"
-          hint="First photo will be the main image shown in search results. You can upload up to 10 photos."
+
+        {/* Amenities multi-select */}
+        <AmenitiesPicker
+          value={data.amenities}
+          onChange={(v) => set("amenities", v)}
+          inputCls={inputCls}
         />
+
+        {/* Main Image */}
         <GalleryUploader
-          value={data.floorPlans}
-          onChange={(urls) => set("floorPlans", urls)}
-          max={5}
-          label="Floor Plans"
-          hint="Upload floor plan images (optional). Up to 5 floor plans."
+          value={mainImage ? [mainImage] : []}
+          onChange={(urls) => {
+            const next = urls.length > 0 ? [urls[0], ...otherImages] : [...otherImages];
+            set("gallery", next);
+          }}
+          max={1}
+          label="Main Image"
+          hint="This photo will be shown as the cover in search results."
+        />
+
+        {/* Additional Gallery */}
+        <GalleryUploader
+          value={otherImages}
+          onChange={(urls) => {
+            const next = mainImage ? [mainImage, ...urls] : [...urls];
+            set("gallery", next);
+          }}
+          max={9}
+          label="Gallery Photos"
+          hint="Upload additional property photos. Up to 9 more images."
         />
       </div>
     );
@@ -364,18 +412,6 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
                   {i === 0 && <span className="absolute top-0.5 left-0.5 bg-accent text-white text-[8px] font-bold px-1 rounded">Main</span>}
                 </div>
               ))}
-            </div>
-          )}
-          {data.floorPlans.length > 0 && (
-            <div>
-              <p className="text-[10px] text-muted mb-1">{data.floorPlans.length} floor plan{data.floorPlans.length !== 1 ? "s" : ""}</p>
-              <div className="flex flex-wrap gap-2">
-                {data.floorPlans.map((url, i) => (
-                  <div key={url} className="rounded-lg overflow-hidden border border-border w-20 h-14">
-                    <img src={url} alt={`Floor plan ${i + 1}`} className="w-full h-full object-cover" />
-                  </div>
-                ))}
-              </div>
             </div>
           )}
         </div>
@@ -466,6 +502,195 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
           Step {step + 1} of {STEPS.length}
         </span>
       </div>
+    </div>
+  );
+}
+
+/* ── Formatted number sub-components ── */
+
+function PriceInput({ value, onChange, placeholder, className }: { value: string; onChange: (v: string) => void; placeholder?: string; className?: string }) {
+  const { display, handleChange, setFocused } = useFormattedNumber(value, onChange, { allowDecimal: true });
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={display}
+      onChange={handleChange}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      placeholder={placeholder}
+      className={className}
+    />
+  );
+}
+
+function AreaInput({ value, onChange, placeholder, className }: { value: string; onChange: (v: string) => void; placeholder?: string; className?: string }) {
+  const { display, handleChange, setFocused } = useFormattedNumber(value, onChange, { allowDecimal: true });
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={display}
+      onChange={handleChange}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      placeholder={placeholder}
+      className={className}
+    />
+  );
+}
+
+/* ── Amenities picker with search ── */
+
+const COMMON_AMENITIES = [
+  // General
+  "Swimming Pool", "Shared Pool", "Private Pool", "Children's Pool",
+  "Gym / Fitness Center", "Shared Gym", "Private Gym",
+  "Security", "Garden", "Private Garden", "Balcony", "Terrace", "Rooftop",
+  "Central A/C", "Air Conditioning", "Generator / Backup Power", "Borehole / Water Tank",
+  "Gated Community", "CCTV / Surveillance", "Intercom", "Elevator / Lift",
+  "WiFi / Internet", "Cable TV", "Laundry Room", "Storage Room", "Study",
+  // Staff & Service
+  "Maids Room", "Maid Service", "Boys Quarters (BQ)", "Staff Quarters", "Servant Quarters",
+  "Concierge Service",
+  // Parking
+  "Parking", "Covered Parking", "Garage", "Car Port",
+  // Leisure
+  "Playground", "Children's Play Area", "Tennis Court", "Basketball Court",
+  "Clubhouse", "Spa / Sauna", "Shared Spa", "Jacuzzi", "Private Jacuzzi",
+  "Barbecue Area", "Fireplace",
+  // Interior
+  "Walk-in Closet", "Built in Wardrobes", "Built in Kitchen Appliances", "Fitted Kitchen",
+  "Smart Home System", "Ensuite Bathrooms", "Guest Toilet", "Dining Area",
+  // Exterior & Views
+  "View of Water", "View of Landmark", "Solar Panels",
+  "Fully Tiled", "POP Ceiling", "Marble Flooring", "Granite Countertops",
+  "Paved Compound", "Fence / Wall",
+  // Other
+  "Wheelchair Accessible", "Pets Allowed", "Pet Friendly",
+];
+
+function AmenitiesPicker({
+  value,
+  onChange,
+  inputCls,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  inputCls: string;
+}) {
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const selected = value
+    .split(",")
+    .map((a) => a.trim())
+    .filter(Boolean);
+
+  const filtered = COMMON_AMENITIES.filter(
+    (a) =>
+      a.toLowerCase().includes(search.toLowerCase()) &&
+      !selected.includes(a),
+  );
+
+  function toggle(amenity: string) {
+    if (selected.includes(amenity)) {
+      onChange(selected.filter((a) => a !== amenity).join(", "));
+    } else {
+      onChange([...selected, amenity].join(", "));
+    }
+  }
+
+  function addCustom() {
+    const trimmed = search.trim();
+    if (!trimmed || selected.includes(trimmed)) return;
+    onChange([...selected, trimmed].join(", "));
+    setSearch("");
+  }
+
+  return (
+    <div className="grid gap-1.5" ref={wrapperRef}>
+      <span className="text-xs font-semibold text-muted">Amenities & Features</span>
+
+      {/* Selected chips */}
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.map((a) => (
+            <button
+              key={a}
+              type="button"
+              onClick={() => toggle(a)}
+              className="inline-flex items-center gap-1 bg-accent/10 text-accent text-[11px] font-medium px-2.5 py-1 rounded-full hover:bg-accent/20 transition-colors cursor-pointer"
+            >
+              {a}
+              <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Search input */}
+      <div className="relative">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") { e.preventDefault(); addCustom(); }
+          }}
+          placeholder={selected.length > 0 ? "Search or type to add more…" : "Search amenities…"}
+          className={inputCls + " w-full"}
+        />
+        {search.trim() && !COMMON_AMENITIES.some((a) => a.toLowerCase() === search.trim().toLowerCase()) && (
+          <button
+            type="button"
+            onClick={addCustom}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-accent text-white text-[10px] font-bold px-2 py-1 rounded cursor-pointer hover:bg-accent-hover transition-colors"
+          >
+            + Add
+          </button>
+        )}
+      </div>
+
+      {/* Dropdown */}
+      {open && filtered.length > 0 && (
+        <div
+          className="border border-border rounded-lg bg-panel shadow-lg max-h-48 overflow-y-auto"
+        >
+          {filtered.map((a) => (
+            <button
+              key={a}
+              type="button"
+              onClick={() => { toggle(a); setSearch(""); }}
+              className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-panel-alt transition-colors cursor-pointer flex items-center gap-2"
+            >
+              <span className="w-4 h-4 rounded border border-border flex items-center justify-center shrink-0">
+                {selected.includes(a) && (
+                  <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                )}
+              </span>
+              {a}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <span className="text-[10px] text-muted/60">
+        {selected.length} selected · Search the list or type a custom amenity and press Enter
+      </span>
     </div>
   );
 }
