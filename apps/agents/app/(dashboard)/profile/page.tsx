@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AgentShell } from "@/components/agent-shell";
 import { ProfileAvatarField } from "@/components/profile-avatar-field";
+import { FormButton } from "@/components/form-button";
 import { fetchAgentProfile, updateAgentProfile } from "@/lib/api";
 
 type ProfilePageProps = {
@@ -151,12 +152,13 @@ export default async function AgentProfilePage({
             />
           </label>
 
-          <button
+          <FormButton
             type="submit"
+            pendingText="Saving…"
             className="justify-self-start bg-accent text-white py-2.5 px-5 rounded-lg text-sm font-bold hover:bg-accent-hover transition-colors cursor-pointer"
           >
             Save Changes
-          </button>
+          </FormButton>
         </form>
       </section>
     </AgentShell>

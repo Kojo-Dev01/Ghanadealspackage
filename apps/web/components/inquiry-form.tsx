@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { startConversation } from "../lib/api";
+import { startConversation, sendMessage } from "../lib/api";
 import { useAuth } from "./auth-provider";
 
 type Props = {
@@ -11,7 +10,6 @@ type Props = {
 
 export function InquiryForm({ propertyId }: Props) {
   const { user } = useAuth();
-  const router = useRouter();
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [feedback, setFeedback] = useState("");
@@ -29,14 +27,13 @@ export function InquiryForm({ propertyId }: Props) {
     setStatus("loading");
     setFeedback("");
 
-    const result = await startConversation(propertyId, "", message);
+    const result = await startConversation(propertyId, "", "");
     if (result) {
+      // Send as a property_ref message so the property is tagged with the caption
+      await sendMessage(result.conversationId, message.trim(), "property_ref", { propertyRefId: propertyId });
       setStatus("success");
-      setFeedback("Message sent! Redirecting to chat...");
+      setFeedback("Message sent! The seller will be notified.");
       setMessage("");
-      setTimeout(() => {
-        router.push(`/account/messages/${result.conversationId}`);
-      }, 1000);
     } else {
       setStatus("error");
       setFeedback("Failed to send message. Please try again.");
@@ -49,7 +46,7 @@ export function InquiryForm({ propertyId }: Props) {
         Send a Message
       </h4>
       <p style={{ margin: 0, fontSize: 13, color: "var(--text-secondary, #64748b)" }}>
-        Chat directly with the seller about this property.
+        Send a message and continue searching.
       </p>
 
       <textarea

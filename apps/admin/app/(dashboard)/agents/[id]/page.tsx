@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { AdminShell } from "@/components/admin-shell";
+import { FormButton } from "@/components/form-button";
 import {
   fetchAdminAgentById,
   verifyAgent,
@@ -195,12 +196,13 @@ export default async function AdminAgentDetailPage({
               {canReview && (
                 <div className="flex items-center gap-2">
                   <form action={approveAction}>
-                    <button
+                    <FormButton
                       type="submit"
+                      pendingText="Approving…"
                       className="inline-flex items-center gap-1.5 bg-green-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-green-700 transition-colors cursor-pointer"
                     >
                       <CheckCircle2 size={16} /> Approve
-                    </button>
+                    </FormButton>
                   </form>
                   <form
                     action={rejectAction}
@@ -212,12 +214,13 @@ export default async function AdminAgentDetailPage({
                       placeholder="Rejection reason…"
                       className="border border-border rounded-lg bg-white px-3 py-2 text-sm text-foreground focus:outline-none focus:border-red-400 transition-colors w-48"
                     />
-                    <button
+                    <FormButton
                       type="submit"
+                      pendingText="Rejecting…"
                       className="inline-flex items-center gap-1.5 bg-red-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-red-700 transition-colors cursor-pointer"
                     >
                       <XCircle size={16} /> Reject
-                    </button>
+                    </FormButton>
                   </form>
                 </div>
               )}

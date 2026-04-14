@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { AgentShell } from "@/components/agent-shell";
 import { ListingFormWizard } from "@/components/listing-form-wizard";
+import { FormButton } from "@/components/form-button";
 import { fetchListingById, updateListing, deleteListing } from "@/lib/api";
 import Link from "next/link";
 
@@ -140,12 +141,13 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
           Permanently delete this listing. This action cannot be undone.
         </p>
         <form action={handleDelete}>
-          <button
+          <FormButton
             type="submit"
+            pendingText="Deleting…"
             className="bg-red-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors cursor-pointer"
           >
             Delete Listing
-          </button>
+          </FormButton>
         </form>
       </section>
     </AgentShell>

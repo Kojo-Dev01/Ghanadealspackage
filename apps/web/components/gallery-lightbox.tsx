@@ -8,6 +8,21 @@ type GalleryLightboxProps = {
   alt: string;
 };
 
+/** Image that stays invisible until loaded, revealing over a shimmer parent */
+function GalleryImage(props: React.ComponentProps<typeof Image>) {
+  const [loaded, setLoaded] = useState(false);
+  const { style, ...rest } = props;
+
+  return (
+    <Image
+      {...rest}
+      loading="eager"
+      style={{ ...style, opacity: loaded ? 1 : 0, transition: "opacity 0.3s ease" }}
+      onLoadingComplete={() => setLoaded(true)}
+    />
+  );
+}
+
 export function GalleryLightbox({ images, alt }: GalleryLightboxProps) {
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
@@ -36,16 +51,16 @@ export function GalleryLightbox({ images, alt }: GalleryLightboxProps) {
     <>
       {/* Gallery grid */}
       <div className="gallery-grid" style={{ marginTop: 20, cursor: "pointer" }}>
-        <div className="gallery-main" onClick={() => openAt(0)}>
-          <Image src={images[0]} alt={alt} width={1200} height={700} />
+        <div className="gallery-main gd-shimmer-bg" onClick={() => openAt(0)}>
+          <GalleryImage src={images[0]} alt={alt} width={1200} height={700} unoptimized />
           <div className="card-photo-count" style={{ position: "absolute", bottom: 12, left: 12 }}>{images.length} Photos</div>
         </div>
         <div className="gallery-side">
-          <div className="gallery-side-img" onClick={() => openAt(1)}>
-            <Image src={images[1] ?? images[0]} alt="Interior" width={500} height={320} />
+          <div className="gallery-side-img gd-shimmer-bg" onClick={() => openAt(1)}>
+            <GalleryImage src={images[1] ?? images[0]} alt="Interior" width={500} height={320} unoptimized />
           </div>
-          <div className="gallery-side-img" style={{ position: "relative" }} onClick={() => openAt(2)}>
-            <Image src={images[2] ?? images[0]} alt="View" width={500} height={320} />
+          <div className="gallery-side-img gd-shimmer-bg" style={{ position: "relative" }} onClick={() => openAt(2)}>
+            <GalleryImage src={images[2] ?? images[0]} alt="View" width={500} height={320} unoptimized />
             {images.length > 3 && (
               <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 20, fontWeight: 700, borderRadius: "inherit" }}>
                 +{images.length - 3} more
@@ -59,8 +74,8 @@ export function GalleryLightbox({ images, alt }: GalleryLightboxProps) {
       {images.length > 3 && (
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, marginTop: 12 }}>
           {images.map((src, i) => (
-            <div key={i} onClick={() => openAt(i)} style={{ flexShrink: 0, width: 140, height: 95, borderRadius: 8, overflow: "hidden", border: "2px solid var(--border, #eee)", cursor: "pointer" }}>
-              <Image src={src} alt={`Photo ${i + 1}`} width={140} height={95} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <div key={i} onClick={() => openAt(i)} className="gd-shimmer-bg" style={{ flexShrink: 0, width: 140, height: 95, borderRadius: 8, overflow: "hidden", border: "2px solid var(--border, #eee)", cursor: "pointer" }}>
+              <GalleryImage src={src} alt={`Photo ${i + 1}`} width={140} height={95} style={{ width: "100%", height: "100%", objectFit: "cover" }} unoptimized />
             </div>
           ))}
         </div>
@@ -95,6 +110,7 @@ export function GalleryLightbox({ images, alt }: GalleryLightboxProps) {
               height={900}
               style={{ maxWidth: "90vw", maxHeight: "80vh", objectFit: "contain", borderRadius: 8 }}
               priority
+              unoptimized
             />
           </div>
 
@@ -134,7 +150,7 @@ export function GalleryLightbox({ images, alt }: GalleryLightboxProps) {
                   transition: "opacity 0.2s, border-color 0.2s",
                 }}
               >
-                <Image src={src} alt={`Thumb ${i + 1}`} width={72} height={52} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <Image src={src} alt={`Thumb ${i + 1}`} width={72} height={52} style={{ width: "100%", height: "100%", objectFit: "cover" }} unoptimized />
               </div>
             ))}
           </div>

@@ -22,9 +22,10 @@ export function PropertyMessageButton({ propertyId }: Props) {
 
     setStatus("loading");
 
-    const result = await startConversation(propertyId, "", "Hi, I'm interested in this property.");
+    const result = await startConversation(propertyId, "", "");
     if (result) {
-      router.push(`/account/messages/${result.conversationId}`);
+      const draft = encodeURIComponent("Hi, I'm interested in this property.");
+      router.push(`/account/messages/${result.conversationId}?draft=${draft}&autoTag=1`);
     } else {
       setStatus("idle");
     }

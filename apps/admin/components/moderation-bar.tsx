@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import {
   CheckCircle2,
   AlertTriangle,
@@ -9,6 +9,7 @@ import {
   XCircle,
   Trash2,
 } from "lucide-react";
+import { FormButton } from "@/components/form-button";
 
 type Props = {
   listingId: string;
@@ -72,6 +73,7 @@ export function ModerationBar({
 }: Props) {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [reason, setReason] = useState(moderationReason ?? "");
+  const [pending, startTransition] = useTransition();
 
   const s = statusMeta[status] ?? statusMeta.pending;
   const t = typeMeta[listingType] ?? typeMeta.sale;
@@ -81,7 +83,7 @@ export function ModerationBar({
     fd.set("listingId", listingId);
     fd.set("moderationStatus", nextStatus);
     if (extraReason) fd.set("reason", extraReason);
-    moderateAction(fd);
+    startTransition(() => { moderateAction(fd); });
   };
 
   const handleReject = () => {
@@ -165,7 +167,7 @@ export function ModerationBar({
 
             {/* Featured toggle */}
             <form action={toggleFeaturedAction} style={{ display: "inline" }}>
-              <button
+              <FormButton
                 type="submit"
                 style={{
                   display: "inline-flex",
@@ -184,7 +186,7 @@ export function ModerationBar({
               >
                 <Star size={12} fill={featured ? "currentColor" : "none"} />
                 {featured ? "Unfeature" : "Feature"}
-              </button>
+              </FormButton>
             </form>
 
             {moderatedAt && (
@@ -199,6 +201,7 @@ export function ModerationBar({
             {status !== "approved" && (
               <button
                 type="button"
+                disabled={pending}
                 onClick={() => submit("approved")}
                 style={{
                   display: "inline-flex",
@@ -213,15 +216,17 @@ export function ModerationBar({
                   background: "#16a34a",
                   color: "#fff",
                   transition: "opacity 0.15s",
+                  opacity: pending ? 0.5 : 1,
                 }}
               >
-                <CheckCircle2 size={14} /> Approve
+                <CheckCircle2 size={14} /> {pending ? "Approving…" : "Approve"}
               </button>
             )}
 
             {status !== "flagged" && (
               <button
                 type="button"
+                disabled={pending}
                 onClick={() => setShowRejectModal(true)}
                 style={{
                   display: "inline-flex",
@@ -236,6 +241,7 @@ export function ModerationBar({
                   background: "#fff",
                   color: "#dc2626",
                   transition: "all 0.15s",
+                  opacity: pending ? 0.5 : 1,
                 }}
               >
                 <XCircle size={14} /> Reject
@@ -245,6 +251,7 @@ export function ModerationBar({
             {status !== "pending" && (
               <button
                 type="button"
+                disabled={pending}
                 onClick={() => submit("pending")}
                 style={{
                   display: "inline-flex",
@@ -259,9 +266,10 @@ export function ModerationBar({
                   background: "transparent",
                   color: "var(--color-foreground)",
                   transition: "all 0.15s",
+                  opacity: pending ? 0.5 : 1,
                 }}
               >
-                <Clock size={14} /> Set Pending
+                <Clock size={14} /> {pending ? "Updating…" : "Set Pending"}
               </button>
             )}
 
@@ -273,8 +281,9 @@ export function ModerationBar({
                 }}
                 style={{ display: "inline" }}
               >
-                <button
+                <FormButton
                   type="submit"
+                  pendingText="Deleting…"
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
@@ -291,7 +300,7 @@ export function ModerationBar({
                   }}
                 >
                   <Trash2 size={14} /> Delete
-                </button>
+                </FormButton>
               </form>
             )}
           </div>
@@ -418,6 +427,7 @@ export function ModerationBar({
               </button>
               <button
                 type="button"
+                disabled={pending}
                 onClick={handleReject}
                 style={{
                   padding: "7px 16px",
@@ -428,9 +438,10 @@ export function ModerationBar({
                   border: "none",
                   background: "#dc2626",
                   color: "#fff",
+                  opacity: pending ? 0.5 : 1,
                 }}
               >
-                Reject
+                {pending ? "Rejecting…" : "Reject"}
               </button>
             </div>
           </div>

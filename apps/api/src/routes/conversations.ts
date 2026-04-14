@@ -9,7 +9,7 @@ import { sendToUser } from "../plugins/websocket.js";
 const createConversationSchema = z.object({
   propertyId: z.string().uuid().optional(),
   sellerId: z.string().uuid().optional(),
-  message: z.string().min(1).max(5000).transform((s) => s.trim()),
+  message: z.string().max(5000).transform((s) => s.trim()).optional().default(""),
 });
 
 const sendMessageSchema = z.object({
@@ -137,48 +137,52 @@ export async function registerConversationRoutes(app: FastifyInstance) {
       }
     }
 
-    // Insert the first message
-    const { data: msg, error: msgErr } = await (supabase as any)
-      .from("messages")
-      .insert({
-        conversation_id: convo.id,
-        sender_id: userId,
-        content: message,
-        message_type: "text",
-      })
-      .select("id, content, message_type, sender_id, created_at")
-      .single();
+    // Only insert a message if one was provided
+    if (message) {
+      const { data: msg, error: msgErr } = await (supabase as any)
+        .from("messages")
+        .insert({
+          conversation_id: convo.id,
+          sender_id: userId,
+          content: message,
+          message_type: "text",
+        })
+        .select("id, content, message_type, sender_id, created_at")
+        .single();
 
-    if (msgErr) {
-      app.log.error(msgErr, "Failed to send message");
-      return reply.code(500).send({ message: "Failed to send message" });
+      if (msgErr) {
+        app.log.error(msgErr, "Failed to send message");
+        return reply.code(500).send({ message: "Failed to send message" });
+      }
+
+      // Update last_message_at
+      await (supabase as any)
+        .from("conversations")
+        .update({ last_message_at: msg.created_at })
+        .eq("id", convo.id);
+
+      // Real-time push to seller
+      sendToUser(sellerId, {
+        type: "new_message",
+        conversationId: convo.id,
+        message: msg,
+      });
+
+      // Notification for seller
+      createNotification({
+        userId: sellerId,
+        type: "message_received",
+        title: "New Message",
+        body: propertyId
+          ? `New message about "${propertyTitle}"`
+          : `New direct message`,
+        data: { conversationId: convo.id, ...(propertyId ? { propertyId } : {}) },
+      }).catch((err) => app.log.error(err, "Failed to create message notification"));
+
+      return reply.code(201).send({ conversationId: convo.id, message: msg });
     }
 
-    // Update last_message_at
-    await (supabase as any)
-      .from("conversations")
-      .update({ last_message_at: msg.created_at })
-      .eq("id", convo.id);
-
-    // Real-time push to seller
-    sendToUser(sellerId, {
-      type: "new_message",
-      conversationId: convo.id,
-      message: msg,
-    });
-
-    // Notification for seller
-    createNotification({
-      userId: sellerId,
-      type: "message_received",
-      title: "New Message",
-      body: propertyId
-        ? `New message about "${propertyTitle}"`
-        : `New direct message`,
-      data: { conversationId: convo.id, ...(propertyId ? { propertyId } : {}) },
-    }).catch((err) => app.log.error(err, "Failed to create message notification"));
-
-    return reply.code(201).send({ conversationId: convo.id, message: msg });
+    return reply.code(201).send({ conversationId: convo.id, message: null });
   });
 
   /* ───────────────────────────────────────────

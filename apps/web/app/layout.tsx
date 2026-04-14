@@ -4,7 +4,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "GhanaDeals",
-  description: "Ghana's Premier Property Marketplace"
+  description: "Ghana's Premier Property Marketplace",
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

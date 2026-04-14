@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "../../components/auth-provider";
+import { BrandedLoader } from "../../components/branded-loader";
 import { fetchSavedProperties, fetchNotifications, type SavedPropertyItem, type NotificationItem } from "../../lib/api";
 
 export default function AccountDashboardPage() {
@@ -30,12 +31,7 @@ export default function AccountDashboardPage() {
   }, [user]);
 
   if (fetching) {
-    return (
-      <div style={{ textAlign: "center", padding: "80px 0" }}>
-        <div style={{ display: "inline-block", width: 32, height: 32, border: "3px solid var(--border-primary)", borderTopColor: "var(--red)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
+    return <BrandedLoader />;
   }
 
   const greeting = (() => {

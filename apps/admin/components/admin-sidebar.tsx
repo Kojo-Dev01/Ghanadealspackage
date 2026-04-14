@@ -15,12 +15,14 @@ import {
   LogOut,
   ExternalLink,
   ShieldCheck,
+  Monitor,
 } from "lucide-react";
+import { FormButton } from "@/components/form-button";
 import type { Permission } from "@/lib/permissions-shared";
 
 type AdminRole = "super_admin" | "moderator" | "customer_service";
 
-type NavKey = "overview" | "listings" | "agents" | "users" | "inquiries" | "metrics" | "settings" | "team";
+type NavKey = "overview" | "listings" | "agents" | "users" | "inquiries" | "metrics" | "settings" | "team" | "system";
 
 const ROLE_PERMISSIONS: Record<AdminRole, ReadonlySet<Permission>> = {
   super_admin: new Set<Permission>([
@@ -46,7 +48,8 @@ const NAV_PERMISSION: Record<NavKey, Permission | null> = {
   inquiries: "inquiries.read",
   metrics: "metrics.read",
   team: "admin_users.read",
-  settings: "settings.read",
+  settings: null,
+  system: "settings.read",
 };
 
 const navItems: Array<
@@ -60,6 +63,7 @@ const navItems: Array<
   { key: "inquiries", label: "Inquiries", href: "/inquiries", icon: <MessageSquare size={18} /> },
   { key: "metrics", label: "Metrics", href: "/metrics", icon: <BarChart3 size={18} /> },
   { key: "team", label: "Team", href: "/team", icon: <ShieldCheck size={18} /> },
+  { key: "system", label: "System", href: "/system", icon: <Monitor size={18} /> },
   { key: "settings", label: "Settings", href: "/settings", icon: <Settings size={18} /> },
 ];
 
@@ -70,6 +74,7 @@ function getActiveNav(pathname: string): NavKey {
   if (pathname.startsWith("/inquiries")) return "inquiries";
   if (pathname.startsWith("/metrics")) return "metrics";
   if (pathname.startsWith("/team")) return "team";
+  if (pathname.startsWith("/system")) return "system";
   if (pathname.startsWith("/settings")) return "settings";
   return "overview";
 }
@@ -151,13 +156,14 @@ export function AdminSidebar({
           Public site
         </a>
         <form action={logoutAction}>
-          <button
+          <FormButton
             type="submit"
+            pendingText="Signing out…"
             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm hover:bg-white/5 hover:text-sidebar-active transition-colors w-full cursor-pointer"
           >
             <LogOut size={18} />
             Sign out
-          </button>
+          </FormButton>
         </form>
       </div>
     </aside>

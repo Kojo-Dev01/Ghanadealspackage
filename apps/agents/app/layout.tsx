@@ -17,6 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "GhanaDeals Seller Dashboard",
   description: "Manage your property listings, inquiries, and profile",
+  manifest: "/manifest.webmanifest",
 };
 
 export const viewport: Viewport = {

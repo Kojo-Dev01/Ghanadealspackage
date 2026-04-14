@@ -20,3 +20,14 @@ body {
 a {
   text-decoration: none;
 }
+
+/* Shimmer skeleton background for image placeholders */
+.gd-shimmer-bg {
+  background: linear-gradient(90deg, #f0f0f0 25%, #f7f7f7 50%, #f0f0f0 75%);
+  background-size: 400% 100%;
+  animation: gdShimmer 2.4s ease-in-out infinite;
+}
+@keyframes gdShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

@@ -16,7 +16,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
 
   return (
     <article className="property-card-v">
-      <div className="card-img">
+      <div className="card-img gd-shimmer-bg">
         <Link href={`/property/${property.id}`}>
           <Image src={property.image} alt={property.title} width={640} height={420} unoptimized />
         </Link>

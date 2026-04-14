@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
+import { FormButton } from "@/components/form-button";
 import {
   fetchAdminInquiries,
   updateInquiryStatus,
@@ -222,7 +223,7 @@ export default async function AdminInquiriesPage({
                   value={String(page)}
                 />
                 {statusOptions.map((option) => (
-                  <button
+                  <FormButton
                     key={option}
                     name="nextStatus"
                     type="submit"
@@ -241,7 +242,7 @@ export default async function AdminInquiriesPage({
                     }`}
                   >
                     {option}
-                  </button>
+                  </FormButton>
                 ))}
               </form>
             </div>

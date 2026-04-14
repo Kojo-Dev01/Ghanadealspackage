@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "GhanaDeals Admin",
   description: "Marketplace administration dashboard for GhanaDeals.",
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({

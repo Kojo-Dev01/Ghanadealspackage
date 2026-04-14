@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { MapPin, Bed, Bath, Ruler, User, Trash2 } from "lucide-react";
+import { FormButton } from "@/components/form-button";
 import type { AdminListing } from "@/lib/api";
 
 const WEB_URL = process.env.NEXT_PUBLIC_WEB_URL ?? "http://localhost:3000";
@@ -140,17 +141,18 @@ export function AdminListingCard({
               <input type="hidden" name="currentQuery" value={query} />
               <input type="hidden" name="currentPage" value={String(page)} />
               <input type="hidden" name="currentType" value={currentType} />
-              <button
+              <FormButton
                 name="moderationStatus"
                 type="submit"
                 value="approved"
+                pendingText="Approving…"
                 className="px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all"
                 style={{ background: '#dcfce7', color: '#166534' }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = '#16a34a'; e.currentTarget.style.color = '#fff'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = '#dcfce7'; e.currentTarget.style.color = '#166534'; }}
               >
                 Approve
-              </button>
+              </FormButton>
             </form>
           )}
           {listing.moderationStatus !== "flagged" && (
@@ -172,15 +174,16 @@ export function AdminListingCard({
             <input type="hidden" name="currentQuery" value={query} />
             <input type="hidden" name="currentPage" value={String(page)} />
             <input type="hidden" name="currentType" value={currentType} />
-            <button
+            <FormButton
               type="submit"
+              pendingText="Deleting…"
               className="px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all flex items-center gap-1"
               style={{ background: '#fce4ec', color: '#7f1d1d' }}
               onMouseEnter={(e) => { e.currentTarget.style.background = '#991b1b'; e.currentTarget.style.color = '#fff'; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = '#fce4ec'; e.currentTarget.style.color = '#7f1d1d'; }}
             >
               <Trash2 size={12} /> Delete
-            </button>
+            </FormButton>
           </form>
         </div>
       </div>

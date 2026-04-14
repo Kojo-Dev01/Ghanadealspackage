@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { z } from "zod";
-import { getSupabaseAdminClient } from "../lib/supabase.js";
+import { getSupabaseAdminClient, getSupabaseServerClient } from "../lib/supabase.js";
 import type { ModerationStatus } from "./properties.js";
 import { notifyAgentListingApproved, notifyAgentListingFlagged, notifyAgentVerificationApproved, notifyAgentVerificationRejected } from "../lib/email.js";
 import { hasPermission, ADMIN_ROLES, type AdminRole, type Permission } from "../lib/permissions.js";
@@ -904,6 +904,72 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     if (error || !data) return reply.code(404).send({ message: "Admin user not found" });
 
     return { user: data };
+  });
+
+  // ---- Update own profile ----
+  const updateMeSchema = z.object({
+    name: z.string().min(1).max(100).optional(),
+    currentPassword: z.string().min(1).optional(),
+    newPassword: z.string().min(6).max(128).optional(),
+  }).refine(
+    (d) => !d.newPassword || d.currentPassword,
+    { message: "Current password is required to set a new password", path: ["currentPassword"] },
+  );
+
+  app.put("/me", async (request, reply) => {
+    const userId = (request.user as { sub?: string }).sub;
+    const supabase = getSupabaseAdminClient();
+    const supabaseClient = getSupabaseServerClient();
+    if (!supabase || !supabaseClient || !userId) {
+      return reply.code(503).send({ message: "Database not configured" });
+    }
+
+    const parsed = updateMeSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ message: parsed.error.issues[0]?.message ?? "Invalid data" });
+    }
+
+    const { name, currentPassword, newPassword } = parsed.data;
+
+    // Update name in admin_users table
+    if (name) {
+      const { error } = await (supabase.from("admin_users") as any)
+        .update({ name, updated_at: new Date().toISOString() })
+        .eq("user_id", userId);
+      if (error) return reply.code(500).send({ message: "Failed to update name" });
+    }
+
+    // Update password via Supabase Auth
+    if (newPassword && currentPassword) {
+      // Verify current password first by fetching user email
+      const { data: adminRow } = await supabase
+        .from("admin_users")
+        .select("email")
+        .eq("user_id", userId)
+        .single();
+
+      if (!adminRow) return reply.code(404).send({ message: "Admin user not found" });
+
+      const { error: signInErr } = await supabaseClient.auth.signInWithPassword({
+        email: (adminRow as { email: string }).email,
+        password: currentPassword,
+      });
+      if (signInErr) return reply.code(403).send({ message: "Current password is incorrect" });
+
+      const { error: updateErr } = await supabase.auth.admin.updateUserById(userId, {
+        password: newPassword,
+      });
+      if (updateErr) return reply.code(500).send({ message: "Failed to update password" });
+    }
+
+    // Return updated user
+    const { data: updated } = await supabase
+      .from("admin_users")
+      .select("id, email, name, role, active")
+      .eq("user_id", userId)
+      .single();
+
+    return { user: updated, message: "Profile updated" };
   });
 
   // ---- Admin team management ----

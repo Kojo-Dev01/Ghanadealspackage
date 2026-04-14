@@ -813,7 +813,8 @@ export async function startConversation(
   message: string
 ): Promise<{ conversationId: string } | null> {
   try {
-    const payload: Record<string, string> = { message };
+    const payload: Record<string, string> = {};
+    if (message) payload.message = message;
     if (propertyId) payload.propertyId = propertyId;
     if (sellerId) payload.sellerId = sellerId;
     const res = await authFetch("/conversations", {

@@ -25,9 +25,10 @@ export function MessageSellerButton({ sellerId, sellerName }: Props) {
 
     setStatus("loading");
 
-    const result = await startConversation("", sellerId, `Hi ${sellerName}, I'd like to get in touch with you.`);
+    const result = await startConversation("", sellerId, "");
     if (result) {
-      router.push(`/account/messages/${result.conversationId}`);
+      const draft = encodeURIComponent(`Hi ${sellerName}, I'd like to get in touch with you.`);
+      router.push(`/account/messages/${result.conversationId}?draft=${draft}`);
     } else {
       setStatus("idle");
     }

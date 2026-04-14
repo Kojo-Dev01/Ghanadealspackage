@@ -508,6 +508,21 @@ export async function fetchAdminMe(): Promise<AdminMe | null> {
   return payload.user;
 }
 
+export async function updateAdminMe(
+  body: { name?: string; currentPassword?: string; newPassword?: string }
+): Promise<{ ok: true; user: AdminMe } | { ok: false; message: string }> {
+  const token = await getToken();
+  const res = await apiFetch("/v1/admin/me", token, {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res) return { ok: false, message: "Network error" };
+  const payload = await res.json() as any;
+  if (!res.ok) return { ok: false, message: payload.message ?? "Update failed" };
+  return { ok: true, user: payload.user };
+}
+
 export async function fetchAdminTeam(): Promise<AdminTeamMember[] | null> {
   const token = await getToken();
   const res = await apiFetch("/v1/admin/team", token);

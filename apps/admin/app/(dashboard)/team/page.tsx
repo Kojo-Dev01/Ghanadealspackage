@@ -1,4 +1,5 @@
 import { AdminShell } from "@/components/admin-shell";
+import { FormButton } from "@/components/form-button";
 import { fetchAdminTeam, fetchAdminMe, createAdminTeamMember, toggleAdminTeamMemberActive, updateAdminTeamMember } from "@/lib/api";
 import type { AdminRole } from "@/lib/api";
 import { redirect } from "next/navigation";
@@ -153,13 +154,13 @@ export default async function TeamPage({
                       <option value="moderator">Moderator</option>
                       <option value="customer_service">Customer Service</option>
                     </select>
-                    <button
+                    <FormButton
                       type="submit"
                       className="p-1 rounded hover:bg-accent/10 text-accent transition-colors cursor-pointer"
                       title="Update role"
                     >
                       <Pencil size={14} />
-                    </button>
+                    </FormButton>
                   </form>
                 ) : (
                   <span
@@ -181,7 +182,7 @@ export default async function TeamPage({
               {canDeactivate && member.id !== me.id && (
                 <form action={toggleActiveAction}>
                   <input type="hidden" name="id" value={member.id} />
-                  <button
+                  <FormButton
                     type="submit"
                     className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors cursor-pointer ${
                       member.active
@@ -198,7 +199,7 @@ export default async function TeamPage({
                         <RotateCcw size={13} /> Reactivate
                       </>
                     )}
-                  </button>
+                  </FormButton>
                 </form>
               )}
             </div>
@@ -269,12 +270,13 @@ export default async function TeamPage({
             </label>
 
             <div className="sm:col-span-2">
-              <button
+              <FormButton
                 type="submit"
+                pendingText="Creating…"
                 className="bg-accent text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-accent-hover transition-colors cursor-pointer"
               >
                 Create Admin User
-              </button>
+              </FormButton>
             </div>
           </form>
         </div>

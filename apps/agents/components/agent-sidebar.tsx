@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "./theme-provider";
 import { useWs } from "./ws-provider";
+import { FormButton } from "./form-button";
 import { getToken, apiFetch } from "@/lib/client-api";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -390,13 +391,14 @@ export function AgentSidebar({
           {isDark ? "Light Mode" : "Dark Mode"}
         </button>
         <form action={logoutAction}>
-          <button
+          <FormButton
             type="submit"
+            pendingText="Signing out…"
             className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[13px] font-medium text-sidebar-text hover:bg-accent/5 hover:text-foreground transition-all cursor-pointer"
           >
             <LogOut size={18} />
             Sign out
-          </button>
+          </FormButton>
         </form>
         <a
           className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[13px] font-medium text-sidebar-text hover:bg-accent/5 hover:text-foreground transition-all mt-0.5"

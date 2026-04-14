@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "*.wasabisys.com"
+        hostname: "s3.eu-central-1.wasabisys.com"
       },
       {
         protocol: "https",

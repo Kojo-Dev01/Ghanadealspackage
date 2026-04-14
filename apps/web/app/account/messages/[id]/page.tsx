@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../../../../components/auth-provider";
 import {
@@ -151,12 +151,13 @@ function PropertyMentionPopup({
 export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const id = params.id as string;
   const { user } = useAuth();
 
   const [convo, setConvo] = useState<ConversationDetail | null>(null);
   const [convoLoading, setConvoLoading] = useState(true);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(searchParams.get("draft") ?? "");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -167,6 +168,9 @@ export default function ChatPage() {
   // Image upload state
   const [imagePreview, setImagePreview] = useState<{ file: File; url: string } | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // Tagged property state (for sending property_ref with caption)
+  const [taggedProperty, setTaggedProperty] = useState<SellerProp | null>(null);
 
   // @ mention state
   const [showMentions, setShowMentions] = useState(false);
@@ -186,8 +190,20 @@ export default function ChatPage() {
       if (!data) { router.push("/account/messages"); return; }
       setConvo(data);
       setConvoLoading(false);
+
+      // Auto-tag property if autoTag param is set and conversation has a property
+      if (searchParams.get("autoTag") && data.property) {
+        setTaggedProperty({
+          id: data.property.id,
+          title: data.property.title,
+          image: data.property.image || null,
+          price: data.property.price,
+          location: data.property.location,
+          listingType: "",
+        });
+      }
     });
-  }, [id, router]);
+  }, [id, router, searchParams]);
 
   useEffect(() => {
     const prev = prevMsgCountRef.current;
@@ -243,8 +259,15 @@ export default function ChatPage() {
 
   function handlePropertySelect(prop: SellerProp) {
     setShowMentions(false);
-    setInput("");
-    sendChatMessage(prop.title, { messageType: "property_ref", propertyRefId: prop.id });
+    // Remove the @... text from input, keep anything before the @
+    const cursorPos = inputRef.current?.selectionStart ?? input.length;
+    const textBefore = input.slice(0, cursorPos);
+    const atIdx = textBefore.lastIndexOf("@");
+    const beforeAt = atIdx > 0 ? textBefore.slice(0, atIdx).trimEnd() : "";
+    const afterCursor = input.slice(cursorPos);
+    setInput((beforeAt + (beforeAt ? " " : "") + afterCursor).trim());
+    setTaggedProperty(prop);
+    inputRef.current?.focus();
   }
 
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -290,6 +313,15 @@ export default function ChatPage() {
     e.preventDefault();
     if (imagePreview) {
       await handleSendImage();
+      return;
+    }
+    if (taggedProperty) {
+      const caption = input.trim() || taggedProperty.title;
+      setInput("");
+      setTaggedProperty(null);
+      setShowMentions(false);
+      await sendChatMessage(caption, { messageType: "property_ref", propertyRefId: taggedProperty.id });
+      inputRef.current?.focus();
       return;
     }
     if (!input.trim() || sending) return;
@@ -508,6 +540,35 @@ export default function ChatPage() {
             </div>
           )}
 
+          {/* Tagged property preview strip */}
+          {taggedProperty && !imagePreview && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px", borderBottom: "1px solid var(--border-primary)" }}>
+              {taggedProperty.image && (
+                <img src={taggedProperty.image} alt={taggedProperty.title} style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  🏠 {taggedProperty.title}
+                </div>
+                <div style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
+                  Tagged property · add a caption and send
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTaggedProperty(null)}
+                style={{ width: 28, height: 28, borderRadius: "50%", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: "var(--bg-secondary)", color: "var(--text-secondary)", transition: "all .15s", flexShrink: 0 }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "var(--red)"; e.currentTarget.style.color = "#fff"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg-secondary)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+                aria-label="Remove tagged property"
+              >
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          )}
+
           <form onSubmit={handleSend} style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px" }}>
             <input type="file" ref={fileInputRef} accept="image/*" onChange={handleImageSelect} style={{ display: "none" }} />
             <button
@@ -527,7 +588,7 @@ export default function ChatPage() {
               type="text"
               value={input}
               onChange={handleInputChange}
-              placeholder={imagePreview ? "Add a caption…" : "Type a message… (@ to tag a property)"}
+              placeholder={imagePreview ? "Add a caption…" : taggedProperty ? "Add a caption for the tagged property…" : "Type a message… (@ to tag a property)"}
               autoComplete="off"
               style={{ flex: 1, padding: "10px 18px", borderRadius: 999, border: "1px solid var(--border-primary)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14, outline: "none", transition: "border-color .15s" }}
               onFocus={(e) => { e.currentTarget.style.borderColor = "var(--red)"; }}
@@ -535,14 +596,14 @@ export default function ChatPage() {
             />
             <button
               type="submit"
-              disabled={((!input.trim() && !imagePreview) || sending || uploading)}
+              disabled={((!input.trim() && !imagePreview && !taggedProperty) || sending || uploading)}
               style={{
                 width: 42, height: 42, borderRadius: "50%", border: "none",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0, transition: "all .15s",
-                cursor: (input.trim() || imagePreview) ? "pointer" : "default",
-                background: (input.trim() || imagePreview) ? "var(--red)" : "var(--bg-secondary)",
-                color: (input.trim() || imagePreview) ? "#fff" : "var(--text-tertiary)",
+                cursor: (input.trim() || imagePreview || taggedProperty) ? "pointer" : "default",
+                background: (input.trim() || imagePreview || taggedProperty) ? "var(--red)" : "var(--bg-secondary)",
+                color: (input.trim() || imagePreview || taggedProperty) ? "#fff" : "var(--text-tertiary)",
               }}
               aria-label="Send message"
             >
