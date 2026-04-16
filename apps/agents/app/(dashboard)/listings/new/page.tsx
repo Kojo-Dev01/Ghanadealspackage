@@ -23,6 +23,17 @@ export default function NewListingPage() {
     const furnishing = (formData.get("furnishing") as string) || undefined;
     const parking = (formData.get("parking") as string) || undefined;
 
+    const latRaw = formData.get("latitude") as string;
+    const lngRaw = formData.get("longitude") as string;
+    const latitude = latRaw ? Number(latRaw) : undefined;
+    const longitude = lngRaw ? Number(lngRaw) : undefined;
+
+    let floorPlans: string[] | undefined;
+    const floorPlansRaw = formData.get("floorPlans") as string;
+    if (floorPlansRaw) {
+      try { floorPlans = JSON.parse(floorPlansRaw); } catch { floorPlans = undefined; }
+    }
+
     let gallery: string[] | undefined;
     const galleryRaw = formData.get("gallery") as string;
     if (galleryRaw) {
@@ -52,6 +63,9 @@ export default function NewListingPage() {
       amenities: amenities.length > 0 ? amenities : undefined,
       furnishing,
       parking,
+      latitude: latitude && !Number.isNaN(latitude) ? latitude : undefined,
+      longitude: longitude && !Number.isNaN(longitude) ? longitude : undefined,
+      floorPlans,
     });
 
     if (result.ok) {
