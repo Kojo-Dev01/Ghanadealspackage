@@ -768,6 +768,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         verified: agent.verified ?? false,
         verificationStatus: agent.verification_status ?? "unverified",
         kycDocuments: agent.kyc_documents ?? [],
+        selfieUrl: agent.selfie_url ?? null,
         verificationSubmittedAt: agent.verification_submitted_at ?? null,
         verifiedAt: agent.verified_at ?? null,
         verifiedBy: agent.verified_by ?? null,

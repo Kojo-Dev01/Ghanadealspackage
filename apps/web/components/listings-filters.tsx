@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 type Props = {
   q?: string;
@@ -22,7 +22,6 @@ const LOG_MIN = 10_000;
 const LOG_MAX = 20_000_000;
 const LOG_RATIO = Math.log(LOG_MAX / LOG_MIN);
 
-/** Map slider position (0–1000) → price. 0 means "no limit". */
 function sliderToPrice(step: number): number {
   if (step <= 0) return 0;
   if (step >= SLIDER_MAX) return LOG_MAX;
@@ -33,14 +32,12 @@ function sliderToPrice(step: number): number {
   return Math.round(raw / 1_000) * 1_000;
 }
 
-/** Map price → slider position (0–1000). 0 means "no limit". */
 function priceToSlider(price: number): number {
   if (price <= 0) return 0;
   const clamped = Math.max(LOG_MIN, Math.min(LOG_MAX, price));
   return Math.round(SLIDER_MAX * Math.log(clamped / LOG_MIN) / LOG_RATIO);
 }
 
-/** Compact label for the range summary below slider */
 function fmtPrice(v: number): string {
   if (v >= 1_000_000) return `GH₵ ${(v / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 2 })}M`;
   if (v >= 1_000) return `GH₵ ${(v / 1_000).toLocaleString(undefined, { maximumFractionDigits: 1 })}K`;
@@ -48,21 +45,69 @@ function fmtPrice(v: number): string {
   return "Any";
 }
 
-/** Display price in the text input (full number with commas) */
 function displayPrice(v: number): string {
   return v > 0 ? v.toLocaleString() : "";
 }
 
-/** Parse a price string (strips non-numeric chars) */
 function parsePrice(s: string): number {
   const n = Number(s.replace(/[^0-9]/g, ""));
   return Number.isFinite(n) ? n : 0;
 }
 
+const LISTING_TYPES = [
+  { value: "", label: "All" },
+  { value: "sale", label: "For Sale" },
+  { value: "rent", label: "For Rent" },
+  { value: "new", label: "New Development" },
+  { value: "commercial", label: "Commercial" },
+  { value: "land", label: "Land" },
+];
+
+const PROPERTY_TYPES = [
+  "Apartment", "House", "Villa", "Townhouse", "Penthouse", "Compound",
+  "Duplex", "Bungalow", "Full Floor", "Half Floor", "Whole Building",
+  "Land", "Commercial", "Office", "Bulk Sale Unit", "Hotel & Hotel Apartment",
+];
+
+const BED_OPTIONS = [
+  { value: "", label: "Any" },
+  { value: "1", label: "1+" },
+  { value: "2", label: "2+" },
+  { value: "3", label: "3+" },
+  { value: "4", label: "4+" },
+  { value: "5", label: "5+" },
+];
+
+const BATH_OPTIONS = [
+  { value: "", label: "Any" },
+  { value: "1", label: "1+" },
+  { value: "2", label: "2+" },
+  { value: "3", label: "3+" },
+  { value: "4", label: "4+" },
+];
+
+/* Chevron SVG for pill buttons */
+function ChevronDown() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ marginLeft: 4, flexShrink: 0 }}>
+      <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/* Search icon */
+function SearchIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, color: "var(--text-tertiary)" }}>
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
+    </svg>
+  );
+}
+
 export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minBeds, minBaths }: Props) {
   const searchParams = useSearchParams();
 
-  /* Read all URL params as source of truth */
   const urlQ = searchParams.get("q") ?? "";
   const urlListingType = searchParams.get("listingType") ?? "";
   const urlType = searchParams.get("type") ?? "";
@@ -71,7 +116,6 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
   const urlMinBeds = searchParams.get("minBeds") ?? "";
   const urlMinBaths = searchParams.get("minBaths") ?? "";
 
-  /* All filters are controlled state, synced from URL */
   const [search, setSearch] = useState(urlQ);
   const [selectedListingType, setSelectedListingType] = useState(urlListingType);
   const [selectedPropertyType, setSelectedPropertyType] = useState(urlType);
@@ -80,7 +124,6 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
   const [beds, setBeds] = useState(urlMinBeds);
   const [baths, setBaths] = useState(urlMinBaths);
 
-  /* Re-sync everything when the URL changes (e.g. navigating from home page) */
   useEffect(() => {
     setSearch(urlQ);
     setSelectedListingType(urlListingType);
@@ -91,210 +134,290 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
     setBaths(urlMinBaths);
   }, [urlQ, urlListingType, urlType, urlMinPrice, urlMaxPrice, urlMinBeds, urlMinBaths]);
 
-  /* Track which price input is focused (show raw number while editing) */
   const [minFocused, setMinFocused] = useState(false);
   const [maxFocused, setMaxFocused] = useState(false);
 
-  /* Derived values */
   const minVal = parsePrice(minPriceRaw);
   const maxVal = parsePrice(maxPriceRaw);
   const minSlider = priceToSlider(minVal);
   const maxSlider = maxVal > 0 ? priceToSlider(maxVal) : SLIDER_MAX;
-
-  /* Track fill position */
   const fillLeft = (minSlider / SLIDER_MAX) * 100;
   const fillRight = 100 - (maxSlider / SLIDER_MAX) * 100;
 
-  /* Detect whether user changed anything from the current URL state */
-  const dirty =
-    search !== urlQ ||
-    selectedListingType !== urlListingType ||
-    selectedPropertyType !== urlType ||
-    minPriceRaw !== urlMinPrice ||
-    maxPriceRaw !== urlMaxPrice ||
-    beds !== urlMinBeds ||
-    baths !== urlMinBaths;
+  /* ── Dropdown state ── */
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const barRef = useRef<HTMLFormElement>(null);
+
+  const toggle = useCallback((key: string) => {
+    setOpenDropdown((prev) => (prev === key ? null : key));
+  }, []);
+
+  /* Close dropdown when clicking outside */
+  useEffect(() => {
+    function onPointerDown(e: PointerEvent) {
+      if (barRef.current && !barRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+      }
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, []);
 
   const hideBedsBaths =
     selectedListingType === "new" ||
     selectedPropertyType === "Commercial" ||
     selectedPropertyType === "Land";
 
+  /* ── Pill labels that reflect current selection ── */
+  const listingLabel = LISTING_TYPES.find((l) => l.value === selectedListingType)?.label ?? "All";
+  const typeLabel = selectedPropertyType || "Property type";
+  const bedsBathsLabel = (beds || baths)
+    ? [beds ? `${beds}+ Beds` : null, baths ? `${baths}+ Baths` : null].filter(Boolean).join(", ")
+    : "Beds & Baths";
+  const priceLabel = (minVal > 0 || maxVal > 0)
+    ? `${minVal > 0 ? fmtPrice(minVal) : "Any"} – ${maxVal > 0 ? fmtPrice(maxVal) : "Any"}`
+    : "Price";
+
+  /* Active state for pills */
+  const isListingActive = selectedListingType !== "";
+  const isTypeActive = selectedPropertyType !== "";
+  const isBedsBathsActive = beds !== "" || baths !== "";
+  const isPriceActive = minVal > 0 || maxVal > 0;
+
   return (
-    <form className="listings-search-bar" action="/listings" method="get" style={{ marginBottom: 20 }}>
-      {/* Hidden price inputs for form submission */}
+    <form ref={barRef} className="filter-bar" action="/listings" method="get" style={{ marginBottom: 24 }}>
+      {/* Hidden inputs for form submission */}
       <input type="hidden" name="minPrice" value={minPriceRaw} />
       <input type="hidden" name="maxPrice" value={maxPriceRaw} />
+      <input type="hidden" name="listingType" value={selectedListingType} />
+      <input type="hidden" name="type" value={selectedPropertyType} />
+      <input type="hidden" name="minBeds" value={beds} />
+      <input type="hidden" name="minBaths" value={baths} />
 
-      {/* Row 1: Search + Category + Type */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, width: "100%" }}>
+      {/* ── Search bar ── */}
+      <div className="filter-search-row">
+        <SearchIcon />
         <input
-          className="form-input"
+          className="filter-search-input"
           type="text"
           name="q"
-          placeholder="Search location or title"
+          placeholder="Search by location, title, or keyword"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ flex: "1 1 200px", minWidth: 0 }}
         />
-        <select
-          className="filter-select"
-          name="listingType"
-          value={selectedListingType}
-          onChange={(e) => setSelectedListingType(e.target.value)}
-          style={{ flex: "0 0 auto" }}
-        >
-          <option value="">All</option>
-          <option value="sale">For Sale</option>
-          <option value="rent">For Rent</option>
-          <option value="new">New Development</option>
-        </select>
-        <select
-          className="filter-select"
-          name="type"
-          value={selectedPropertyType}
-          onChange={(e) => setSelectedPropertyType(e.target.value)}
-          style={{ flex: "0 0 auto" }}
-        >
-          <option value="">Any Type</option>
-          <option value="Apartment">Apartment</option>
-          <option value="House">House</option>
-          <option value="Villa">Villa</option>
-          <option value="Townhouse">Townhouse</option>
-          <option value="Penthouse">Penthouse</option>
-          <option value="Compound">Compound</option>
-          <option value="Duplex">Duplex</option>
-          <option value="Bungalow">Bungalow</option>
-          <option value="Full Floor">Full Floor</option>
-          <option value="Half Floor">Half Floor</option>
-          <option value="Whole Building">Whole Building</option>
-          <option value="Land">Land</option>
-          <option value="Commercial">Commercial</option>
-          <option value="Office">Office</option>
-          <option value="Bulk Sale Unit">Bulk Sale Unit</option>
-          <option value="Hotel & Hotel Apartment">Hotel & Hotel Apartment</option>
-        </select>
       </div>
 
-      {/* Row 2: Price Range + Beds/Baths + Apply */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, width: "100%", marginTop: 10, alignItems: "flex-start" }}>
-        {/* Price Range Widget — combo inputs + synced slider */}
-        <div className="price-range-widget">
-          <div className="price-range-selects">
-            <input
-              type="text"
-              inputMode="numeric"
-              list="gd-min-presets"
-              className="filter-select"
-              placeholder="Min Price"
-              value={minFocused ? minPriceRaw : displayPrice(minVal)}
-              onChange={(e) => {
-                const raw = e.target.value.replace(/[^0-9]/g, "");
-                setMinPriceRaw(raw);
-              }}
-              onFocus={() => setMinFocused(true)}
-              onBlur={() => setMinFocused(false)}
-              style={{ flex: 1, minWidth: 0 }}
-            />
-            <datalist id="gd-min-presets">
-              {PRICE_PRESETS.map((v) => (
-                <option key={v} value={String(v)} />
+      {/* ── Pills row ── */}
+      <div className="filter-pills-row">
+        {/* Listing Type */}
+        <div className="filter-pill-wrapper">
+          <button
+            type="button"
+            className={`filter-pill${isListingActive ? " filter-pill--active" : ""}${openDropdown === "listing" ? " filter-pill--open" : ""}`}
+            onClick={() => toggle("listing")}
+          >
+            {listingLabel}
+            <ChevronDown />
+          </button>
+          {openDropdown === "listing" && (
+            <div className="filter-dropdown">
+              {LISTING_TYPES.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  className={`filter-dropdown-item${selectedListingType === opt.value ? " filter-dropdown-item--selected" : ""}`}
+                  onClick={() => { setSelectedListingType(opt.value); setOpenDropdown(null); }}
+                >
+                  {opt.label}
+                </button>
               ))}
-            </datalist>
-            <span style={{ color: "var(--text-tertiary)", fontSize: 14, lineHeight: 1 }}>–</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              list="gd-max-presets"
-              className="filter-select"
-              placeholder="Max Price"
-              value={maxFocused ? maxPriceRaw : displayPrice(maxVal)}
-              onChange={(e) => {
-                const raw = e.target.value.replace(/[^0-9]/g, "");
-                setMaxPriceRaw(raw);
-              }}
-              onFocus={() => setMaxFocused(true)}
-              onBlur={() => setMaxFocused(false)}
-              style={{ flex: 1, minWidth: 0 }}
-            />
-            <datalist id="gd-max-presets">
-              {PRICE_PRESETS.map((v) => (
-                <option key={v} value={String(v)} />
-              ))}
-            </datalist>
-          </div>
-          <div className="price-range-track">
-            <div className="track-bg" />
-            <div className="track-fill" style={{ left: `${fillLeft}%`, right: `${fillRight}%` }} />
-            <input
-              type="range"
-              min={0}
-              max={SLIDER_MAX}
-              value={minSlider}
-              onChange={(e) => {
-                const step = Math.min(Number(e.target.value), maxSlider);
-                const price = sliderToPrice(step);
-                setMinPriceRaw(price > 0 ? String(price) : "");
-              }}
-            />
-            <input
-              type="range"
-              min={0}
-              max={SLIDER_MAX}
-              value={maxSlider}
-              onChange={(e) => {
-                const step = Math.max(Number(e.target.value), minSlider);
-                const price = sliderToPrice(step);
-                setMaxPriceRaw(step < SLIDER_MAX ? String(price) : "");
-              }}
-            />
-          </div>
-          {(minVal > 0 || maxVal > 0) && (
-            <div className="price-range-label">
-              {minVal > 0 ? fmtPrice(minVal) : "No Min"} – {maxVal > 0 ? fmtPrice(maxVal) : "No Max"}
             </div>
           )}
         </div>
 
+        {/* Property Type */}
+        <div className="filter-pill-wrapper">
+          <button
+            type="button"
+            className={`filter-pill${isTypeActive ? " filter-pill--active" : ""}${openDropdown === "type" ? " filter-pill--open" : ""}`}
+            onClick={() => toggle("type")}
+          >
+            {typeLabel}
+            <ChevronDown />
+          </button>
+          {openDropdown === "type" && (
+            <div className="filter-dropdown filter-dropdown--scroll">
+              <button
+                type="button"
+                className={`filter-dropdown-item${selectedPropertyType === "" ? " filter-dropdown-item--selected" : ""}`}
+                onClick={() => { setSelectedPropertyType(""); setOpenDropdown(null); }}
+              >
+                Any Type
+              </button>
+              {PROPERTY_TYPES.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  className={`filter-dropdown-item${selectedPropertyType === t ? " filter-dropdown-item--selected" : ""}`}
+                  onClick={() => { setSelectedPropertyType(t); setOpenDropdown(null); }}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Beds & Baths (combined pill) */}
         {!hideBedsBaths && (
-          <>
-            <select
-              className="filter-select"
-              name="minBeds"
-              value={beds}
-              onChange={(e) => setBeds(e.target.value)}
-              style={{ flex: "0 0 auto" }}
+          <div className="filter-pill-wrapper">
+            <button
+              type="button"
+              className={`filter-pill${isBedsBathsActive ? " filter-pill--active" : ""}${openDropdown === "bedsbaths" ? " filter-pill--open" : ""}`}
+              onClick={() => toggle("bedsbaths")}
             >
-              <option value="">Beds</option>
-              <option value="1">1+ Bed</option>
-              <option value="2">2+ Beds</option>
-              <option value="3">3+ Beds</option>
-              <option value="4">4+ Beds</option>
-              <option value="5">5+ Beds</option>
-            </select>
-            <select
-              className="filter-select"
-              name="minBaths"
-              value={baths}
-              onChange={(e) => setBaths(e.target.value)}
-              style={{ flex: "0 0 auto" }}
-            >
-              <option value="">Baths</option>
-              <option value="1">1+ Bath</option>
-              <option value="2">2+ Baths</option>
-              <option value="3">3+ Baths</option>
-              <option value="4">4+ Baths</option>
-            </select>
-          </>
+              {bedsBathsLabel}
+              <ChevronDown />
+            </button>
+            {openDropdown === "bedsbaths" && (
+              <div className="filter-dropdown filter-dropdown--bedsbaths">
+                <div className="filter-dropdown-section">
+                  <span className="filter-dropdown-label">Bedrooms</span>
+                  <div className="filter-option-pills">
+                    {BED_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        className={`filter-option-chip${beds === opt.value ? " filter-option-chip--selected" : ""}`}
+                        onClick={() => setBeds(opt.value)}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="filter-dropdown-section">
+                  <span className="filter-dropdown-label">Bathrooms</span>
+                  <div className="filter-option-pills">
+                    {BATH_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        className={`filter-option-chip${baths === opt.value ? " filter-option-chip--selected" : ""}`}
+                        onClick={() => setBaths(opt.value)}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="filter-dropdown-done"
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  Done
+                </button>
+              </div>
+            )}
+          </div>
         )}
 
-        <button
-          className={`btn ${dirty ? "btn-primary" : "btn-outline"}`}
-          type="submit"
-          disabled={!dirty}
-          style={{ flex: "0 0 auto", opacity: dirty ? 1 : 0.5, cursor: dirty ? "pointer" : "default" }}
-        >
-          Apply
+        {/* Price */}
+        <div className="filter-pill-wrapper">
+          <button
+            type="button"
+            className={`filter-pill${isPriceActive ? " filter-pill--active" : ""}${openDropdown === "price" ? " filter-pill--open" : ""}`}
+            onClick={() => toggle("price")}
+          >
+            {priceLabel}
+            <ChevronDown />
+          </button>
+          {openDropdown === "price" && (
+            <div className="filter-dropdown filter-dropdown--price">
+              <div className="price-range-selects">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  list="gd-min-presets"
+                  className="price-range-input"
+                  placeholder="Min Price"
+                  value={minFocused ? minPriceRaw : displayPrice(minVal)}
+                  onChange={(e) => setMinPriceRaw(e.target.value.replace(/[^0-9]/g, ""))}
+                  onFocus={() => setMinFocused(true)}
+                  onBlur={() => setMinFocused(false)}
+                />
+                <datalist id="gd-min-presets">
+                  {PRICE_PRESETS.map((v) => (
+                    <option key={v} value={String(v)} />
+                  ))}
+                </datalist>
+                <span className="price-range-sep">–</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  list="gd-max-presets"
+                  className="price-range-input"
+                  placeholder="Max Price"
+                  value={maxFocused ? maxPriceRaw : displayPrice(maxVal)}
+                  onChange={(e) => setMaxPriceRaw(e.target.value.replace(/[^0-9]/g, ""))}
+                  onFocus={() => setMaxFocused(true)}
+                  onBlur={() => setMaxFocused(false)}
+                />
+                <datalist id="gd-max-presets">
+                  {PRICE_PRESETS.map((v) => (
+                    <option key={v} value={String(v)} />
+                  ))}
+                </datalist>
+              </div>
+              <div className="price-range-track">
+                <div className="track-bg" />
+                <div className="track-fill" style={{ left: `${fillLeft}%`, right: `${fillRight}%` }} />
+                <input
+                  type="range"
+                  min={0}
+                  max={SLIDER_MAX}
+                  value={minSlider}
+                  onChange={(e) => {
+                    const step = Math.min(Number(e.target.value), maxSlider);
+                    setMinPriceRaw(sliderToPrice(step) > 0 ? String(sliderToPrice(step)) : "");
+                  }}
+                />
+                <input
+                  type="range"
+                  min={0}
+                  max={SLIDER_MAX}
+                  value={maxSlider}
+                  onChange={(e) => {
+                    const step = Math.max(Number(e.target.value), minSlider);
+                    const price = sliderToPrice(step);
+                    setMaxPriceRaw(step < SLIDER_MAX ? String(price) : "");
+                  }}
+                />
+              </div>
+              {(minVal > 0 || maxVal > 0) && (
+                <div className="price-range-label">
+                  {minVal > 0 ? fmtPrice(minVal) : "No Min"} – {maxVal > 0 ? fmtPrice(maxVal) : "No Max"}
+                </div>
+              )}
+              <button
+                type="button"
+                className="filter-dropdown-done"
+                onClick={() => setOpenDropdown(null)}
+              >
+                Done
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Apply / Search button */}
+        <button className="filter-pill filter-pill--search" type="submit">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+          Search
         </button>
       </div>
     </form>

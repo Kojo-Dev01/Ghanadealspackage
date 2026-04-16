@@ -16,10 +16,10 @@ const STATUS_STYLES: Record<
   string,
   { label: string; bg: string; color: string }
 > = {
-  unverified: { label: "Unverified", bg: "#f1f5f9", color: "#64748b" },
-  pending: { label: "Pending Review", bg: "#fffbeb", color: "#d97706" },
-  approved: { label: "Verified", bg: "#dcfce7", color: "#16a34a" },
-  rejected: { label: "Rejected", bg: "#fee2e2", color: "#dc2626" },
+  unverified: { label: "Unverified", bg: "rgba(148,163,184,0.12)", color: "var(--color-muted, #64748b)" },
+  pending: { label: "Pending Review", bg: "rgba(245,158,11,0.12)", color: "var(--status-warning-text, #d97706)" },
+  approved: { label: "Verified", bg: "rgba(16,185,129,0.12)", color: "var(--status-success-text, #16a34a)" },
+  rejected: { label: "Rejected", bg: "rgba(239,68,68,0.1)", color: "var(--status-danger-text, #dc2626)" },
 };
 
 export function SellerCard({ agent }: { agent: AdminAgent }) {

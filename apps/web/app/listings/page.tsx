@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { fetchProperties } from "../../lib/api";
 import { PropertyCard } from "../../components/property-card";
-import { SectionHeader } from "../../components/section-header";
 import { ExtractedShell } from "../../components/extracted-shell";
 import { ListingsFilters } from "../../components/listings-filters";
 
@@ -61,13 +60,16 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
   return (
     <ExtractedShell>
       <main>
-        <section className="section" style={{ paddingTop: 48 }}>
+        <section className="section" style={{ paddingTop: 32 }}>
           <div className="container">
-            <SectionHeader
-              title="Listings"
-              subtitle={`${result.total} properties found`}
-              action={<Link href="/" className="btn btn-outline">Home</Link>}
-            />
+            <div style={{ marginBottom: 20 }}>
+              <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.3 }}>
+                Properties in Ghana
+                <span style={{ fontWeight: 400, fontSize: 14, color: "var(--text-tertiary)", marginLeft: 10 }}>
+                  {result.total.toLocaleString()} listed
+                </span>
+              </h1>
+            </div>
 
             <Suspense>
               <ListingsFilters

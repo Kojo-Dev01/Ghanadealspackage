@@ -45,24 +45,24 @@ export function TrendAreaChart({
             <stop offset="95%" stopColor={color} stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--border, #e5e7eb)" />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border, #e5e7eb)" />
         <XAxis
           dataKey="label"
-          tick={{ fontSize: 11, fill: "var(--text-secondary, #6b7280)" }}
+          tick={{ fontSize: 11, fill: "var(--color-text-secondary, #6b7280)" }}
           tickLine={false}
           axisLine={false}
           interval="preserveStartEnd"
         />
         <YAxis
-          tick={{ fontSize: 11, fill: "var(--text-secondary, #6b7280)" }}
+          tick={{ fontSize: 11, fill: "var(--color-text-secondary, #6b7280)" }}
           tickLine={false}
           axisLine={false}
           allowDecimals={false}
         />
         <Tooltip
           contentStyle={{
-            background: "var(--bg-panel, #fff)",
-            border: "1px solid var(--border, #e5e7eb)",
+            background: "var(--color-panel, #fff)",
+            border: "1px solid var(--color-border, #e5e7eb)",
             borderRadius: 8,
             fontSize: 13,
           }}
@@ -91,10 +91,10 @@ export function HorizontalBarChart({
   return (
     <ResponsiveContainer width="100%" height={Math.max(data.length * 40, 120)}>
       <BarChart data={data} layout="vertical" margin={{ top: 0, right: 8, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="var(--border, #e5e7eb)" horizontal={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border, #e5e7eb)" horizontal={false} />
         <XAxis
           type="number"
-          tick={{ fontSize: 11, fill: "var(--text-secondary, #6b7280)" }}
+          tick={{ fontSize: 11, fill: "var(--color-text-secondary, #6b7280)" }}
           tickLine={false}
           axisLine={false}
           allowDecimals={false}
@@ -102,15 +102,15 @@ export function HorizontalBarChart({
         <YAxis
           type="category"
           dataKey="name"
-          tick={{ fontSize: 12, fill: "var(--text-secondary, #6b7280)" }}
+          tick={{ fontSize: 12, fill: "var(--color-text-secondary, #6b7280)" }}
           tickLine={false}
           axisLine={false}
           width={100}
         />
         <Tooltip
           contentStyle={{
-            background: "var(--bg-panel, #fff)",
-            border: "1px solid var(--border, #e5e7eb)",
+            background: "var(--color-panel, #fff)",
+            border: "1px solid var(--color-border, #e5e7eb)",
             borderRadius: 8,
             fontSize: 13,
           }}
@@ -147,8 +147,8 @@ export function DonutChart({
         </Pie>
         <Tooltip
           contentStyle={{
-            background: "var(--bg-panel, #fff)",
-            border: "1px solid var(--border, #e5e7eb)",
+            background: "var(--color-panel, #fff)",
+            border: "1px solid var(--color-border, #e5e7eb)",
             borderRadius: 8,
             fontSize: 13,
           }}
@@ -204,8 +204,8 @@ export function StatusDonutChart({
         </Pie>
         <Tooltip
           contentStyle={{
-            background: "var(--bg-panel, #fff)",
-            border: "1px solid var(--border, #e5e7eb)",
+            background: "var(--color-panel, #fff)",
+            border: "1px solid var(--color-border, #e5e7eb)",
             borderRadius: 8,
             fontSize: 13,
           }}

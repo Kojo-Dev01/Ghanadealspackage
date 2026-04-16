@@ -491,7 +491,7 @@ export async function registerAgentDashboardRoutes(app: FastifyInstance) {
     const supabase = getSupabaseAdminClient()!;
     const { data: agent, error } = await (supabase as any)
       .from("agents")
-      .select("verification_status, kyc_documents, verification_submitted_at, verified_at, rejection_reason")
+      .select("verification_status, kyc_documents, selfie_url, verification_submitted_at, verified_at, rejection_reason")
       .eq("id", auth.agentId)
       .single();
 
@@ -502,6 +502,7 @@ export async function registerAgentDashboardRoutes(app: FastifyInstance) {
     return {
       verificationStatus: agent.verification_status ?? "unverified",
       kycDocuments: agent.kyc_documents ?? [],
+      selfieUrl: agent.selfie_url ?? null,
       submittedAt: agent.verification_submitted_at ?? null,
       verifiedAt: agent.verified_at ?? null,
       rejectionReason: agent.rejection_reason ?? null,
@@ -515,6 +516,7 @@ export async function registerAgentDashboardRoutes(app: FastifyInstance) {
       url: z.string().url().max(500),
       name: z.string().max(200),
     })).min(1).max(5),
+    selfieUrl: z.string().url().max(500).optional(),
   });
 
   app.post("/verification", async (request, reply) => {
@@ -554,6 +556,7 @@ export async function registerAgentDashboardRoutes(app: FastifyInstance) {
       .update({
         verification_status: "pending",
         kyc_documents: documents,
+        selfie_url: body.data.selfieUrl ?? null,
         verification_submitted_at: new Date().toISOString(),
         rejection_reason: null,
         updated_at: new Date().toISOString(),

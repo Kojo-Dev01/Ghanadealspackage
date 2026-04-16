@@ -30,6 +30,7 @@ import {
   Ruler,
   AlertTriangle,
   Download,
+  Camera,
 } from "lucide-react";
 import { AvatarPreview } from "@/components/avatar-preview";
 
@@ -77,11 +78,13 @@ export default async function AdminAgentDetailPage({ params, searchParams }: Pag
   const hasPhoto = !!agent.avatarUrl;
   const hasDocs = agent.kycDocuments.length > 0;
   const hasPhone = !!agent.phone;
-  const canApprove = hasPhoto && hasDocs && hasPhone;
+  const hasSelfie = !!agent.selfieUrl;
+  const canApprove = hasPhoto && hasDocs && hasPhone && hasSelfie;
 
   const checks = [
     { ok: hasPhoto, label: "Profile photo" },
     { ok: hasDocs, label: "KYC documents" },
+    { ok: hasSelfie, label: "Live selfie" },
     { ok: hasPhone, label: "Phone number" },
   ];
 
@@ -326,6 +329,46 @@ export default async function AdminAgentDetailPage({ params, searchParams }: Pag
           <div className="flex items-center gap-3 bg-slate-50 border border-border rounded-xl px-4 py-4 text-sm text-muted">
             <ShieldAlert size={18} className="shrink-0 text-slate-400" />
             No documents uploaded yet.
+          </div>
+        )}
+      </section>
+
+      {/* ─── Live Selfie ─── */}
+      <section className="bg-panel border border-border rounded-2xl p-6">
+        <h2 className="text-[15px] font-bold text-foreground mb-4 flex items-center gap-2">
+          <Camera size={16} className="text-accent" />
+          Live Selfie
+        </h2>
+
+        {hasSelfie ? (
+          <a
+            href={agent.selfieUrl!}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group block border border-border rounded-xl overflow-hidden hover:ring-2 hover:ring-accent/20 transition-all max-w-xs"
+          >
+            <div className="relative bg-slate-50" style={{ aspectRatio: "3/4" }}>
+              <img
+                src={agent.selfieUrl!}
+                alt={`${agent.name} selfie`}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
+              <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="inline-flex items-center gap-1 bg-white/90 backdrop-blur-sm text-[11px] font-semibold text-foreground px-2 py-1 rounded-md shadow-sm">
+                  <ExternalLink size={10} /> Full size
+                </span>
+              </div>
+            </div>
+            <div className="px-3 py-2.5 border-t border-border">
+              <p className="text-sm font-semibold text-foreground">Live Capture</p>
+              <p className="text-[11px] text-muted">Taken during verification submission</p>
+            </div>
+          </a>
+        ) : (
+          <div className="flex items-center gap-3 bg-slate-50 border border-border rounded-xl px-4 py-4 text-sm text-muted">
+            <ShieldAlert size={18} className="shrink-0 text-slate-400" />
+            No live selfie captured yet.
           </div>
         )}
       </section>

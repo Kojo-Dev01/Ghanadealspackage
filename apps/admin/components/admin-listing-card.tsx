@@ -118,7 +118,7 @@ export function AdminListingCard({
 
       {/* Rejection reason if flagged */}
       {listing.moderationStatus === "flagged" && listing.moderationReason && (
-        <div className="mx-4 mb-3 p-2.5 rounded-lg text-xs" style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c' }}>
+        <div className="mx-4 mb-3 p-2.5 rounded-lg text-xs" style={{ background: 'var(--color-accent-light, rgba(239,68,68,0.08))', border: '1px solid var(--color-border)', color: 'var(--status-danger-text, #b91c1c)' }}>
           <strong className="font-semibold">Rejection reason:</strong>{" "}
           {listing.moderationReason}
         </div>
@@ -146,10 +146,7 @@ export function AdminListingCard({
                 type="submit"
                 value="approved"
                 pendingText="Approving…"
-                className="px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all"
-                style={{ background: '#dcfce7', color: '#166534' }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = '#16a34a'; e.currentTarget.style.color = '#fff'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = '#dcfce7'; e.currentTarget.style.color = '#166534'; }}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all bg-green-50 text-green-700 hover:bg-green-600 hover:text-white"
               >
                 Approve
               </FormButton>
@@ -160,10 +157,7 @@ export function AdminListingCard({
               type="button"
               data-reject-id={listing.id}
               data-reject-title={listing.title}
-              className="reject-trigger px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all"
-              style={{ background: '#fee2e2', color: '#991b1b' }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = '#dc2626'; e.currentTarget.style.color = '#fff'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#fee2e2'; e.currentTarget.style.color = '#991b1b'; }}
+              className="reject-trigger px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all bg-red-50 text-red-700 hover:bg-red-600 hover:text-white"
             >
               Reject
             </button>
@@ -177,10 +171,7 @@ export function AdminListingCard({
             <FormButton
               type="submit"
               pendingText="Deleting…"
-              className="px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all flex items-center gap-1"
-              style={{ background: '#fce4ec', color: '#7f1d1d' }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = '#991b1b'; e.currentTarget.style.color = '#fff'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#fce4ec'; e.currentTarget.style.color = '#7f1d1d'; }}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all flex items-center gap-1 bg-red-50 text-red-700 hover:bg-red-600 hover:text-white"
             >
               <Trash2 size={12} /> Delete
             </FormButton>

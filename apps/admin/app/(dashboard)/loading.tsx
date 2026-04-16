@@ -6,7 +6,7 @@ export default function DashboardLoading() {
         style={{
           width: 36,
           height: 36,
-          border: "3.5px solid #e5e7eb",
+          border: "3.5px solid var(--color-border, #e5e7eb)",
           borderTopColor: "var(--color-accent, #dc2626)",
           borderRadius: "50%",
           animation: "spin .7s linear infinite",

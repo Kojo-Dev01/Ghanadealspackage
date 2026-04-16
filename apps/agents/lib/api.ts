@@ -346,6 +346,7 @@ export type KycDocument = {
 export type VerificationData = {
   verificationStatus: VerificationStatus;
   kycDocuments: KycDocument[];
+  selfieUrl: string | null;
   submittedAt: string | null;
   verifiedAt: string | null;
   rejectionReason: string | null;
@@ -364,14 +365,15 @@ export async function fetchVerificationStatus(): Promise<VerificationData | null
 }
 
 export async function submitVerification(
-  documents: Array<{ type: string; url: string; name: string }>
+  documents: Array<{ type: string; url: string; name: string }>,
+  selfieUrl?: string,
 ): Promise<{ ok: boolean; message: string }> {
   const token = await getSessionToken();
   if (!token) return { ok: false, message: "Not authenticated" };
   try {
     const res = await fetchEndpoint("/v1/agent/verification", token, {
       method: "POST",
-      body: JSON.stringify({ documents }),
+      body: JSON.stringify({ documents, selfieUrl }),
     });
     const json = await res.json();
     return { ok: res.ok, message: json.message ?? "Failed to submit" };

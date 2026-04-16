@@ -191,12 +191,12 @@ export default async function AdminSettingsPage() {
         </SettingCard>
 
         {/* Info banner */}
-        <div className="flex items-start gap-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-xl px-5 py-4">
+        <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-5 py-4">
           <Info size={18} className="text-blue-500 mt-0.5 shrink-0" />
-          <div className="text-sm text-blue-800 dark:text-blue-200">
+          <div className="text-sm text-blue-800">
             <p className="font-medium">Environment-based Configuration</p>
             <p className="text-xs mt-1 opacity-80">
-              Settings are configured via environment variables in <code className="px-1 py-0.5 bg-blue-100 dark:bg-blue-900/40 rounded text-[11px]">.env</code>. 
+              Settings are configured via environment variables in <code className="px-1 py-0.5 bg-blue-100 rounded text-[11px]">.env</code>. 
               Changes require an application restart to take effect.
             </p>
           </div>

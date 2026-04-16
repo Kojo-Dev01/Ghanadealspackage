@@ -16,8 +16,11 @@ import {
   ExternalLink,
   ShieldCheck,
   Monitor,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { FormButton } from "@/components/form-button";
+import { useTheme } from "@/components/theme-provider";
 import type { Permission } from "@/lib/permissions-shared";
 
 type AdminRole = "super_admin" | "moderator" | "customer_service";
@@ -89,6 +92,7 @@ export function AdminSidebar({
   const pathname = usePathname();
   const activeNav = getActiveNav(pathname);
   const permissions = ROLE_PERMISSIONS[role as AdminRole] ?? ROLE_PERMISSIONS.customer_service;
+  const { isDark, toggle } = useTheme();
 
   const visibleNavItems = navItems.filter((item) => {
     const perm = NAV_PERMISSION[item.key];
@@ -96,12 +100,12 @@ export function AdminSidebar({
   });
 
   return (
-    <aside className="bg-sidebar text-sidebar-text flex max-lg:flex-row max-lg:items-center max-lg:px-4 max-lg:py-3 max-lg:gap-4 max-lg:overflow-x-auto lg:flex-col lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto">
+    <aside className="bg-sidebar text-sidebar-text border-r border-border flex max-lg:flex-row max-lg:items-center max-lg:px-4 max-lg:py-3 max-lg:gap-4 max-lg:overflow-x-auto lg:flex-col lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto">
       <div className="max-lg:hidden px-5 pt-6 pb-4">
         <div className="flex items-center gap-2.5">
           <Image src="/logo.png" alt="GhanaDeals" width={32} height={32} className="rounded-lg shrink-0" unoptimized />
           <div>
-            <span className="font-bold text-[15px] tracking-tight"><span className="text-accent">Ghana</span><span className="text-white">Deals</span></span>
+            <span className="font-bold text-[15px] tracking-tight"><span className="text-accent">Ghana</span><span className="text-sidebar-active">Deals</span></span>
             <p className="text-[11px] text-sidebar-text/60">Marketplace Admin</p>
           </div>
         </div>
@@ -121,8 +125,8 @@ export function AdminSidebar({
                 href={item.href}
                 className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   active
-                    ? "bg-white/10 text-sidebar-active"
-                    : "hover:bg-white/5 hover:text-sidebar-active"
+                    ? "bg-accent/10 text-accent"
+                    : "hover:bg-accent/5 hover:text-sidebar-active"
                 }`}
               >
                 {item.icon}
@@ -145,12 +149,20 @@ export function AdminSidebar({
         })}
       </nav>
 
-      <div className="max-lg:hidden mt-auto px-3 pb-5 flex flex-col gap-1">
+      <div className="max-lg:hidden mt-auto pt-4 border-t border-border px-3 pb-5 flex flex-col gap-1">
+        <button
+          type="button"
+          onClick={toggle}
+          className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[13px] font-medium text-sidebar-text hover:bg-accent/5 hover:text-sidebar-active transition-all cursor-pointer"
+        >
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          {isDark ? "Light Mode" : "Dark Mode"}
+        </button>
         <a
           href={process.env.NEXT_PUBLIC_WEB_URL ?? "http://localhost:3000"}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm hover:bg-white/5 hover:text-sidebar-active transition-colors"
+          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-sidebar-text hover:bg-accent/5 hover:text-sidebar-active transition-all"
         >
           <ExternalLink size={18} />
           Public site
@@ -159,7 +171,7 @@ export function AdminSidebar({
           <FormButton
             type="submit"
             pendingText="Signing out…"
-            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm hover:bg-white/5 hover:text-sidebar-active transition-colors w-full cursor-pointer"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-sidebar-text hover:bg-accent/5 hover:text-sidebar-active transition-all w-full cursor-pointer"
           >
             <LogOut size={18} />
             Sign out

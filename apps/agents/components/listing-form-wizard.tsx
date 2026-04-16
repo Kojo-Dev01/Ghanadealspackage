@@ -218,9 +218,25 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
   function renderLocation() {
     return (
       <div className="grid gap-6">
-        {/* Location */}
+        {/* Location search / map / link picker */}
+        <CoordinatePicker
+          latitude={data.latitude}
+          longitude={data.longitude}
+          location={data.location}
+          region={data.region}
+          regions={REGIONS}
+          inputCls={inputCls}
+          onSelect={(result) => {
+            set("latitude", result.lat);
+            set("longitude", result.lng);
+            if (result.location) set("location", result.location);
+            if (result.region) set("region", result.region);
+          }}
+        />
+
+        {/* Region & Specific Location (editable, auto-filled from map) */}
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-muted mb-3">Location</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted mb-3">Location Details</h3>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="grid gap-1 text-xs font-semibold text-muted">
               Region *
@@ -234,27 +250,16 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
               <input value={data.location} onChange={(e) => set("location", e.target.value)} maxLength={200} placeholder="e.g. East Legon, Airport Residential" className={inputCls} />
             </label>
           </div>
+          <p className="text-[10px] text-muted/60 mt-2">These fields are auto-filled when you search or pick a location above. You can also edit them manually.</p>
         </div>
-        {/* Map Coordinates */}
-        <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider text-muted mb-3">Map Coordinates <span className="font-normal opacity-60">(optional)</span></h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-1 text-xs font-semibold text-muted">
-              Latitude
-              <input type="number" value={data.latitude} onChange={(e) => set("latitude", e.target.value)} step="0.0000001" min={-90} max={90} placeholder="e.g. 5.6037" className={inputCls} />
-            </label>
-            <label className="grid gap-1 text-xs font-semibold text-muted">
-              Longitude
-              <input type="number" value={data.longitude} onChange={(e) => set("longitude", e.target.value)} step="0.0000001" min={-180} max={180} placeholder="e.g. -0.1870" className={inputCls} />
-            </label>
+
+        {/* Hidden-ish coordinate display (read-only for reference) */}
+        {data.latitude && data.longitude && (
+          <div className="flex items-center gap-3 text-xs text-muted bg-panel-alt rounded-lg px-3 py-2 border border-border">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span>Coordinates: <strong className="text-foreground">{data.latitude}, {data.longitude}</strong></span>
           </div>
-          <CoordinatePicker
-            latitude={data.latitude}
-            longitude={data.longitude}
-            onSelect={(lat, lng) => { set("latitude", lat); set("longitude", lng); }}
-          />
-          <p className="text-[10px] text-muted/60 mt-1">Enter GPS coordinates manually or click the map to set the property location.</p>
-        </div>
+        )}
         {/* Specs */}
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-muted mb-3">Specifications</h3>
@@ -667,29 +672,37 @@ function AmenitiesPicker({
 
       {/* Dropdown */}
       {open && filtered.length > 0 && (
-        <div
-          className="border border-border rounded-lg bg-panel shadow-lg max-h-48 overflow-y-auto"
-        >
-          {filtered.map((a) => (
-            <button
-              key={a}
-              type="button"
-              onClick={() => { toggle(a); setSearch(""); }}
-              className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-panel-alt transition-colors cursor-pointer flex items-center gap-2"
-            >
-              <span className="w-4 h-4 rounded border border-border flex items-center justify-center shrink-0">
-                {selected.includes(a) && (
-                  <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-                )}
-              </span>
-              {a}
-            </button>
-          ))}
+        <div className="border border-border rounded-lg bg-panel shadow-lg overflow-hidden">
+          <div className="max-h-56 overflow-y-auto">
+            {filtered.map((a) => (
+              <button
+                key={a}
+                type="button"
+                onClick={() => { toggle(a); setSearch(""); }}
+                className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-panel-alt transition-colors cursor-pointer flex items-center gap-2"
+              >
+                <span className="w-4 h-4 rounded border border-border flex items-center justify-center shrink-0">
+                  {selected.includes(a) && (
+                    <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                  )}
+                </span>
+                {a}
+              </button>
+            ))}
+          </div>
+          {/* Scroll indicator footer */}
+          <div className="flex items-center justify-between px-3 py-1.5 border-t border-border bg-panel-alt text-[10px] text-muted">
+            <span>{filtered.length} available{search ? ` for "${search}"` : ""}</span>
+            <span className="flex items-center gap-1">
+              <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+              Scroll for more
+            </span>
+          </div>
         </div>
       )}
 
       <span className="text-[10px] text-muted/60">
-        {selected.length} selected · Search the list or type a custom amenity and press Enter
+        {selected.length} selected{selected.length > 0 ? "" : " — click above to browse"} · {COMMON_AMENITIES.length} amenities available · Type a custom one and press Enter
       </span>
     </div>
   );

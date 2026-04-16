@@ -676,7 +676,7 @@ export async function fetchAgentReviews(agentId: string, page = 1): Promise<Revi
 export async function submitAgentReview(
   agentId: string,
   data: { rating: number; comment?: string }
-): Promise<{ ok: boolean; message: string }> {
+): Promise<{ ok: boolean; message: string; item?: ReviewRecord }> {
   try {
     const res = await authFetch(`/agents/${agentId}/reviews`, {
       method: "POST",
@@ -685,7 +685,7 @@ export async function submitAgentReview(
     });
     const json = await res.json();
     if (!res.ok) return { ok: false, message: json.message ?? "Failed to submit review" };
-    return { ok: true, message: json.message ?? "Review submitted" };
+    return { ok: true, message: json.message ?? "Review submitted", item: json.item };
   } catch {
     return { ok: false, message: "Network error" };
   }

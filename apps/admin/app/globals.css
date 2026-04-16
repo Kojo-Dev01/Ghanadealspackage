@@ -1,26 +1,23 @@
 @import "tailwindcss";
 
-@theme inline {
-  --color-background: #f1f5f9;
+@theme {
+  --color-background: #f8fafc;
   --color-foreground: #0f172a;
-  --color-panel: #ffffff;
-  --color-panel-alt: #f8fafc;
-  --color-border: #e2e8f0;
   --color-muted: #64748b;
+  --color-border: #e2e8f0;
+  --color-panel: #ffffff;
+  --color-panel-alt: #f1f5f9;
+  --color-accent: #E63946;
+  --color-accent-hover: #cf2f3c;
+  --color-accent-light: rgba(230,57,70,0.08);
   --color-text-secondary: #475569;
-
-  --color-accent: #dc2626;
-  --color-accent-hover: #b91c1c;
-  --color-sidebar: #0f172a;
-  --color-sidebar-text: #94a3b8;
-  --color-sidebar-active: #e2e8f0;
-  --color-sidebar-accent: #f59e0b;
-
+  --color-sidebar: #ffffff;
+  --color-sidebar-text: #64748b;
+  --color-sidebar-active: #0f172a;
   --color-success: #16a34a;
-  --color-warning: #d97706;
   --color-danger: #dc2626;
+  --color-warning: #d97706;
   --color-info: #2563eb;
-
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -28,4 +25,119 @@
 body {
   background: var(--color-background);
   color: var(--color-foreground);
+}
+
+/* Status text colors (used by inline styles) */
+:root {
+  --status-warning-text: #b45309;
+  --status-success-text: #15803d;
+  --status-danger-text: #dc2626;
+}
+
+/* ---------- Dark Mode ---------- */
+[data-theme="dark"] {
+  --color-background: #0D0D0D;
+  --color-foreground: #F0F0F0;
+  --color-muted: #9CA3AF;
+  --color-border: #2A2A2A;
+  --color-panel: #161616;
+  --color-panel-alt: #1A1A1A;
+  --color-sidebar: #111111;
+  --color-sidebar-text: #9CA3AF;
+  --color-sidebar-active: #F0F0F0;
+  --color-text-secondary: #A0AEC0;
+  --status-warning-text: #fbbf24;
+  --status-success-text: #34d399;
+  --status-danger-text: #f87171;
+}
+
+/* --- Dark mode overrides for hardcoded Tailwind utility classes --- */
+[data-theme="dark"] {
+  /* Blue light backgrounds → translucent */
+  .bg-blue-50 { background-color: rgba(59, 130, 246, 0.1) !important; }
+  .bg-blue-100 { background-color: rgba(59, 130, 246, 0.15) !important; }
+  /* Blue dark text → lighter */
+  .text-blue-600 { color: #60a5fa !important; }
+  .text-blue-700 { color: #93bbfd !important; }
+  .text-blue-800 { color: #a5c8fd !important; }
+  .text-blue-900 { color: #bdd5fe !important; }
+  /* Blue borders → translucent */
+  .border-blue-200 { border-color: rgba(59, 130, 246, 0.25) !important; }
+
+  /* Green light backgrounds → translucent */
+  .bg-green-50 { background-color: rgba(16, 185, 129, 0.1) !important; }
+  .bg-green-100 { background-color: rgba(16, 185, 129, 0.15) !important; }
+  /* Green dark text → lighter */
+  .text-green-600 { color: #34d399 !important; }
+  .text-green-700 { color: #6ee7b7 !important; }
+  .text-green-800 { color: #86efac !important; }
+  /* Green borders → translucent */
+  .border-green-200 { border-color: rgba(16, 185, 129, 0.25) !important; }
+  .border-green-300 { border-color: rgba(16, 185, 129, 0.3) !important; }
+
+  /* Amber light backgrounds → translucent */
+  .bg-amber-50 { background-color: rgba(245, 158, 11, 0.1) !important; }
+  .bg-amber-100 { background-color: rgba(245, 158, 11, 0.15) !important; }
+  /* Amber dark text → lighter */
+  .text-amber-600 { color: #fbbf24 !important; }
+  .text-amber-700 { color: #fcd34d !important; }
+  .text-amber-800 { color: #fde68a !important; }
+  .text-amber-900 { color: #fef3c7 !important; }
+  /* Amber borders → translucent */
+  .border-amber-200 { border-color: rgba(245, 158, 11, 0.25) !important; }
+  /* Amber gradient overrides */
+  .from-amber-50 { --tw-gradient-from: rgba(245, 158, 11, 0.1) !important; }
+  .to-orange-50 { --tw-gradient-to: rgba(249, 115, 22, 0.1) !important; }
+
+  /* Red light backgrounds → translucent */
+  .bg-red-50 { background-color: rgba(239, 68, 68, 0.1) !important; }
+  .bg-red-100 { background-color: rgba(239, 68, 68, 0.15) !important; }
+  /* Red dark text → lighter */
+  .text-red-600 { color: #f87171 !important; }
+  .text-red-700 { color: #fca5a5 !important; }
+  .text-red-800 { color: #fecaca !important; }
+  .text-red-900 { color: #fee2e2 !important; }
+  /* Red borders → translucent */
+  .border-red-200 { border-color: rgba(239, 68, 68, 0.25) !important; }
+
+  /* Slate light backgrounds → translucent */
+  .bg-slate-100 { background-color: rgba(148, 163, 184, 0.1) !important; }
+  /* Slate text → lighter */
+  .text-slate-400 { color: #94a3b8 !important; }
+  .text-slate-500 { color: #a8b5c4 !important; }
+  .text-slate-600 { color: #cbd5e1 !important; }
+  /* Slate borders → translucent */
+  .border-slate-200 { border-color: rgba(148, 163, 184, 0.15) !important; }
+  .border-slate-300 { border-color: rgba(148, 163, 184, 0.2) !important; }
+  .hover\:border-slate-300:hover { border-color: rgba(148, 163, 184, 0.3) !important; }
+
+  /* White backgrounds → translucent in dark */
+  .bg-white { background-color: var(--color-panel) !important; }
+  .bg-white\/20 { background-color: rgba(255, 255, 255, 0.1) !important; }
+
+  /* Gray light backgrounds */
+  .bg-gray-50 { background-color: rgba(148, 163, 184, 0.08) !important; }
+  .bg-gray-100 { background-color: rgba(148, 163, 184, 0.12) !important; }
+  .border-gray-200 { border-color: rgba(148, 163, 184, 0.15) !important; }
+  .text-gray-500 { color: #9CA3AF !important; }
+  .text-gray-600 { color: #D1D5DB !important; }
+  .text-gray-700 { color: #E5E7EB !important; }
+  .text-gray-800 { color: #F3F4F6 !important; }
+  .text-gray-900 { color: #F9FAFB !important; }
+
+  /* Zinc backgrounds & text */
+  .bg-zinc-50 { background-color: rgba(161, 161, 170, 0.08) !important; }
+  .bg-zinc-100 { background-color: rgba(161, 161, 170, 0.12) !important; }
+  .bg-zinc-200 { background-color: rgba(161, 161, 170, 0.18) !important; }
+  .text-zinc-500 { color: #a1a1aa !important; }
+  .text-zinc-600 { color: #d4d4d8 !important; }
+  .border-zinc-200 { border-color: rgba(161, 161, 170, 0.2) !important; }
+  .hover\:bg-zinc-200:hover { background-color: rgba(161, 161, 170, 0.25) !important; }
+
+  /* Purple backgrounds & text */
+  .bg-purple-50 { background-color: rgba(147, 51, 234, 0.1) !important; }
+  .bg-purple-100 { background-color: rgba(147, 51, 234, 0.15) !important; }
+  .text-purple-600 { color: #a78bfa !important; }
+  .text-purple-700 { color: #c4b5fd !important; }
+  .border-purple-200 { border-color: rgba(147, 51, 234, 0.25) !important; }
 }

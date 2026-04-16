@@ -353,7 +353,7 @@ export default async function AdminListingDetailPage({ params }: PageProps) {
             </h2>
             <div className="relative pl-5 border-l-2 border-border space-y-4">
               <div className="relative">
-                <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-accent border-2 border-white" />
+                <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-accent border-2 border-panel" />
                 <p className="text-xs font-bold text-foreground">Submitted</p>
                 <p className="text-xs text-muted">{listing.submittedAt}</p>
               </div>
@@ -367,7 +367,7 @@ export default async function AdminListingDetailPage({ params }: PageProps) {
                       width: 10,
                       height: 10,
                       borderRadius: "50%",
-                      border: "2px solid #fff",
+                      border: "2px solid var(--color-panel, #fff)",
                       background:
                         listing.moderationStatus === "approved"
                           ? "#22c55e"
@@ -390,7 +390,7 @@ export default async function AdminListingDetailPage({ params }: PageProps) {
                         style={{
                           marginTop: 4,
                           fontSize: 12,
-                          color: "#991b1b",
+                          color: "var(--status-danger-text, #991b1b)",
                           lineHeight: 1.4,
                         }}
                       >

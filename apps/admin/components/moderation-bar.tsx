@@ -30,33 +30,33 @@ const statusMeta: Record<
 > = {
   pending: {
     label: "Pending",
-    color: "#b45309",
-    bg: "#fef3c7",
-    border: "#fde68a",
+    color: "var(--status-warning-text, #b45309)",
+    bg: "rgba(245,158,11,0.12)",
+    border: "rgba(245,158,11,0.25)",
     icon: <Clock size={14} />,
   },
   approved: {
     label: "Approved",
-    color: "#15803d",
-    bg: "#dcfce7",
-    border: "#bbf7d0",
+    color: "var(--status-success-text, #15803d)",
+    bg: "rgba(16,185,129,0.12)",
+    border: "rgba(16,185,129,0.25)",
     icon: <CheckCircle2 size={14} />,
   },
   flagged: {
     label: "Rejected",
-    color: "#dc2626",
-    bg: "#fee2e2",
-    border: "#fecaca",
+    color: "var(--status-danger-text, #dc2626)",
+    bg: "rgba(239,68,68,0.1)",
+    border: "rgba(239,68,68,0.25)",
     icon: <AlertTriangle size={14} />,
   },
 };
 
 const typeMeta: Record<string, { label: string; color: string; bg: string }> = {
-  sale: { label: "For Sale", color: "#2563eb", bg: "#eff6ff" },
-  rent: { label: "For Rent", color: "#7c3aed", bg: "#f5f3ff" },
-  land: { label: "Land", color: "#059669", bg: "#ecfdf5" },
-  new: { label: "New Development", color: "#2563eb", bg: "#eff6ff" },
-  commercial: { label: "Commercial", color: "#059669", bg: "#ecfdf5" },
+  sale: { label: "For Sale", color: "#60a5fa", bg: "rgba(59,130,246,0.1)" },
+  rent: { label: "For Rent", color: "#a78bfa", bg: "rgba(139,92,246,0.1)" },
+  land: { label: "Land", color: "#34d399", bg: "rgba(5,150,105,0.1)" },
+  new: { label: "New Development", color: "#60a5fa", bg: "rgba(59,130,246,0.1)" },
+  commercial: { label: "Commercial", color: "#34d399", bg: "rgba(5,150,105,0.1)" },
 };
 
 export function ModerationBar({
@@ -147,9 +147,9 @@ export function ModerationBar({
                   fontWeight: 700,
                   textTransform: "uppercase",
                   letterSpacing: "0.05em",
-                  color: "#a16207",
-                  background: "#fefce8",
-                  border: "1px solid #fde68a",
+                  color: "var(--status-warning-text, #a16207)",
+                  background: "rgba(245,158,11,0.1)",
+                  border: "1px solid rgba(245,158,11,0.25)",
                 }}
               >
                 <Star size={10} fill="currentColor" /> Featured
@@ -237,9 +237,9 @@ export function ModerationBar({
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
-                  border: "1px solid #fecaca",
-                  background: "#fff",
-                  color: "#dc2626",
+                  border: "1px solid var(--color-border)",
+                  background: "var(--color-panel, #fff)",
+                  color: "var(--status-danger-text, #dc2626)",
                   transition: "all 0.15s",
                   opacity: pending ? 0.5 : 1,
                 }}
@@ -293,9 +293,9 @@ export function ModerationBar({
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
-                    border: "1px solid #fecaca",
-                    background: "#fce4ec",
-                    color: "#7f1d1d",
+                    border: "1px solid var(--color-border)",
+                    background: "rgba(239,68,68,0.08)",
+                    color: "var(--status-danger-text, #7f1d1d)",
                     transition: "all 0.15s",
                   }}
                 >
@@ -313,10 +313,10 @@ export function ModerationBar({
               marginTop: 12,
               padding: "10px 14px",
               borderRadius: 8,
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
+              background: "rgba(239,68,68,0.08)",
+              border: "1px solid var(--color-border)",
               fontSize: 13,
-              color: "#991b1b",
+              color: "var(--status-danger-text, #991b1b)",
               lineHeight: 1.5,
             }}
           >

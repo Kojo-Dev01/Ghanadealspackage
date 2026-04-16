@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Plus,
 } from "lucide-react";
+import { SelfieCaptureWidget } from "./selfie-capture";
 
 type DocumentEntry = {
   type: "ghana_card" | "passport";
@@ -44,6 +45,7 @@ export function KycUploadForm({ submitAction }: Props) {
   const [documents, setDocuments] = useState<DocumentEntry[]>([
     { type: "ghana_card", file: null, url: "", name: "" },
   ]);
+  const [selfieUrl, setSelfieUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -97,6 +99,11 @@ export function KycUploadForm({ submitAction }: Props) {
       return;
     }
 
+    if (!selfieUrl) {
+      setError("Please take a live selfie for identity verification.");
+      return;
+    }
+
     setUploading(true);
     try {
       // Upload all files
@@ -110,6 +117,7 @@ export function KycUploadForm({ submitAction }: Props) {
       // Submit via server action
       const formData = new FormData();
       formData.set("documents", JSON.stringify(uploaded));
+      formData.set("selfieUrl", selfieUrl);
 
       startTransition(() => {
         submitAction(formData);
@@ -252,6 +260,15 @@ export function KycUploadForm({ submitAction }: Props) {
           Add another document
         </button>
       )}
+
+      {/* ── Live Selfie Capture ── */}
+      <div className="border-t border-border pt-5 mt-1">
+        <SelfieCaptureWidget
+          onCapture={(url) => setSelfieUrl(url)}
+          existingUrl={selfieUrl}
+          disabled={busy}
+        />
+      </div>
 
       <div className="border-t border-border pt-5 mt-1">
         <button

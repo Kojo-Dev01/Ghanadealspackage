@@ -81,6 +81,12 @@ export function AgentReviews({ agentId, reviews: initialReviews, total }: Props)
       });
       setMessage(result.message);
       if (result.ok) {
+        if (result.item) {
+          setReviews((prev) => {
+            const filtered = prev.filter((r) => r.userId !== result.item!.userId);
+            return [result.item!, ...filtered];
+          });
+        }
         setRating(0);
         setComment("");
         setShowForm(false);

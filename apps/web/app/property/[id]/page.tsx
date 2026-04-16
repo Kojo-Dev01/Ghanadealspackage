@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { fetchPropertyById } from "../../../lib/api";
@@ -9,6 +8,7 @@ import { GalleryLightbox } from "../../../components/gallery-lightbox";
 import { MortgageCalculator } from "../../../components/mortgage-calculator";
 import { PropertyMessageButton } from "../../../components/property-message-button";
 import { PropertyDescription } from "../../../components/property-description";
+import { AmenityIcon } from "../../../components/amenity-icon";
 
 type PropertyPageProps = {
   params: Promise<{ id: string }>;
@@ -30,13 +30,22 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
     <ExtractedShell>
       <main className="detail-page">
         <div className="container">
-          <GalleryLightbox images={gallery} alt={property.title} />
+          {/* Breadcrumb — above gallery */}
+          <nav className="detail-breadcrumb">
+            <Link href="/listings" className="detail-breadcrumb-back">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+              Back to Properties
+            </Link>
+            <div className="detail-breadcrumb-trail">
+              <Link href="/">Ghana</Link>
+              <span className="detail-breadcrumb-sep">›</span>
+              <Link href={`/listings?region=${encodeURIComponent(property.region)}`}>{property.region}</Link>
+              <span className="detail-breadcrumb-sep">›</span>
+              <span>{property.type} for {property.listingType === "rent" ? "Rent" : "Sale"}</span>
+            </div>
+          </nav>
 
-          <div className="breadcrumb">
-            <Link href="/">Ghana</Link> <span>›</span>
-            <Link href="/listings">{property.region}</Link> <span>›</span>
-            <span>{property.type} for {property.listingType === "rent" ? "Rent" : "Sale"}</span>
-          </div>
+          <GalleryLightbox images={gallery} alt={property.title} />
 
           <div className="detail-layout">
             <div className="detail-main">
@@ -73,7 +82,10 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
                 <h3 className="detail-section-title">Amenities & Features</h3>
                 <div className="amenities-grid">
                   {property.amenities.map((amenity) => (
-                    <div className="amenity-item" key={amenity}>{amenity}</div>
+                    <div className="amenity-item" key={amenity}>
+                      <AmenityIcon name={amenity} />
+                      {amenity}
+                    </div>
                   ))}
                 </div>
               </div>

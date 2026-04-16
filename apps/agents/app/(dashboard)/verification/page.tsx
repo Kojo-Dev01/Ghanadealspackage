@@ -18,7 +18,7 @@ export default async function VerificationPage() {
     redirect("/login?next=%2Fverification");
   }
 
-  const { verificationStatus, kycDocuments, submittedAt, verifiedAt, rejectionReason } = verification;
+  const { verificationStatus, kycDocuments, selfieUrl, submittedAt, verifiedAt, rejectionReason } = verification;
 
   async function submitKycAction(formData: FormData) {
     "use server";
@@ -37,7 +37,9 @@ export default async function VerificationPage() {
       redirect("/verification?error=invalid");
     }
 
-    const result = await submitVerification(documents);
+    const selfieUrl = String(formData.get("selfieUrl") ?? "").trim();
+
+    const result = await submitVerification(documents, selfieUrl || undefined);
 
     if (result.ok) {
       redirect("/verification?success=1");
@@ -139,6 +141,29 @@ export default async function VerificationPage() {
         </section>
       )}
 
+      {/* Requirements info */}
+      <section className="bg-panel border border-border rounded-xl p-5 shadow-sm">
+        <h3 className="text-sm font-bold text-foreground mb-3">
+          Verification Requirements
+        </h3>
+        <ul className="grid gap-2 text-sm text-muted">
+          <li className="flex items-start gap-2">
+            <span className="text-accent font-bold">Step 1.</span>
+            <span>
+              <strong>Ghana Card or Passport</strong> — A clear photo or scan
+              of your Ghana Card (front and back) or the bio-data page of your valid passport.
+            </span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-accent font-bold">Step 2.</span>
+            <span>
+              <strong>Live Face Capture</strong> — A live selfie taken
+              using your device camera. No uploaded photos allowed.
+            </span>
+          </li>
+        </ul>
+      </section>
+
       {/* Submitted Documents (when pending or approved) */}
       {(verificationStatus === "pending" || verificationStatus === "approved") &&
         kycDocuments.length > 0 && (
@@ -163,6 +188,24 @@ export default async function VerificationPage() {
           </section>
         )}
 
+      {/* Submitted Selfie (when pending or approved) */}
+      {(verificationStatus === "pending" || verificationStatus === "approved") &&
+        selfieUrl && (
+          <section className="bg-panel border border-border rounded-xl p-5 shadow-sm">
+            <h3 className="text-sm font-bold text-foreground mb-3">
+              Live Selfie
+            </h3>
+            <div className="rounded-xl border border-border overflow-hidden max-w-[200px]">
+              <img
+                src={selfieUrl}
+                alt="Verification selfie"
+                className="w-full object-cover"
+                style={{ aspectRatio: "3/4" }}
+              />
+            </div>
+          </section>
+        )}
+
       {/* Upload Form (when unverified or rejected) */}
       {(verificationStatus === "unverified" ||
         verificationStatus === "rejected") && (
@@ -179,29 +222,6 @@ export default async function VerificationPage() {
           />
         </section>
       )}
-
-      {/* Requirements info */}
-      <section className="bg-panel border border-border rounded-xl p-5 shadow-sm">
-        <h3 className="text-sm font-bold text-foreground mb-3">
-          Verification Requirements
-        </h3>
-        <ul className="grid gap-2 text-sm text-muted">
-          <li className="flex items-start gap-2">
-            <span className="text-accent font-bold">1.</span>
-            <span>
-              <strong>Ghana Card</strong> — A clear photo or scan
-              of the front and back of your Ghana Card.
-            </span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-accent font-bold">2.</span>
-            <span>
-              <strong>Passport</strong> — The bio-data page of your
-              valid passport (alternative to Ghana Card).
-            </span>
-          </li>
-        </ul>
-      </section>
     </AgentShell>
   );
 }

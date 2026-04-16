@@ -350,6 +350,7 @@ export type AdminAgent = {
   verified: boolean;
   verificationStatus: VerificationStatus;
   kycDocuments: KycDocument[];
+  selfieUrl: string | null;
   verificationSubmittedAt: string | null;
   verifiedAt: string | null;
   rejectionReason: string | null;
