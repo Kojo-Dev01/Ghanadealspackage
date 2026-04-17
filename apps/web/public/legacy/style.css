@@ -2180,6 +2180,54 @@ ul, ol { list-style: none; }
   background: rgba(230,57,70,0.12);
 }
 
+/* ── Clear button inside dropdowns ── */
+.filter-dropdown-clear {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--text-tertiary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: center;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.filter-dropdown-clear:hover {
+  color: var(--red);
+  background: rgba(230,57,70,0.06);
+}
+
+/* ── Inline clear for bed/bath section headers ── */
+.filter-dropdown-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.filter-dropdown-section-header .filter-dropdown-label {
+  margin-bottom: 0;
+}
+.filter-dropdown-clear-inline {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-tertiary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+}
+.filter-dropdown-clear-inline:hover {
+  color: var(--red);
+}
+
 /* Price Range Widget (reused inside dropdown) */
 .price-range-widget {
   flex: 1 1 260px;

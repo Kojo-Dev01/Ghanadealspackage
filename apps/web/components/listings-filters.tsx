@@ -74,20 +74,21 @@ const PROPERTY_TYPES = [
 ];
 
 const BED_OPTIONS = [
-  { value: "", label: "Any" },
-  { value: "1", label: "1+" },
-  { value: "2", label: "2+" },
-  { value: "3", label: "3+" },
-  { value: "4", label: "4+" },
-  { value: "5", label: "5+" },
+  { value: "1", label: "1" },
+  { value: "2", label: "2" },
+  { value: "3", label: "3" },
+  { value: "4", label: "4" },
+  { value: "5", label: "5" },
+  { value: "6+", label: "6+" },
 ];
 
 const BATH_OPTIONS = [
-  { value: "", label: "Any" },
-  { value: "1", label: "1+" },
-  { value: "2", label: "2+" },
-  { value: "3", label: "3+" },
-  { value: "4", label: "4+" },
+  { value: "1", label: "1" },
+  { value: "2", label: "2" },
+  { value: "3", label: "3" },
+  { value: "4", label: "4" },
+  { value: "5", label: "5" },
+  { value: "6+", label: "6+" },
 ];
 
 /* Chevron SVG for pill buttons */
@@ -117,6 +118,10 @@ export function ListingsFilters({ initialFilters, onFiltersChange }: Props) {
   const [maxPriceRaw, setMaxPriceRaw] = useState(initialFilters.maxPrice);
   const [beds, setBeds] = useState(initialFilters.minBeds);
   const [baths, setBaths] = useState(initialFilters.minBaths);
+
+  /** Parse comma-separated bed/bath string into a Set for easy toggle */
+  const bedsSet = new Set(beds ? beds.split(",") : []);
+  const bathsSet = new Set(baths ? baths.split(",") : []);
 
   /* Sync from parent when filters are cleared externally */
   const prevFiltersRef = useRef(initialFilters);
@@ -231,12 +236,18 @@ export function ListingsFilters({ initialFilters, onFiltersChange }: Props) {
     emit({ type: v });
   };
   const applyBeds = (v: string) => {
-    setBeds(v);
-    emit({ minBeds: v });
+    const next = new Set(bedsSet);
+    if (next.has(v)) next.delete(v); else next.add(v);
+    const val = [...next].join(",");
+    setBeds(val);
+    emit({ minBeds: val });
   };
   const applyBaths = (v: string) => {
-    setBaths(v);
-    emit({ minBaths: v });
+    const next = new Set(bathsSet);
+    if (next.has(v)) next.delete(v); else next.add(v);
+    const val = [...next].join(",");
+    setBaths(val);
+    emit({ minBaths: val });
   };
 
   /* ── Clear all filters ── */
@@ -262,7 +273,7 @@ export function ListingsFilters({ initialFilters, onFiltersChange }: Props) {
   const listingLabel = LISTING_TYPES.find((l) => l.value === selectedListingType)?.label ?? "All";
   const typeLabel = selectedPropertyType || "Property type";
   const bedsBathsLabel = (beds || baths)
-    ? [beds ? `${beds}+ Beds` : null, baths ? `${baths}+ Baths` : null].filter(Boolean).join(", ")
+    ? [beds ? `${beds} Bed${bedsSet.size > 1 ? "s" : ""}` : null, baths ? `${baths} Bath${bathsSet.size > 1 ? "s" : ""}` : null].filter(Boolean).join(", ")
     : "Beds & Baths";
   const priceLabel = (minVal > 0 || maxVal > 0)
     ? `${minVal > 0 ? fmtPrice(minVal) : "Any"} – ${maxVal > 0 ? fmtPrice(maxVal) : "Any"}`
@@ -317,6 +328,11 @@ export function ListingsFilters({ initialFilters, onFiltersChange }: Props) {
                   {opt.label}
                 </button>
               ))}
+              {isListingActive && (
+                <button type="button" className="filter-dropdown-clear" onClick={() => applyListingType("")}>
+                  Clear
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -350,6 +366,11 @@ export function ListingsFilters({ initialFilters, onFiltersChange }: Props) {
                   {t}
                 </button>
               ))}
+              {isTypeActive && (
+                <button type="button" className="filter-dropdown-clear" onClick={() => applyPropertyType("")}>
+                  Clear
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -368,13 +389,20 @@ export function ListingsFilters({ initialFilters, onFiltersChange }: Props) {
             {openDropdown === "bedsbaths" && (
               <div className="filter-dropdown filter-dropdown--bedsbaths">
                 <div className="filter-dropdown-section">
-                  <span className="filter-dropdown-label">Bedrooms</span>
+                  <div className="filter-dropdown-section-header">
+                    <span className="filter-dropdown-label">Bedrooms</span>
+                    {beds && (
+                      <button type="button" className="filter-dropdown-clear-inline" onClick={() => { setBeds(""); emit({ minBeds: "" }); }}>
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <div className="filter-option-pills">
                     {BED_OPTIONS.map((opt) => (
                       <button
                         key={opt.value}
                         type="button"
-                        className={`filter-option-chip${beds === opt.value ? " filter-option-chip--selected" : ""}`}
+                        className={`filter-option-chip${bedsSet.has(opt.value) ? " filter-option-chip--selected" : ""}`}
                         onClick={() => applyBeds(opt.value)}
                       >
                         {opt.label}
@@ -383,13 +411,20 @@ export function ListingsFilters({ initialFilters, onFiltersChange }: Props) {
                   </div>
                 </div>
                 <div className="filter-dropdown-section">
-                  <span className="filter-dropdown-label">Bathrooms</span>
+                  <div className="filter-dropdown-section-header">
+                    <span className="filter-dropdown-label">Bathrooms</span>
+                    {baths && (
+                      <button type="button" className="filter-dropdown-clear-inline" onClick={() => { setBaths(""); emit({ minBaths: "" }); }}>
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <div className="filter-option-pills">
                     {BATH_OPTIONS.map((opt) => (
                       <button
                         key={opt.value}
                         type="button"
-                        className={`filter-option-chip${baths === opt.value ? " filter-option-chip--selected" : ""}`}
+                        className={`filter-option-chip${bathsSet.has(opt.value) ? " filter-option-chip--selected" : ""}`}
                         onClick={() => applyBaths(opt.value)}
                       >
                         {opt.label}
@@ -502,6 +537,19 @@ export function ListingsFilters({ initialFilters, onFiltersChange }: Props) {
                 <div className="price-range-label">
                   {minVal > 0 ? fmtPrice(minVal) : "No Min"} – {maxVal > 0 ? fmtPrice(maxVal) : "No Max"}
                 </div>
+              )}
+              {isPriceActive && (
+                <button
+                  type="button"
+                  className="filter-dropdown-clear"
+                  onClick={() => {
+                    setMinPriceRaw("");
+                    setMaxPriceRaw("");
+                    emit({ minPrice: "", maxPrice: "" });
+                  }}
+                >
+                  Clear
+                </button>
               )}
               <button
                 type="button"

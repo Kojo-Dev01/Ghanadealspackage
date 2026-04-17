@@ -157,13 +157,30 @@ export async function registerPropertyRoutes(app: FastifyInstance) {
     if (!Number.isNaN(maxPrice) && maxPrice > 0) {
       qb = qb.lte("price", maxPrice);
     }
-    const minBeds = Number(query.minBeds ?? "0");
-    if (!Number.isNaN(minBeds) && minBeds > 0) {
-      qb = qb.gte("beds", minBeds);
+    // Beds filter: supports comma-separated values like "1,3,6+"
+    // "6+" means 6 or more; exact values match exactly
+    if (query.minBeds) {
+      const bedValues = query.minBeds.split(",").map((v) => v.trim()).filter(Boolean);
+      if (bedValues.length > 0) {
+        const exactBeds = bedValues.filter((v) => v !== "6+").map(Number).filter((n) => !Number.isNaN(n) && n > 0);
+        const hasSixPlus = bedValues.includes("6+");
+        const orParts: string[] = [];
+        for (const b of exactBeds) orParts.push(`beds.eq.${b}`);
+        if (hasSixPlus) orParts.push("beds.gte.6");
+        if (orParts.length > 0) qb = qb.or(orParts.join(","));
+      }
     }
-    const minBaths = Number(query.minBaths ?? "0");
-    if (!Number.isNaN(minBaths) && minBaths > 0) {
-      qb = qb.gte("baths", minBaths);
+    // Baths filter: same logic as beds
+    if (query.minBaths) {
+      const bathValues = query.minBaths.split(",").map((v) => v.trim()).filter(Boolean);
+      if (bathValues.length > 0) {
+        const exactBaths = bathValues.filter((v) => v !== "6+").map(Number).filter((n) => !Number.isNaN(n) && n > 0);
+        const hasSixPlus = bathValues.includes("6+");
+        const orParts: string[] = [];
+        for (const b of exactBaths) orParts.push(`baths.eq.${b}`);
+        if (hasSixPlus) orParts.push("baths.gte.6");
+        if (orParts.length > 0) qb = qb.or(orParts.join(","));
+      }
     }
     if (query.featured === "true") {
       qb = qb.eq("featured", true);
