@@ -2,12 +2,6 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 
-type HeroSectionProps = {
-  totalProperties?: number;
-  totalAgents?: number;
-  totalRegions?: number;
-};
-
 /* ── Shared price slider logic (same as listings-filters) ── */
 const PRICE_PRESETS = [50_000, 100_000, 200_000, 500_000, 1_000_000, 2_000_000, 5_000_000, 10_000_000];
 const SLIDER_MAX = 1000;
@@ -55,20 +49,21 @@ const PROPERTY_TYPES = [
 ];
 
 const BED_OPTIONS = [
-  { value: "", label: "Any" },
-  { value: "1", label: "1+" },
-  { value: "2", label: "2+" },
-  { value: "3", label: "3+" },
-  { value: "4", label: "4+" },
-  { value: "5", label: "5+" },
+  { value: "1", label: "1" },
+  { value: "2", label: "2" },
+  { value: "3", label: "3" },
+  { value: "4", label: "4" },
+  { value: "5", label: "5" },
+  { value: "6+", label: "6+" },
 ];
 
 const BATH_OPTIONS = [
-  { value: "", label: "Any" },
-  { value: "1", label: "1+" },
-  { value: "2", label: "2+" },
-  { value: "3", label: "3+" },
-  { value: "4", label: "4+" },
+  { value: "1", label: "1" },
+  { value: "2", label: "2" },
+  { value: "3", label: "3" },
+  { value: "4", label: "4" },
+  { value: "5", label: "5" },
+  { value: "6+", label: "6+" },
 ];
 
 /* ── SVG helpers ── */
@@ -80,7 +75,7 @@ function ChevronDown() {
   );
 }
 
-export function HeroSection({ totalProperties = 0, totalAgents = 0, totalRegions = 0 }: HeroSectionProps) {
+export function HeroSection() {
   const [activeTab, setActiveTab] = useState("buy");
   const [query, setQuery] = useState("");
   const [selectedType, setSelectedType] = useState("");
@@ -96,6 +91,23 @@ export function HeroSection({ totalProperties = 0, totalAgents = 0, totalRegions
 
   const toggle = useCallback((key: string) => {
     setOpenDropdown((prev) => (prev === key ? null : key));
+  }, []);
+
+  /* Multi-select beds/baths toggles */
+  const toggleBed = useCallback((value: string) => {
+    setBeds((prev) => {
+      const set = new Set(prev ? prev.split(",") : []);
+      if (set.has(value)) set.delete(value); else set.add(value);
+      return [...set].join(",");
+    });
+  }, []);
+
+  const toggleBath = useCallback((value: string) => {
+    setBaths((prev) => {
+      const set = new Set(prev ? prev.split(",") : []);
+      if (set.has(value)) set.delete(value); else set.add(value);
+      return [...set].join(",");
+    });
   }, []);
 
   /* Close dropdown on outside click */
@@ -119,8 +131,10 @@ export function HeroSection({ totalProperties = 0, totalAgents = 0, totalRegions
 
   /* Pill labels */
   const typeLabel = selectedType || "Property Type";
+  const bedsSet = new Set(beds ? beds.split(",") : []);
+  const bathsSet = new Set(baths ? baths.split(",") : []);
   const bedsBathsLabel = (beds || baths)
-    ? [beds ? `${beds}+ Beds` : null, baths ? `${baths}+ Baths` : null].filter(Boolean).join(", ")
+    ? [beds ? `${bedsSet.size === 1 ? [...bedsSet][0] : bedsSet.size} Bed${bedsSet.size > 1 ? "s" : ""}` : null, baths ? `${bathsSet.size === 1 ? [...bathsSet][0] : bathsSet.size} Bath${bathsSet.size > 1 ? "s" : ""}` : null].filter(Boolean).join(", ")
     : "Beds & Baths";
   const priceLabel = (minVal > 0 || maxVal > 0)
     ? `${minVal > 0 ? fmtPrice(minVal) : "Any"} – ${maxVal > 0 ? fmtPrice(maxVal) : "Any"}`
@@ -157,22 +171,13 @@ export function HeroSection({ totalProperties = 0, totalAgents = 0, totalRegions
     window.location.href = `/listings?${params.toString()}`;
   };
 
-  function fmt(n: number) {
-    if (n >= 1000) return `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}K+`;
-    return String(n);
-  }
-
   return (
     <section className="hero">
       <div className="hero-bg" style={{ backgroundImage: "url('/legacy/assets/properties/dominik-mCQ-ykj6tQk-unsplash.jpg')" }} />
       <div className="hero-content">
         <h1>Find Your Dream Property in Ghana</h1>
         <p>Ghana&apos;s Premier Property Marketplace</p>
-        <div className="hero-stats">
-          <div className="stat"><strong>{fmt(totalProperties)}</strong> Properties</div>
-          <div className="stat"><strong>{fmt(totalAgents)}</strong> Verified Agents</div>
-          <div className="stat"><strong>{fmt(totalRegions)}</strong> Regions</div>
-        </div>
+
 
         <div className="hero-search-panel" ref={panelRef}>
           {/* Tabs */}
@@ -243,6 +248,11 @@ export function HeroSection({ totalProperties = 0, totalAgents = 0, totalRegions
                         {t}
                       </button>
                     ))}
+                    {isTypeActive && (
+                      <button type="button" className="filter-dropdown-clear" onClick={() => { setSelectedType(""); setOpenDropdown(null); }}>
+                        Clear
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -268,8 +278,8 @@ export function HeroSection({ totalProperties = 0, totalAgents = 0, totalRegions
                           <button
                             key={opt.value}
                             type="button"
-                            className={`filter-option-chip${beds === opt.value ? " filter-option-chip--selected" : ""}`}
-                            onClick={() => setBeds(opt.value)}
+                            className={`filter-option-chip${bedsSet.has(opt.value) ? " filter-option-chip--selected" : ""}`}
+                            onClick={() => toggleBed(opt.value)}
                           >
                             {opt.label}
                           </button>
@@ -283,14 +293,19 @@ export function HeroSection({ totalProperties = 0, totalAgents = 0, totalRegions
                           <button
                             key={opt.value}
                             type="button"
-                            className={`filter-option-chip${baths === opt.value ? " filter-option-chip--selected" : ""}`}
-                            onClick={() => setBaths(opt.value)}
+                            className={`filter-option-chip${bathsSet.has(opt.value) ? " filter-option-chip--selected" : ""}`}
+                            onClick={() => toggleBath(opt.value)}
                           >
                             {opt.label}
                           </button>
                         ))}
                       </div>
                     </div>
+                    {isBedsBathsActive && (
+                      <button type="button" className="filter-dropdown-clear" onClick={() => { setBeds(""); setBaths(""); }}>
+                        Clear
+                      </button>
+                    )}
                     <button type="button" className="filter-dropdown-done" onClick={() => setOpenDropdown(null)}>Done</button>
                   </div>
                 )}
@@ -369,6 +384,11 @@ export function HeroSection({ totalProperties = 0, totalAgents = 0, totalRegions
                     <div className="price-range-label">
                       {minVal > 0 ? fmtPrice(minVal) : "No Min"} – {maxVal > 0 ? fmtPrice(maxVal) : "No Max"}
                     </div>
+                  )}
+                  {isPriceActive && (
+                    <button type="button" className="filter-dropdown-clear" onClick={() => { setMinPriceRaw(""); setMaxPriceRaw(""); }}>
+                      Clear
+                    </button>
                   )}
                   <button type="button" className="filter-dropdown-done" onClick={() => setOpenDropdown(null)}>Done</button>
                 </div>

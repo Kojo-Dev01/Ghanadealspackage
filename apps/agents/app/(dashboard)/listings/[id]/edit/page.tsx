@@ -111,7 +111,7 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
     >
       <ListingFormWithCancel
         action={handleUpdate}
-        submitLabel="Save Changes"
+        submitLabel="Submit Changes"
         defaultValues={{
           title: listing.title,
           listingType: listing.listingType as "sale" | "rent" | "new",

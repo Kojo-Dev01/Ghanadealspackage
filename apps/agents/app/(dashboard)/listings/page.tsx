@@ -11,12 +11,12 @@ export default async function AgentListingsPage({
   searchParams,
 }: ListingsPageProps) {
   const params = await searchParams;
-  const validTabs = ["approved", "pending", "flagged"] as const;
+  const validTabs = ["approved", "pending", "rejected"] as const;
   const tab = validTabs.includes(params.tab as any) ? (params.tab as typeof validTabs[number]) : "approved";
   const listingType = params.type ?? "";
   const page = Math.max(1, Number(params.page ?? "1") || 1);
 
-  const data = await fetchAgentListings({ status: tab, listingType: listingType || undefined, page });
+  const data = await fetchAgentListings({ status: tab === "rejected" ? "flagged" : tab, listingType: listingType || undefined, page });
   const totalPages = Math.max(1, Math.ceil(data.total / data.limit));
 
   function buildHref(overrides: { tab?: string; type?: string; page?: number } = {}) {
@@ -75,14 +75,14 @@ export default async function AgentListingsPage({
           Pending Review
         </Link>
         <Link
-          href={buildHref({ tab: "flagged" })}
+          href={buildHref({ tab: "rejected" })}
           className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
-            tab === "flagged"
+            tab === "rejected"
               ? "bg-panel text-foreground shadow-sm"
               : "text-muted hover:text-foreground"
           }`}
         >
-          Flagged
+          Rejected
         </Link>
       </div>
 
@@ -123,7 +123,7 @@ export default async function AgentListingsPage({
               ? "No approved listings yet."
               : tab === "pending"
               ? "No listings waiting for review."
-              : "No flagged listings."}
+              : "No rejected listings."}
           </p>
           <Link
             href="/listings/new"

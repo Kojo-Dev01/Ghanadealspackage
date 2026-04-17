@@ -391,11 +391,6 @@ export function ListingsFilters({ initialFilters, onFiltersChange }: Props) {
                 <div className="filter-dropdown-section">
                   <div className="filter-dropdown-section-header">
                     <span className="filter-dropdown-label">Bedrooms</span>
-                    {beds && (
-                      <button type="button" className="filter-dropdown-clear-inline" onClick={() => { setBeds(""); emit({ minBeds: "" }); }}>
-                        Clear
-                      </button>
-                    )}
                   </div>
                   <div className="filter-option-pills">
                     {BED_OPTIONS.map((opt) => (
@@ -413,11 +408,6 @@ export function ListingsFilters({ initialFilters, onFiltersChange }: Props) {
                 <div className="filter-dropdown-section">
                   <div className="filter-dropdown-section-header">
                     <span className="filter-dropdown-label">Bathrooms</span>
-                    {baths && (
-                      <button type="button" className="filter-dropdown-clear-inline" onClick={() => { setBaths(""); emit({ minBaths: "" }); }}>
-                        Clear
-                      </button>
-                    )}
                   </div>
                   <div className="filter-option-pills">
                     {BATH_OPTIONS.map((opt) => (
@@ -432,6 +422,19 @@ export function ListingsFilters({ initialFilters, onFiltersChange }: Props) {
                     ))}
                   </div>
                 </div>
+                {isBedsBathsActive && (
+                  <button
+                    type="button"
+                    className="filter-dropdown-clear"
+                    onClick={() => {
+                      setBeds("");
+                      setBaths("");
+                      emit({ minBeds: "", minBaths: "" });
+                    }}
+                  >
+                    Clear
+                  </button>
+                )}
                 <button
                   type="button"
                   className="filter-dropdown-done"

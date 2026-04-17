@@ -79,12 +79,19 @@ export function PropertyDetailMap({ latitude, longitude, title, image, priceForm
           position={{ lat: latitude, lng: longitude }}
           mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
         >
-          <div style={{
-            transform: "translate(-50%, -100%)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}>
+          <a
+            href={googleMapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              transform: "translate(-50%, -100%)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              textDecoration: "none",
+              cursor: "pointer",
+            }}
+          >
             <div style={{
               background: "var(--bg-card, #fff)",
               borderRadius: 10,
@@ -125,7 +132,7 @@ export function PropertyDetailMap({ latitude, longitude, title, image, priceForm
               borderTop: "8px solid var(--red, #E63946)",
               marginTop: -1,
             }} />
-          </div>
+          </a>
         </OverlayViewF>
       </GoogleMap>
 
