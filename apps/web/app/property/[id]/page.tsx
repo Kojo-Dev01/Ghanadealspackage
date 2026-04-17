@@ -9,6 +9,7 @@ import { MortgageCalculator } from "../../../components/mortgage-calculator";
 import { PropertyMessageButton } from "../../../components/property-message-button";
 import { PropertyDescription } from "../../../components/property-description";
 import { AmenityIcon } from "../../../components/amenity-icon";
+import { PropertyDetailMap } from "../../../components/property-detail-map";
 
 type PropertyPageProps = {
   params: Promise<{ id: string }>;
@@ -108,17 +109,15 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
               {hasCoordinates && (
                 <div className="detail-section">
                   <h3 className="detail-section-title">Location on Map</h3>
-                  <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)" }}>
-                    <iframe
-                      title="Property location"
-                      width="100%"
-                      height="300"
-                      style={{ border: 0 }}
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${property.longitude! - 0.005}%2C${property.latitude! - 0.005}%2C${property.longitude! + 0.005}%2C${property.latitude! + 0.005}&layer=mapnik&marker=${property.latitude}%2C${property.longitude}`}
-                    />
-                  </div>
+                  <PropertyDetailMap
+                    latitude={property.latitude!}
+                    longitude={property.longitude!}
+                    title={property.title}
+                    image={gallery[0] ?? ""}
+                    priceFormatted={property.priceFormatted}
+                    type={property.type}
+                    listingType={property.listingType}
+                  />
                 </div>
               )}
 

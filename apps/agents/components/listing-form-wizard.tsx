@@ -67,6 +67,7 @@ type Props = {
   action: (formData: FormData) => Promise<void>;
   defaultValues?: Partial<ListingFormData>;
   submitLabel?: string;
+  onCancel?: () => void;
 };
 
 const STEPS = [
@@ -92,7 +93,7 @@ const inputCls =
   "border border-border rounded-lg bg-panel-alt px-3 py-2.5 text-foreground text-sm transition-colors focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20";
 
 /* ── Component ── */
-export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit Listing" }: Props) {
+export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit Listing", onCancel }: Props) {
   const [step, setStep] = useState(0);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
@@ -310,7 +311,7 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
             rows={5}
             maxLength={5000}
             placeholder="Describe the property — features, surroundings, condition..."
-            className={inputCls + " resize-y"}
+            className={inputCls + " resize-y !text-base"}
           />
         </label>
 
@@ -320,21 +321,6 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
           onChange={(v) => set("amenities", v)}
           inputCls={inputCls}
         />
-
-        {/* Orientation hint */}
-        <div className="flex items-center gap-4 text-[11px] text-muted bg-panel-alt border border-border rounded-lg px-3 py-2">
-          <span className="inline-flex items-center gap-1.5">
-            <svg width="18" height="13" viewBox="0 0 18 13" fill="none" stroke="currentColor" strokeWidth="1.2"><rect x="0.6" y="0.6" width="16.8" height="11.8" rx="2"/></svg>
-            Landscape
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <svg width="11" height="16" viewBox="0 0 11 16" fill="none" stroke="currentColor" strokeWidth="1.2"><rect x="0.6" y="0.6" width="9.8" height="14.8" rx="2"/></svg>
-            Portrait
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-          </span>
-          <span className="text-muted/60 ml-auto">Use landscape photos for best results</span>
-        </div>
 
         {/* Upload inputs — side by side */}
         <div className="grid gap-4" style={{ gridTemplateColumns: "2fr 3fr" }}>
@@ -398,6 +384,21 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
             hint="Up to 9 additional photos."
             hidePreview
           />
+        </div>
+
+        {/* Orientation warning — below uploaders */}
+        <div className="flex flex-wrap items-center gap-4 text-sm text-foreground bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+          <span className="inline-flex items-center gap-2 font-medium">
+            <svg width="22" height="16" viewBox="0 0 18 13" fill="none" stroke="#16a34a" strokeWidth="1.4"><rect x="0.6" y="0.6" width="16.8" height="11.8" rx="2"/></svg>
+            Landscape
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          </span>
+          <span className="inline-flex items-center gap-2 font-medium">
+            <svg width="14" height="20" viewBox="0 0 11 16" fill="none" stroke="#dc2626" strokeWidth="1.4"><rect x="0.6" y="0.6" width="9.8" height="14.8" rx="2"/></svg>
+            Portrait
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </span>
+          <span className="text-red-700 font-semibold ml-auto">⚠ Portrait photos are not allowed. Listings with portrait images will not be approved.</span>
         </div>
 
         {/* Unified image preview grid */}
@@ -585,6 +586,15 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
 
       {/* Navigation */}
       <div className="flex items-center gap-3 mt-6">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-5 py-2.5 rounded-lg text-sm font-semibold border border-red-200 text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+        )}
         {step > 0 && (
           <button
             type="button"

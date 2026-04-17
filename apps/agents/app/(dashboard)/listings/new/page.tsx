@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { AgentShell } from "@/components/agent-shell";
-import { ListingFormWizard } from "@/components/listing-form-wizard";
+import { ListingFormWithCancel } from "@/components/cancel-listing-button";
 import { createListing } from "@/lib/api";
 import Link from "next/link";
 
@@ -88,7 +88,7 @@ export default function NewListingPage() {
         </Link>
       }
     >
-      <ListingFormWizard action={handleCreate} />
+      <ListingFormWithCancel action={handleCreate} />
     </AgentShell>
   );
 }

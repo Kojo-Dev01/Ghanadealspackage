@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
   GoogleMap,
   useJsApiLoader,
@@ -96,6 +96,8 @@ export function CoordinatePicker({
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const geocoderRef = useRef<google.maps.Geocoder | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const [searchValue, setSearchValue] = useState("");
 
   const lat = latitude ? parseFloat(latitude) : undefined;
   const lng = longitude ? parseFloat(longitude) : undefined;
@@ -213,11 +215,29 @@ export function CoordinatePicker({
           }}
           onPlaceChanged={onPlaceChanged}
         >
-          <input
-            type="text"
-            placeholder="Type an address, landmark, or area in Ghana…"
-            className={inputCls ? `${inputCls} w-full` : "border border-border rounded-lg bg-panel-alt px-3 py-2.5 text-foreground text-sm transition-colors focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 w-full"}
-          />
+          <div className="relative">
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              placeholder="Type an address, landmark, or area in Ghana…"
+              className={inputCls ? `${inputCls} w-full pr-8` : "border border-border rounded-lg bg-panel-alt px-3 py-2.5 text-foreground text-sm transition-colors focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 w-full pr-8"}
+            />
+            {searchValue && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchValue("");
+                  if (searchInputRef.current) searchInputRef.current.value = "";
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-muted hover:text-foreground transition-colors cursor-pointer"
+                title="Clear search"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+            )}
+          </div>
         </Autocomplete>
       </div>
 

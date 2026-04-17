@@ -11,7 +11,8 @@ export default async function AgentListingsPage({
   searchParams,
 }: ListingsPageProps) {
   const params = await searchParams;
-  const tab = params.tab === "approved" ? "approved" : "pending";
+  const validTabs = ["approved", "pending", "flagged"] as const;
+  const tab = validTabs.includes(params.tab as any) ? (params.tab as typeof validTabs[number]) : "approved";
   const listingType = params.type ?? "";
   const page = Math.max(1, Number(params.page ?? "1") || 1);
 
@@ -54,6 +55,16 @@ export default async function AgentListingsPage({
       {/* Tabs */}
       <div className="flex items-center gap-1 p-1 bg-panel-alt border border-border rounded-lg w-fit">
         <Link
+          href={buildHref({ tab: "approved" })}
+          className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
+            tab === "approved"
+              ? "bg-panel text-foreground shadow-sm"
+              : "text-muted hover:text-foreground"
+          }`}
+        >
+          Approved
+        </Link>
+        <Link
           href={buildHref({ tab: "pending" })}
           className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
             tab === "pending"
@@ -64,14 +75,14 @@ export default async function AgentListingsPage({
           Pending Review
         </Link>
         <Link
-          href={buildHref({ tab: "approved" })}
+          href={buildHref({ tab: "flagged" })}
           className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
-            tab === "approved"
+            tab === "flagged"
               ? "bg-panel text-foreground shadow-sm"
               : "text-muted hover:text-foreground"
           }`}
         >
-          Approved
+          Flagged
         </Link>
       </div>
 
@@ -108,9 +119,11 @@ export default async function AgentListingsPage({
       {data.items.length === 0 && (
         <div className="bg-panel border border-border rounded-xl p-10 text-center">
           <p className="text-sm text-muted mb-3">
-            {tab === "pending"
+            {tab === "approved"
+              ? "No approved listings yet."
+              : tab === "pending"
               ? "No listings waiting for review."
-              : "No approved listings yet."}
+              : "No flagged listings."}
           </p>
           <Link
             href="/listings/new"

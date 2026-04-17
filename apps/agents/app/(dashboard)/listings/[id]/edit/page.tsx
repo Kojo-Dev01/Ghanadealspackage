@@ -1,6 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import { AgentShell } from "@/components/agent-shell";
-import { ListingFormWizard } from "@/components/listing-form-wizard";
+import { ListingFormWithCancel } from "@/components/cancel-listing-button";
 import { FormButton } from "@/components/form-button";
 import { fetchListingById, updateListing, deleteListing } from "@/lib/api";
 import Link from "next/link";
@@ -109,7 +109,7 @@ export default async function EditListingPage({ params }: EditListingPageProps) 
         </Link>
       }
     >
-      <ListingFormWizard
+      <ListingFormWithCancel
         action={handleUpdate}
         submitLabel="Save Changes"
         defaultValues={{
