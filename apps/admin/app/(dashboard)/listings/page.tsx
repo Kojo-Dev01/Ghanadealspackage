@@ -30,7 +30,8 @@ export default async function AdminListingsPage({
   searchParams,
 }: ListingsPageProps) {
   const params = await searchParams;
-  const tab = params.tab === "approved" ? "approved" : "pending";
+  const validTabs = ["pending", "approved", "flagged"] as const;
+  const tab = validTabs.includes(params.tab as any) ? (params.tab as typeof validTabs[number]) : "pending";
   const listingType = params.type ?? "";
   const query = String(params.q ?? "").trim();
   const page = Math.max(1, Number(params.page ?? "1") || 1);
@@ -160,6 +161,16 @@ export default async function AdminListingsPage({
         >
           Approved
         </Link>
+        <Link
+          href={buildHref({ tab: "flagged" })}
+          className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
+            tab === "flagged"
+              ? "bg-panel text-foreground shadow-sm"
+              : "text-muted hover:text-foreground"
+          }`}
+        >
+          Flagged
+        </Link>
       </div>
 
       {/* Listing type filters */}
@@ -234,7 +245,9 @@ export default async function AdminListingsPage({
             <p className="text-sm text-muted">
               {tab === "pending"
                 ? "No listings waiting for review."
-                : "No approved listings found."}
+                : tab === "approved"
+                ? "No approved listings found."
+                : "No flagged listings."}
             </p>
           </div>
         )}
