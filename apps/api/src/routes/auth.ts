@@ -1,14 +1,16 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { randomInt, randomBytes } from "crypto";
 import { getSupabaseAdminClient, getSupabaseServerClient } from "../lib/supabase.js";
 import { createNotification } from "../lib/notifications.js";
+import { sendOtpEmail } from "../lib/email.js";
 
 const signupSchema = z.object({
   name: z.string().min(2).max(100),
   email: z.string().email(),
   phone: z.string().min(6).max(20),
   password: z.string().min(8).max(128),
-  accountType: z.enum(["buyer", "agent"])
+  accountType: z.enum(["buyer"])
 });
 
 const loginSchema = z.object({
@@ -25,6 +27,34 @@ const resetPasswordSchema = z.object({
   refreshToken: z.string().min(1),
   password: z.string().min(8).max(128)
 });
+
+const sendOtpSchema = z.object({
+  userId: z.string().uuid(),
+  verificationToken: z.string().min(1),
+});
+
+const verifyOtpSchema = z.object({
+  userId: z.string().uuid(),
+  code: z.string().length(6),
+  verificationToken: z.string().min(1),
+});
+
+const cancelVerificationSchema = z.object({
+  userId: z.string().uuid(),
+  verificationToken: z.string().min(1),
+});
+
+/** Generate a cryptographically random 6-digit OTP */
+function generateOtp(): string {
+  return String(randomInt(100_000, 999_999));
+}
+
+/** Generate a random verification token to secure the OTP flow */
+function generateVerificationToken(): string {
+  return randomBytes(32).toString("hex");
+}
+
+const OTP_EXPIRY_MINUTES = 10;
 
 export async function registerAuthRoutes(app: FastifyInstance) {
   // ── POST /signup ────────────────────────────────────────────
@@ -59,43 +89,17 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
     const userId = authData.user.id;
 
-    // If agent, create agents row
-    let agentRecord = null;
-    let profileRecord = null;
-    if (accountType === "agent") {
-      const { data: agent, error: agentError } = await (supabaseAdmin as any)
-        .from("agents")
-        .insert({
-          user_id: userId,
-          name,
-          email,
-          company: "",
-          phone
-        })
-        .select("id, name, company, phone, verified")
-        .single();
+    // Create buyer profile row
+    const { data: profile, error: profileError } = await (supabaseAdmin as any)
+      .from("profiles")
+      .insert({ user_id: userId, name, email, phone })
+      .select("id, name, email, phone, avatar_url, saved_properties, search_preferences")
+      .single();
 
-      if (agentError) {
-        request.log.error(agentError, "Failed to create agent record");
-        // Rollback: remove the auth user we just created
-        await supabaseAdmin.auth.admin.deleteUser(userId);
-        return reply.code(500).send({ message: "Failed to create seller profile" });
-      }
-      agentRecord = agent;
-    } else {
-      // Create buyer profile row
-      const { data: profile, error: profileError } = await (supabaseAdmin as any)
-        .from("profiles")
-        .insert({ user_id: userId, name, email, phone })
-        .select("id, name, email, phone, avatar_url, saved_properties, search_preferences")
-        .single();
-
-      if (profileError) {
-        request.log.error(profileError, "Failed to create buyer profile");
-        await supabaseAdmin.auth.admin.deleteUser(userId);
-        return reply.code(500).send({ message: "Failed to create user profile" });
-      }
-      profileRecord = profile;
+    if (profileError) {
+      request.log.error(profileError, "Failed to create buyer profile");
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+      return reply.code(500).send({ message: "Failed to create user profile" });
     }
 
     // Sign in to get a session
@@ -104,9 +108,25 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       return reply.code(503).send({ message: "Auth service is not configured" });
     }
 
-    const token = app.jwt.sign(
-      { sub: userId, email, role: accountType, name },
-      { expiresIn: "7d" }
+    // Generate and send OTP for email verification
+    const otpCode = generateOtp();
+    const verificationToken = generateVerificationToken();
+    const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60_000).toISOString();
+
+    // Invalidate any existing OTPs for this user
+    await (supabaseAdmin as any)
+      .from("email_otps")
+      .update({ used: true })
+      .eq("user_id", userId)
+      .eq("used", false);
+
+    await (supabaseAdmin as any)
+      .from("email_otps")
+      .insert({ user_id: userId, email, code: otpCode, expires_at: expiresAt, verification_token: verificationToken });
+
+    // Send OTP email (fire-and-forget logging, but we still await)
+    sendOtpEmail(email, name, otpCode).catch((err) =>
+      request.log.error(err, "Failed to send OTP email"),
     );
 
     // Welcome notification (fire-and-forget)
@@ -117,11 +137,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       body: `Hi ${name}, your ${accountType} account is ready.`,
     }).catch((err) => request.log.error(err, "Failed to create welcome notification"));
 
+    // Return needsVerification — client must complete OTP before getting a token
     return reply.code(201).send({
-      token,
-      user: { id: userId, email, name, role: accountType },
-      agent: agentRecord,
-      profile: profileRecord
+      needsVerification: true,
+      userId,
+      email,
+      name,
+      role: accountType,
+      verificationToken,
     });
   });
 
@@ -150,6 +173,44 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const meta = signInData.user.user_metadata ?? {};
     const role = String(meta.role ?? "buyer");
     const name = String(meta.name ?? "");
+
+    // Check if email is verified
+    const { data: profileCheck } = await (supabaseAdmin as any)
+      .from("profiles")
+      .select("email_verified")
+      .eq("user_id", userId)
+      .single();
+
+    if (profileCheck && !profileCheck.email_verified) {
+      // Send a new OTP automatically
+      const otpCode = generateOtp();
+      const verificationToken = generateVerificationToken();
+      const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60_000).toISOString();
+
+      await (supabaseAdmin as any)
+        .from("email_otps")
+        .update({ used: true })
+        .eq("user_id", userId)
+        .eq("used", false);
+
+      await (supabaseAdmin as any)
+        .from("email_otps")
+        .insert({ user_id: userId, email, code: otpCode, expires_at: expiresAt, verification_token: verificationToken });
+
+      sendOtpEmail(email, name, otpCode).catch((err) =>
+        request.log.error(err, "Failed to send OTP email"),
+      );
+
+      return reply.code(403).send({
+        needsVerification: true,
+        userId,
+        email,
+        name,
+        role,
+        verificationToken,
+        message: "Please verify your email to continue",
+      });
+    }
 
     // Fetch agent record if agent, always fetch profile (dual-role: agents are also buyers)
     let agentRecord = null;
@@ -287,5 +348,201 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     }
 
     return { message: "Password has been reset successfully. You can now log in with your new password." };
+  });
+
+  // ── POST /send-otp ─────────────────────────────────────────
+  app.post("/send-otp", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (request, reply) => {
+    const body = sendOtpSchema.safeParse(request.body);
+    if (!body.success) {
+      return reply.code(400).send({ message: "Invalid request" });
+    }
+
+    const supabaseAdmin = getSupabaseAdminClient();
+    if (!supabaseAdmin) {
+      return reply.code(503).send({ message: "Auth service is not configured" });
+    }
+
+    const { userId, verificationToken } = body.data;
+
+    // Verify that the caller owns this OTP flow by checking the verification token
+    const { data: tokenCheck } = await (supabaseAdmin as any)
+      .from("email_otps")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("verification_token", verificationToken)
+      .limit(1)
+      .single();
+
+    if (!tokenCheck) {
+      return reply.code(403).send({ message: "Invalid verification session" });
+    }
+
+    // Look up user
+    const { data: authUser, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
+    if (userError || !authUser?.user) {
+      return reply.code(404).send({ message: "User not found" });
+    }
+
+    const email = authUser.user.email!;
+    const name = String(authUser.user.user_metadata?.name ?? "");
+
+    // Invalidate previous OTPs
+    await (supabaseAdmin as any)
+      .from("email_otps")
+      .update({ used: true })
+      .eq("user_id", userId)
+      .eq("used", false);
+
+    const otpCode = generateOtp();
+    const newVerificationToken = generateVerificationToken();
+    const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60_000).toISOString();
+
+    await (supabaseAdmin as any)
+      .from("email_otps")
+      .insert({ user_id: userId, email, code: otpCode, expires_at: expiresAt, verification_token: newVerificationToken });
+
+    sendOtpEmail(email, name, otpCode).catch((err) =>
+      request.log.error(err, "Failed to send OTP email"),
+    );
+
+    return { message: "Verification code sent", email, verificationToken: newVerificationToken };
+  });
+
+  // ── POST /verify-otp ───────────────────────────────────────
+  app.post("/verify-otp", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
+    const body = verifyOtpSchema.safeParse(request.body);
+    if (!body.success) {
+      return reply.code(400).send({ message: "Invalid request" });
+    }
+
+    const supabaseAdmin = getSupabaseAdminClient();
+    if (!supabaseAdmin) {
+      return reply.code(503).send({ message: "Auth service is not configured" });
+    }
+
+    const { userId, code, verificationToken } = body.data;
+
+    // Find valid OTP matching both code and verification token
+    const { data: otpRow } = await (supabaseAdmin as any)
+      .from("email_otps")
+      .select("id, expires_at")
+      .eq("user_id", userId)
+      .eq("code", code)
+      .eq("verification_token", verificationToken)
+      .eq("used", false)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!otpRow) {
+      return reply.code(400).send({ message: "Invalid verification code" });
+    }
+
+    if (new Date(otpRow.expires_at) < new Date()) {
+      return reply.code(400).send({ message: "Verification code has expired. Please request a new one." });
+    }
+
+    // Mark ALL OTPs for this user as used (not just the matched one)
+    await (supabaseAdmin as any)
+      .from("email_otps")
+      .update({ used: true })
+      .eq("user_id", userId)
+      .eq("used", false);
+
+    // Mark profile as email_verified
+    await (supabaseAdmin as any)
+      .from("profiles")
+      .update({ email_verified: true })
+      .eq("user_id", userId);
+
+    // Fetch user info to issue token
+    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId);
+    if (!authUser?.user) {
+      return reply.code(500).send({ message: "User not found" });
+    }
+
+    const meta = authUser.user.user_metadata ?? {};
+    const email = authUser.user.email!;
+    const role = String(meta.role ?? "buyer");
+    const name = String(meta.name ?? "");
+
+    // Fetch profile / agent records
+    let agentRecord = null;
+    let profileRecord = null;
+    if (role === "agent") {
+      const { data: agent } = await (supabaseAdmin as any)
+        .from("agents")
+        .select("id, name, company, phone, verified, rating, areas, years, color")
+        .eq("user_id", userId)
+        .single();
+      agentRecord = agent;
+    }
+    const { data: profile } = await (supabaseAdmin as any)
+      .from("profiles")
+      .select("id, name, email, phone, avatar_url, saved_properties, search_preferences")
+      .eq("user_id", userId)
+      .single();
+    profileRecord = profile ?? null;
+
+    const token = app.jwt.sign(
+      { sub: userId, email, role, name },
+      { expiresIn: "7d" },
+    );
+
+    return {
+      token,
+      user: { id: userId, email, name, role },
+      agent: agentRecord,
+      profile: profileRecord,
+    };
+  });
+
+  // ── POST /cancel-verification ──────────────────────────────
+  // Deletes an unverified account so the user can sign up with a different email
+  app.post("/cancel-verification", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (request, reply) => {
+    const body = cancelVerificationSchema.safeParse(request.body);
+    if (!body.success) {
+      return reply.code(400).send({ message: "Invalid request" });
+    }
+
+    const supabaseAdmin = getSupabaseAdminClient();
+    if (!supabaseAdmin) {
+      return reply.code(503).send({ message: "Auth service is not configured" });
+    }
+
+    const { userId, verificationToken } = body.data;
+
+    // Verify the caller owns this flow
+    const { data: tokenCheck } = await (supabaseAdmin as any)
+      .from("email_otps")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("verification_token", verificationToken)
+      .limit(1)
+      .single();
+
+    if (!tokenCheck) {
+      return reply.code(403).send({ message: "Invalid verification session" });
+    }
+
+    // Only allow deletion if the account is unverified
+    const { data: profileCheck } = await (supabaseAdmin as any)
+      .from("profiles")
+      .select("email_verified")
+      .eq("user_id", userId)
+      .single();
+
+    if (profileCheck?.email_verified) {
+      return reply.code(400).send({ message: "Account is already verified" });
+    }
+
+    // Delete the auth user (cascades to profiles, email_otps via ON DELETE CASCADE)
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (error) {
+      request.log.error(error, "Failed to delete unverified user");
+      return reply.code(500).send({ message: "Failed to cancel verification" });
+    }
+
+    return { message: "Account removed. You can sign up with a different email." };
   });
 }

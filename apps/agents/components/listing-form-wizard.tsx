@@ -253,13 +253,7 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
           <p className="text-[10px] text-muted/60 mt-2">These fields are auto-filled when you search or pick a location above. You can also edit them manually.</p>
         </div>
 
-        {/* Hidden-ish coordinate display (read-only for reference) */}
-        {data.latitude && data.longitude && (
-          <div className="flex items-center gap-3 text-xs text-muted bg-panel-alt rounded-lg px-3 py-2 border border-border">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-            <span>Coordinates: <strong className="text-foreground">{data.latitude}, {data.longitude}</strong></span>
-          </div>
-        )}
+
         {/* Specs */}
         <div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-muted mb-3">Specifications</h3>
@@ -327,29 +321,144 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
           inputCls={inputCls}
         />
 
-        {/* Main Image */}
-        <GalleryUploader
-          value={mainImage ? [mainImage] : []}
-          onChange={(urls) => {
-            const next = urls.length > 0 ? [urls[0], ...otherImages] : [...otherImages];
-            set("gallery", next);
-          }}
-          max={1}
-          label="Main Image"
-          hint="This photo will be shown as the cover in search results."
-        />
+        {/* Orientation hint */}
+        <div className="flex items-center gap-4 text-[11px] text-muted bg-panel-alt border border-border rounded-lg px-3 py-2">
+          <span className="inline-flex items-center gap-1.5">
+            <svg width="18" height="13" viewBox="0 0 18 13" fill="none" stroke="currentColor" strokeWidth="1.2"><rect x="0.6" y="0.6" width="16.8" height="11.8" rx="2"/></svg>
+            Landscape
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <svg width="11" height="16" viewBox="0 0 11 16" fill="none" stroke="currentColor" strokeWidth="1.2"><rect x="0.6" y="0.6" width="9.8" height="14.8" rx="2"/></svg>
+            Portrait
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </span>
+          <span className="text-muted/60 ml-auto">Use landscape photos for best results</span>
+        </div>
 
-        {/* Additional Gallery */}
-        <GalleryUploader
-          value={otherImages}
-          onChange={(urls) => {
-            const next = mainImage ? [mainImage, ...urls] : [...urls];
-            set("gallery", next);
-          }}
-          max={9}
-          label="Gallery Photos"
-          hint="Upload additional property photos. Up to 9 more images."
-        />
+        {/* Upload inputs — side by side */}
+        <div className="grid gap-4" style={{ gridTemplateColumns: "2fr 3fr" }}>
+          {/* Main image — show preview with change button when uploaded, drop zone when empty */}
+          {mainImage ? (
+            <div className="grid gap-1.5">
+              <span className="text-xs font-semibold text-muted">Main Image</span>
+              <div className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border px-6 py-6 opacity-50 pointer-events-none">
+                <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                </div>
+                <span className="text-sm font-medium text-foreground">Main image uploaded</span>
+              </div>
+              <label className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-border text-muted hover:text-foreground hover:border-accent/40 cursor-pointer transition-colors">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                Change Main Image
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/heif,image/heic"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const body = new FormData();
+                    body.append("file", file);
+                    body.append("folder", "properties");
+                    try {
+                      const res = await fetch("/api/uploads/sign", { method: "POST", body });
+                      if (!res.ok) throw new Error("Upload failed");
+                      const { url } = await res.json();
+                      set("gallery", [url, ...otherImages]);
+                    } catch {
+                      // silent fail — user can retry
+                    }
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+          ) : (
+            <GalleryUploader
+              value={[]}
+              onChange={(urls) => {
+                const next = urls.length > 0 ? [urls[0], ...otherImages] : [...otherImages];
+                set("gallery", next);
+              }}
+              max={1}
+              label="Main Image"
+              hint="Cover photo shown in search results."
+              hidePreview
+            />
+          )}
+          <GalleryUploader
+            value={otherImages}
+            onChange={(urls) => {
+              const next = mainImage ? [mainImage, ...urls] : [...urls];
+              set("gallery", next);
+            }}
+            max={9}
+            label="Gallery Photos"
+            hint="Up to 9 additional photos."
+            hidePreview
+          />
+        </div>
+
+        {/* Unified image preview grid */}
+        {data.gallery.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold text-muted">All Photos</span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => set("gallery", [])}
+                  className="text-[10px] font-semibold text-red-500 hover:text-red-600 hover:underline cursor-pointer"
+                >
+                  Clear All
+                </button>
+                <span className="text-[10px] text-muted/60">{data.gallery.length} / 10</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+              {data.gallery.map((url, i) => (
+                <div key={url} className="relative group">
+                  <div className="rounded-lg overflow-hidden border border-border aspect-[4/3]">
+                    <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                  </div>
+                  {i === 0 && (
+                    <span className="absolute top-1.5 left-1.5 bg-accent text-white text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      Main
+                    </span>
+                  )}
+                  <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {i !== 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = [...data.gallery];
+                          const [moved] = next.splice(i, 1);
+                          next.unshift(moved);
+                          set("gallery", next);
+                        }}
+                        title="Set as main photo"
+                        className="p-1 bg-black/60 text-white rounded hover:bg-black/80 cursor-pointer"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        set("gallery", data.gallery.filter((_, j) => j !== i));
+                      }}
+                      className="p-1 bg-black/60 text-white rounded hover:bg-black/80 cursor-pointer"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -387,7 +496,7 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
             <div className="flex gap-2"><dt className="text-muted w-28 shrink-0">Area</dt><dd className="text-foreground">{Number(data.area) ? `${Number(data.area).toLocaleString()} sq ft` : "—"}</dd></div>
             {data.furnishing && <div className="flex gap-2"><dt className="text-muted w-28 shrink-0">Furnishing</dt><dd className="text-foreground">{data.furnishing}</dd></div>}
             {data.parking && <div className="flex gap-2"><dt className="text-muted w-28 shrink-0">Parking</dt><dd className="text-foreground">{data.parking}</dd></div>}
-            {(data.latitude || data.longitude) && <div className="flex gap-2"><dt className="text-muted w-28 shrink-0">Coordinates</dt><dd className="text-foreground">{data.latitude}, {data.longitude}</dd></div>}
+
           </dl>
         </div>
 
@@ -545,34 +654,14 @@ function AreaInput({ value, onChange, placeholder, className }: { value: string;
   );
 }
 
-/* ── Amenities picker with search ── */
+/* ── Amenities picker with pills ── */
 
 const COMMON_AMENITIES = [
-  // General
-  "Swimming Pool", "Shared Pool", "Private Pool", "Children's Pool",
-  "Gym / Fitness Center", "Shared Gym", "Private Gym",
-  "Security", "Garden", "Private Garden", "Balcony", "Terrace", "Rooftop",
-  "Central A/C", "Air Conditioning", "Generator / Backup Power", "Borehole / Water Tank",
-  "Gated Community", "CCTV / Surveillance", "Intercom", "Elevator / Lift",
-  "WiFi / Internet", "Cable TV", "Laundry Room", "Storage Room", "Study",
-  // Staff & Service
-  "Maids Room", "Maid Service", "Boys Quarters (BQ)", "Staff Quarters", "Servant Quarters",
-  "Concierge Service",
-  // Parking
-  "Parking", "Covered Parking", "Garage", "Car Port",
-  // Leisure
-  "Playground", "Children's Play Area", "Tennis Court", "Basketball Court",
-  "Clubhouse", "Spa / Sauna", "Shared Spa", "Jacuzzi", "Private Jacuzzi",
-  "Barbecue Area", "Fireplace",
-  // Interior
-  "Walk-in Closet", "Built in Wardrobes", "Built in Kitchen Appliances", "Fitted Kitchen",
-  "Smart Home System", "Ensuite Bathrooms", "Guest Toilet", "Dining Area",
-  // Exterior & Views
-  "View of Water", "View of Landmark", "Solar Panels",
-  "Fully Tiled", "POP Ceiling", "Marble Flooring", "Granite Countertops",
-  "Paved Compound", "Fence / Wall",
-  // Other
-  "Wheelchair Accessible", "Pets Allowed", "Pet Friendly",
+  "Swimming Pool", "Air Conditioning", "Security", "Generator / Backup Power",
+  "Parking", "Garden", "Balcony", "Gated Community", "Borehole / Water Tank",
+  "WiFi / Internet", "Gym / Fitness Center", "CCTV / Surveillance",
+  "Elevator / Lift", "Boys Quarters (BQ)", "Fitted Kitchen", "Ensuite Bathrooms",
+  "Guest Toilet", "Fence / Wall", "Solar Panels", "Garage",
 ];
 
 function AmenitiesPicker({
@@ -584,31 +673,12 @@ function AmenitiesPicker({
   onChange: (v: string) => void;
   inputCls: string;
 }) {
-  const [search, setSearch] = useState("");
-  const [open, setOpen] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function handleClick(e: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [open]);
+  const [customInput, setCustomInput] = useState("");
 
   const selected = value
     .split(",")
     .map((a) => a.trim())
     .filter(Boolean);
-
-  const filtered = COMMON_AMENITIES.filter(
-    (a) =>
-      a.toLowerCase().includes(search.toLowerCase()) &&
-      !selected.includes(a),
-  );
 
   function toggle(amenity: string) {
     if (selected.includes(amenity)) {
@@ -619,47 +689,71 @@ function AmenitiesPicker({
   }
 
   function addCustom() {
-    const trimmed = search.trim();
+    const trimmed = customInput.trim();
     if (!trimmed || selected.includes(trimmed)) return;
     onChange([...selected, trimmed].join(", "));
-    setSearch("");
+    setCustomInput("");
   }
 
+  /* Custom items that aren't in the preset list */
+  const customSelected = selected.filter(
+    (a) => !COMMON_AMENITIES.some((c) => c.toLowerCase() === a.toLowerCase()),
+  );
+
   return (
-    <div className="grid gap-1.5" ref={wrapperRef}>
+    <div className="grid gap-2">
       <span className="text-xs font-semibold text-muted">Amenities & Features</span>
 
-      {/* Selected chips */}
-      {selected.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {selected.map((a) => (
+      {/* Always-visible pills */}
+      <div className="flex flex-wrap gap-2">
+        {COMMON_AMENITIES.map((a) => {
+          const isSelected = selected.some((s) => s.toLowerCase() === a.toLowerCase());
+          return (
             <button
               key={a}
               type="button"
               onClick={() => toggle(a)}
-              className="inline-flex items-center gap-1 bg-accent/10 text-accent text-[11px] font-medium px-2.5 py-1 rounded-full hover:bg-accent/20 transition-colors cursor-pointer"
+              className={
+                "inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors cursor-pointer " +
+                (isSelected
+                  ? "bg-accent text-white border-accent"
+                  : "bg-panel-alt text-foreground border-border hover:border-accent hover:text-accent")
+              }
             >
+              {isSelected && (
+                <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+              )}
               {a}
-              <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
             </button>
-          ))}
-        </div>
-      )}
+          );
+        })}
+        {/* Show custom amenities as pills too */}
+        {customSelected.map((a) => (
+          <button
+            key={a}
+            type="button"
+            onClick={() => toggle(a)}
+            className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors cursor-pointer bg-accent text-white border-accent"
+          >
+            <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+            {a}
+          </button>
+        ))}
+      </div>
 
-      {/* Search input */}
+      {/* Custom amenity input */}
       <div className="relative">
         <input
           type="text"
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
-          onFocus={() => setOpen(true)}
+          value={customInput}
+          onChange={(e) => setCustomInput(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") { e.preventDefault(); addCustom(); }
           }}
-          placeholder={selected.length > 0 ? "Search or type to add more…" : "Search amenities…"}
+          placeholder="Type a custom amenity and press Enter…"
           className={inputCls + " w-full"}
         />
-        {search.trim() && !COMMON_AMENITIES.some((a) => a.toLowerCase() === search.trim().toLowerCase()) && (
+        {customInput.trim() && (
           <button
             type="button"
             onClick={addCustom}
@@ -670,39 +764,8 @@ function AmenitiesPicker({
         )}
       </div>
 
-      {/* Dropdown */}
-      {open && filtered.length > 0 && (
-        <div className="border border-border rounded-lg bg-panel shadow-lg overflow-hidden">
-          <div className="max-h-56 overflow-y-auto">
-            {filtered.map((a) => (
-              <button
-                key={a}
-                type="button"
-                onClick={() => { toggle(a); setSearch(""); }}
-                className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-panel-alt transition-colors cursor-pointer flex items-center gap-2"
-              >
-                <span className="w-4 h-4 rounded border border-border flex items-center justify-center shrink-0">
-                  {selected.includes(a) && (
-                    <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-                  )}
-                </span>
-                {a}
-              </button>
-            ))}
-          </div>
-          {/* Scroll indicator footer */}
-          <div className="flex items-center justify-between px-3 py-1.5 border-t border-border bg-panel-alt text-[10px] text-muted">
-            <span>{filtered.length} available{search ? ` for "${search}"` : ""}</span>
-            <span className="flex items-center gap-1">
-              <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-              Scroll for more
-            </span>
-          </div>
-        </div>
-      )}
-
       <span className="text-[10px] text-muted/60">
-        {selected.length} selected{selected.length > 0 ? "" : " — click above to browse"} · {COMMON_AMENITIES.length} amenities available · Type a custom one and press Enter
+        {selected.length} selected · Click to toggle · Type a custom one and press Enter
       </span>
     </div>
   );

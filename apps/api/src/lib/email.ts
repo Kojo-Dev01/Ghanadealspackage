@@ -1,10 +1,18 @@
 import { Resend } from "resend";
 
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null;
+let _resend: Resend | null | undefined;
+function getResend(): Resend | null {
+  if (_resend === undefined) {
+    _resend = process.env.RESEND_API_KEY
+      ? new Resend(process.env.RESEND_API_KEY)
+      : null;
+  }
+  return _resend;
+}
 
-const FROM_EMAIL = process.env.EMAIL_FROM ?? "GhanaDeals <notifications@ghanadeals.com>";
+function getFromEmail(): string {
+  return process.env.EMAIL_FROM ?? "GhanaDeals <notifications@ghanadeals.com>";
+}
 
 interface SendEmailOptions {
   to: string;
@@ -13,16 +21,26 @@ interface SendEmailOptions {
 }
 
 async function sendEmail(opts: SendEmailOptions): Promise<boolean> {
-  if (!resend) return false;
+  const resend = getResend();
+  if (!resend) {
+    console.warn("[email] Resend not configured — RESEND_API_KEY is missing");
+    return false;
+  }
   try {
-    await resend.emails.send({
-      from: FROM_EMAIL,
+    const { data, error } = await resend.emails.send({
+      from: getFromEmail(),
       to: opts.to,
       subject: opts.subject,
       html: opts.html,
     });
+    if (error) {
+      console.error("[email] Resend API error:", error);
+      return false;
+    }
+    console.log("[email] Sent to", opts.to, "id:", data?.id);
     return true;
-  } catch {
+  } catch (err) {
+    console.error("[email] Failed to send:", err);
     return false;
   }
 }
@@ -186,6 +204,22 @@ export async function notifyAgentVerificationRejected(agent: {
       <p style="margin:0">
         <a href="${agentsUrl}/verification" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:10px 20px;border-radius:6px;font-size:14px;font-weight:500">Update Documents</a>
       </p>
+    `),
+  });
+}
+
+/** Send OTP verification code to the user's email */
+export async function sendOtpEmail(to: string, name: string, code: string): Promise<boolean> {
+  return sendEmail({
+    to,
+    subject: `${code} is your GhanaDeals verification code`,
+    html: layout(`
+      <p style="margin:0 0 16px;color:#18181b">Hi ${name},</p>
+      <p style="margin:0 0 16px;color:#52525b">Use the code below to verify your email address. This code expires in 10 minutes.</p>
+      <div style="background:#f4f4f5;border-radius:8px;padding:20px;margin-bottom:16px;text-align:center">
+        <p style="margin:0;font-size:32px;font-weight:700;letter-spacing:8px;color:#18181b">${code}</p>
+      </div>
+      <p style="margin:0;font-size:13px;color:#a1a1aa">If you didn't request this code, you can safely ignore this email.</p>
     `),
   });
 }

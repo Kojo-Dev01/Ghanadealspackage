@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 type HeroSectionProps = {
   totalProperties?: number;
@@ -8,84 +8,151 @@ type HeroSectionProps = {
   totalRegions?: number;
 };
 
-/* ── SVG icon helpers ── */
-const SearchIcon = () => (
-  <svg className="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-);
-const HomeIcon = () => (
-  <svg className="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-);
-const PriceIcon = () => (
-  <svg className="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-);
-const BedIcon = () => (
-  <svg className="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 4v16h20V8H12L8 4z"/></svg>
-);
-const RulerIcon = () => (
-  <svg className="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 4v4M10 4v4M14 4v4M18 4v4"/></svg>
-);
-const StatusIcon = () => (
-  <svg className="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-);
+/* ── Shared price slider logic (same as listings-filters) ── */
+const PRICE_PRESETS = [50_000, 100_000, 200_000, 500_000, 1_000_000, 2_000_000, 5_000_000, 10_000_000];
+const SLIDER_MAX = 1000;
+const LOG_MIN = 10_000;
+const LOG_MAX = 20_000_000;
+const LOG_RATIO = Math.log(LOG_MAX / LOG_MIN);
+
+function sliderToPrice(step: number): number {
+  if (step <= 0) return 0;
+  if (step >= SLIDER_MAX) return LOG_MAX;
+  const raw = LOG_MIN * Math.exp(LOG_RATIO * (step / SLIDER_MAX));
+  if (raw >= 1_000_000) return Math.round(raw / 100_000) * 100_000;
+  if (raw >= 100_000) return Math.round(raw / 10_000) * 10_000;
+  if (raw >= 10_000) return Math.round(raw / 5_000) * 5_000;
+  return Math.round(raw / 1_000) * 1_000;
+}
+
+function priceToSlider(price: number): number {
+  if (price <= 0) return 0;
+  const clamped = Math.max(LOG_MIN, Math.min(LOG_MAX, price));
+  return Math.round(SLIDER_MAX * Math.log(clamped / LOG_MIN) / LOG_RATIO);
+}
+
+function fmtPrice(v: number): string {
+  if (v >= 1_000_000) return `GH₵ ${(v / 1_000_000).toLocaleString(undefined, { maximumFractionDigits: 2 })}M`;
+  if (v >= 1_000) return `GH₵ ${(v / 1_000).toLocaleString(undefined, { maximumFractionDigits: 1 })}K`;
+  if (v > 0) return `GH₵ ${v.toLocaleString()}`;
+  return "Any";
+}
+
+function displayPrice(v: number): string {
+  return v > 0 ? v.toLocaleString() : "";
+}
+
+function parsePrice(s: string): number {
+  const n = Number(s.replace(/[^0-9]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+
+/* ── Constants ── */
+const PROPERTY_TYPES = [
+  "Apartment", "House", "Villa", "Townhouse", "Penthouse", "Compound",
+  "Duplex", "Bungalow", "Full Floor", "Half Floor", "Whole Building",
+  "Land", "Commercial", "Office", "Bulk Sale Unit", "Hotel & Hotel Apartment",
+];
+
+const BED_OPTIONS = [
+  { value: "", label: "Any" },
+  { value: "1", label: "1+" },
+  { value: "2", label: "2+" },
+  { value: "3", label: "3+" },
+  { value: "4", label: "4+" },
+  { value: "5", label: "5+" },
+];
+
+const BATH_OPTIONS = [
+  { value: "", label: "Any" },
+  { value: "1", label: "1+" },
+  { value: "2", label: "2+" },
+  { value: "3", label: "3+" },
+  { value: "4", label: "4+" },
+];
+
+/* ── SVG helpers ── */
+function ChevronDown() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ marginLeft: 4, flexShrink: 0 }}>
+      <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 export function HeroSection({ totalProperties = 0, totalAgents = 0, totalRegions = 0 }: HeroSectionProps) {
   const [activeTab, setActiveTab] = useState("buy");
-  const locationRef = useRef<HTMLInputElement>(null);
-  const typeRef = useRef<HTMLSelectElement>(null);
-  const priceRef = useRef<HTMLSelectElement>(null);
-  const bedsRef = useRef<HTMLSelectElement>(null);
+  const [query, setQuery] = useState("");
+  const [selectedType, setSelectedType] = useState("");
+  const [beds, setBeds] = useState("");
+  const [baths, setBaths] = useState("");
+  const [minPriceRaw, setMinPriceRaw] = useState("");
+  const [maxPriceRaw, setMaxPriceRaw] = useState("");
+  const [minFocused, setMinFocused] = useState(false);
+  const [maxFocused, setMaxFocused] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const toggle = useCallback((key: string) => {
+    setOpenDropdown((prev) => (prev === key ? null : key));
+  }, []);
+
+  /* Close dropdown on outside click */
+  useEffect(() => {
+    function onPointerDown(e: PointerEvent) {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+      }
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, []);
+
+  /* Price slider derived values */
+  const minVal = parsePrice(minPriceRaw);
+  const maxVal = parsePrice(maxPriceRaw);
+  const minSlider = priceToSlider(minVal);
+  const maxSlider = maxVal > 0 ? priceToSlider(maxVal) : SLIDER_MAX;
+  const fillLeft = (minSlider / SLIDER_MAX) * 100;
+  const fillRight = 100 - (maxSlider / SLIDER_MAX) * 100;
+
+  /* Pill labels */
+  const typeLabel = selectedType || "Property Type";
+  const bedsBathsLabel = (beds || baths)
+    ? [beds ? `${beds}+ Beds` : null, baths ? `${baths}+ Baths` : null].filter(Boolean).join(", ")
+    : "Beds & Baths";
+  const priceLabel = (minVal > 0 || maxVal > 0)
+    ? `${minVal > 0 ? fmtPrice(minVal) : "Any"} – ${maxVal > 0 ? fmtPrice(maxVal) : "Any"}`
+    : "Price";
+
+  /* Active states */
+  const isTypeActive = selectedType !== "";
+  const isBedsBathsActive = beds !== "" || baths !== "";
+  const isPriceActive = minVal > 0 || maxVal > 0;
+
+  /* Hide beds & baths for certain tabs/types */
+  const hideBedsBaths =
+    activeTab === "land" ||
+    activeTab === "commercial" ||
+    selectedType === "Commercial" ||
+    selectedType === "Land";
 
   const handleSearch = () => {
     const params = new URLSearchParams();
 
-    // Tab → listing/property type
     if (activeTab === "buy") params.set("listingType", "sale");
     else if (activeTab === "rent") params.set("listingType", "rent");
     else if (activeTab === "new") params.set("listingType", "new");
     else if (activeTab === "commercial") params.set("type", "Commercial");
     else if (activeTab === "land") params.set("type", "Land");
 
-    // Location (all tabs)
-    const q = locationRef.current?.value.trim();
-    if (q) params.set("q", q);
-
-    // Property type (buy, rent, new only — commercial/land already set type above)
-    if (activeTab !== "commercial" && activeTab !== "land") {
-      const type = typeRef.current?.value;
-      if (type && type !== "Type") params.set("type", type);
-    }
-
-    // Price
-    const price = priceRef.current?.value;
-    if (price && price !== "Price" && price !== "Price/mo") {
-      const map: Record<string, [string?, string?]> = {
-        "Under ₵100K":     [undefined, "100000"],
-        "₵100K - ₵500K":   ["100000", "500000"],
-        "₵500K - ₵1M":     ["500000", "1000000"],
-        "₵1M - ₵5M":       ["1000000", "5000000"],
-        "₵5M+":            ["5000000"],
-        "Under ₵500/mo":   [undefined, "500"],
-        "₵500 - ₵2K/mo":   ["500", "2000"],
-        "₵2K - ₵5K/mo":    ["2000", "5000"],
-        "₵5K - ₵15K/mo":   ["5000", "15000"],
-        "₵15K+/mo":        ["15000"],
-        "Under ₵50K":      [undefined, "50000"],
-        "₵50K - ₵200K":    ["50000", "200000"],
-        "₵200K - ₵500K":   ["200000", "500000"],
-        "₵500K - ₵2M":     ["500000", "2000000"],
-        "₵2M+":            ["2000000"],
-      };
-      const [min, max] = map[price] ?? [];
-      if (min) params.set("minPrice", min);
-      if (max) params.set("maxPrice", max);
-    }
-
-    // Beds (buy, rent only)
-    const beds = bedsRef.current?.value;
-    if (beds && beds !== "Beds") {
-      const minBeds = parseInt(beds);
-      if (minBeds) params.set("minBeds", String(minBeds));
-    }
+    if (query.trim()) params.set("q", query.trim());
+    if (selectedType && activeTab !== "commercial" && activeTab !== "land") params.set("type", selectedType);
+    if (minVal > 0) params.set("minPrice", String(minVal));
+    if (maxVal > 0) params.set("maxPrice", String(maxVal));
+    if (beds) params.set("minBeds", beds);
+    if (baths) params.set("minBaths", baths);
 
     window.location.href = `/listings?${params.toString()}`;
   };
@@ -94,194 +161,6 @@ export function HeroSection({ totalProperties = 0, totalAgents = 0, totalRegions
     if (n >= 1000) return `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}K+`;
     return String(n);
   }
-
-  /* ── Tab-specific filter fields ── */
-  const renderFilters = () => {
-    switch (activeTab) {
-      /* ───── BUY ───── */
-      case "buy":
-        return (
-          <>
-            <div className="search-field">
-              <HomeIcon />
-              <select ref={typeRef} key="buy-type">
-                <option>Type</option>
-                <option>Apartment</option>
-                <option>House</option>
-                <option>Villa</option>
-                <option>Townhouse</option>
-              </select>
-            </div>
-            <div className="search-field">
-              <PriceIcon />
-              <select ref={priceRef} key="buy-price">
-                <option>Price</option>
-                <option>Under ₵100K</option>
-                <option>₵100K - ₵500K</option>
-                <option>₵500K - ₵1M</option>
-                <option>₵1M - ₵5M</option>
-                <option>₵5M+</option>
-              </select>
-            </div>
-            <div className="search-field">
-              <BedIcon />
-              <select ref={bedsRef} key="buy-beds">
-                <option>Beds</option>
-                <option value="1">1+ Bed</option>
-                <option value="2">2+ Beds</option>
-                <option value="3">3+ Beds</option>
-                <option value="4">4+ Beds</option>
-                <option value="5">5+ Beds</option>
-              </select>
-            </div>
-          </>
-        );
-
-      /* ───── RENT ───── */
-      case "rent":
-        return (
-          <>
-            <div className="search-field">
-              <HomeIcon />
-              <select ref={typeRef} key="rent-type">
-                <option>Type</option>
-                <option>Apartment</option>
-                <option>House</option>
-                <option>Villa</option>
-                <option>Townhouse</option>
-              </select>
-            </div>
-            <div className="search-field">
-              <PriceIcon />
-              <select ref={priceRef} key="rent-price">
-                <option>Price/mo</option>
-                <option>Under ₵500/mo</option>
-                <option>₵500 - ₵2K/mo</option>
-                <option>₵2K - ₵5K/mo</option>
-                <option>₵5K - ₵15K/mo</option>
-                <option>₵15K+/mo</option>
-              </select>
-            </div>
-            <div className="search-field">
-              <BedIcon />
-              <select ref={bedsRef} key="rent-beds">
-                <option>Beds</option>
-                <option value="1">1+ Bed</option>
-                <option value="2">2+ Beds</option>
-                <option value="3">3+ Beds</option>
-                <option value="4">4+ Beds</option>
-                <option value="5">5+ Beds</option>
-              </select>
-            </div>
-          </>
-        );
-
-      /* ───── NEW PROJECTS ───── */
-      case "new":
-        return (
-          <>
-            <div className="search-field">
-              <HomeIcon />
-              <select ref={typeRef} key="new-type">
-                <option>Type</option>
-                <option>Apartment</option>
-                <option>House</option>
-                <option>Villa</option>
-                <option>Townhouse</option>
-              </select>
-            </div>
-            <div className="search-field">
-              <PriceIcon />
-              <select ref={priceRef} key="new-price">
-                <option>Price</option>
-                <option>Under ₵100K</option>
-                <option>₵100K - ₵500K</option>
-                <option>₵500K - ₵1M</option>
-                <option>₵1M - ₵5M</option>
-                <option>₵5M+</option>
-              </select>
-            </div>
-            <div className="search-field">
-              <StatusIcon />
-              <select key="new-status">
-                <option>Status</option>
-                <option>Pre-selling</option>
-                <option>Under Construction</option>
-                <option>Ready for Occupancy</option>
-              </select>
-            </div>
-          </>
-        );
-
-      /* ───── COMMERCIAL ───── */
-      case "commercial":
-        return (
-          <>
-            <div className="search-field">
-              <HomeIcon />
-              <select ref={typeRef} key="comm-type">
-                <option>Type</option>
-                <option>Office Space</option>
-                <option>Retail / Shop</option>
-                <option>Warehouse</option>
-                <option>Hotel / Hospitality</option>
-                <option>Mixed-Use</option>
-              </select>
-            </div>
-            <div className="search-field">
-              <PriceIcon />
-              <select ref={priceRef} key="comm-price">
-                <option>Price</option>
-                <option>Under ₵100K</option>
-                <option>₵100K - ₵500K</option>
-                <option>₵500K - ₵1M</option>
-                <option>₵1M - ₵5M</option>
-                <option>₵5M+</option>
-              </select>
-            </div>
-            <div className="search-field">
-              <RulerIcon />
-              <select key="comm-size">
-                <option>Size</option>
-                <option>Under 500 sqft</option>
-                <option>500 - 2,000 sqft</option>
-                <option>2,000 - 5,000 sqft</option>
-                <option>5,000+ sqft</option>
-              </select>
-            </div>
-          </>
-        );
-
-      /* ───── LAND ───── */
-      case "land":
-        return (
-          <>
-            <div className="search-field">
-              <PriceIcon />
-              <select ref={priceRef} key="land-price">
-                <option>Price</option>
-                <option>Under ₵50K</option>
-                <option>₵50K - ₵200K</option>
-                <option>₵200K - ₵500K</option>
-                <option>₵500K - ₵2M</option>
-                <option>₵2M+</option>
-              </select>
-            </div>
-            <div className="search-field">
-              <RulerIcon />
-              <select key="land-size">
-                <option>Plot Size</option>
-                <option>Up to ¼ Acre</option>
-                <option>¼ – ½ Acre</option>
-                <option>½ – 1 Acre</option>
-                <option>1 – 2 Acres</option>
-                <option>2+ Acres</option>
-              </select>
-            </div>
-          </>
-        );
-    }
-  };
 
   return (
     <section className="hero">
@@ -295,22 +174,212 @@ export function HeroSection({ totalProperties = 0, totalAgents = 0, totalRegions
           <div className="stat"><strong>{fmt(totalRegions)}</strong> Regions</div>
         </div>
 
-        <div className="search-bar-wrap">
-          <div className="search-tabs">
-            <button className={`search-tab ${activeTab === "buy" ? "active" : ""}`} onClick={() => setActiveTab("buy")}>Buy</button>
-            <button className={`search-tab ${activeTab === "rent" ? "active" : ""}`} onClick={() => setActiveTab("rent")}>Rent</button>
-            <button className={`search-tab ${activeTab === "new" ? "active" : ""}`} onClick={() => setActiveTab("new")}>New Projects</button>
-            <button className={`search-tab ${activeTab === "commercial" ? "active" : ""}`} onClick={() => setActiveTab("commercial")}>Commercial</button>
-            <button className={`search-tab ${activeTab === "land" ? "active" : ""}`} onClick={() => setActiveTab("land")}>Land</button>
+        <div className="hero-search-panel" ref={panelRef}>
+          {/* Tabs */}
+          <div className="hero-search-tabs">
+            {(
+              [
+                ["buy", "Buy"],
+                ["rent", "Rent"],
+                ["new", "New Projects"],
+                ["commercial", "Commercial"],
+                ["land", "Land"],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                className={`hero-search-tab${activeTab === key ? " hero-search-tab--active" : ""}`}
+                onClick={() => { setActiveTab(key); setSelectedType(""); }}
+              >
+                {label}
+              </button>
+            ))}
           </div>
-          <div className="search-bar">
-            <div className="search-field" style={{ flex: "2 1 200px" }}>
-              <SearchIcon />
-              <input ref={locationRef} type="text" placeholder="Location, community, landmark..." />
+
+          {/* Search input */}
+          <div className="hero-search-input-row">
+            <svg className="hero-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+            </svg>
+            <input
+              className="hero-search-input"
+              type="text"
+              placeholder="Search by location, community, or keyword..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
+            />
+          </div>
+
+          {/* Filter pills row */}
+          <div className="hero-filter-row">
+            {/* Property Type (not shown for commercial/land tabs) */}
+            {activeTab !== "commercial" && activeTab !== "land" && (
+              <div className="filter-pill-wrapper">
+                <button
+                  type="button"
+                  className={`hero-pill${isTypeActive ? " hero-pill--active" : ""}${openDropdown === "type" ? " hero-pill--open" : ""}`}
+                  onClick={() => toggle("type")}
+                >
+                  {typeLabel}
+                  <ChevronDown />
+                </button>
+                {openDropdown === "type" && (
+                  <div className="hero-dropdown hero-dropdown--scroll">
+                    <button
+                      type="button"
+                      className={`hero-dropdown-item${selectedType === "" ? " hero-dropdown-item--selected" : ""}`}
+                      onClick={() => { setSelectedType(""); setOpenDropdown(null); }}
+                    >
+                      Any Type
+                    </button>
+                    {PROPERTY_TYPES.map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        className={`hero-dropdown-item${selectedType === t ? " hero-dropdown-item--selected" : ""}`}
+                        onClick={() => { setSelectedType(t); setOpenDropdown(null); }}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Beds & Baths */}
+            {!hideBedsBaths && (
+              <div className="filter-pill-wrapper">
+                <button
+                  type="button"
+                  className={`hero-pill${isBedsBathsActive ? " hero-pill--active" : ""}${openDropdown === "bedsbaths" ? " hero-pill--open" : ""}`}
+                  onClick={() => toggle("bedsbaths")}
+                >
+                  {bedsBathsLabel}
+                  <ChevronDown />
+                </button>
+                {openDropdown === "bedsbaths" && (
+                  <div className="hero-dropdown hero-dropdown--bedsbaths">
+                    <div className="filter-dropdown-section">
+                      <span className="filter-dropdown-label">Bedrooms</span>
+                      <div className="filter-option-pills">
+                        {BED_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            className={`filter-option-chip${beds === opt.value ? " filter-option-chip--selected" : ""}`}
+                            onClick={() => setBeds(opt.value)}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="filter-dropdown-section">
+                      <span className="filter-dropdown-label">Bathrooms</span>
+                      <div className="filter-option-pills">
+                        {BATH_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            className={`filter-option-chip${baths === opt.value ? " filter-option-chip--selected" : ""}`}
+                            onClick={() => setBaths(opt.value)}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <button type="button" className="filter-dropdown-done" onClick={() => setOpenDropdown(null)}>Done</button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Price */}
+            <div className="filter-pill-wrapper">
+              <button
+                type="button"
+                className={`hero-pill${isPriceActive ? " hero-pill--active" : ""}${openDropdown === "price" ? " hero-pill--open" : ""}`}
+                onClick={() => toggle("price")}
+              >
+                {priceLabel}
+                <ChevronDown />
+              </button>
+              {openDropdown === "price" && (
+                <div className="hero-dropdown hero-dropdown--price">
+                  <div className="price-range-selects">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      list="hero-min-presets"
+                      className="price-range-input"
+                      placeholder="Min Price"
+                      value={minFocused ? minPriceRaw : displayPrice(minVal)}
+                      onChange={(e) => setMinPriceRaw(e.target.value.replace(/[^0-9]/g, ""))}
+                      onFocus={() => setMinFocused(true)}
+                      onBlur={() => setMinFocused(false)}
+                    />
+                    <datalist id="hero-min-presets">
+                      {PRICE_PRESETS.map((v) => <option key={v} value={String(v)} />)}
+                    </datalist>
+                    <span className="price-range-sep">–</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      list="hero-max-presets"
+                      className="price-range-input"
+                      placeholder="Max Price"
+                      value={maxFocused ? maxPriceRaw : displayPrice(maxVal)}
+                      onChange={(e) => setMaxPriceRaw(e.target.value.replace(/[^0-9]/g, ""))}
+                      onFocus={() => setMaxFocused(true)}
+                      onBlur={() => setMaxFocused(false)}
+                    />
+                    <datalist id="hero-max-presets">
+                      {PRICE_PRESETS.map((v) => <option key={v} value={String(v)} />)}
+                    </datalist>
+                  </div>
+                  <div className="price-range-track">
+                    <div className="track-bg" />
+                    <div className="track-fill" style={{ left: `${fillLeft}%`, right: `${fillRight}%` }} />
+                    <input
+                      type="range"
+                      min={0}
+                      max={SLIDER_MAX}
+                      value={minSlider}
+                      onChange={(e) => {
+                        const step = Math.min(Number(e.target.value), maxSlider);
+                        setMinPriceRaw(sliderToPrice(step) > 0 ? String(sliderToPrice(step)) : "");
+                      }}
+                    />
+                    <input
+                      type="range"
+                      min={0}
+                      max={SLIDER_MAX}
+                      value={maxSlider}
+                      onChange={(e) => {
+                        const step = Math.max(Number(e.target.value), minSlider);
+                        const price = sliderToPrice(step);
+                        setMaxPriceRaw(step < SLIDER_MAX ? String(price) : "");
+                      }}
+                    />
+                  </div>
+                  {(minVal > 0 || maxVal > 0) && (
+                    <div className="price-range-label">
+                      {minVal > 0 ? fmtPrice(minVal) : "No Min"} – {maxVal > 0 ? fmtPrice(maxVal) : "No Max"}
+                    </div>
+                  )}
+                  <button type="button" className="filter-dropdown-done" onClick={() => setOpenDropdown(null)}>Done</button>
+                </div>
+              )}
             </div>
-            {renderFilters()}
-            <button className="btn btn-primary" onClick={handleSearch}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+
+            {/* Search button */}
+            <button className="hero-search-btn" type="button" onClick={handleSearch}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+              </svg>
               Search
             </button>
           </div>

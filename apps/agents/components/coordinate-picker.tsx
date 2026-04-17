@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState, useEffect } from "react";
+import { useCallback, useRef, useEffect } from "react";
 import {
   GoogleMap,
   useJsApiLoader,
@@ -30,6 +30,13 @@ type Props = {
 const GHANA_CENTER = { lat: 7.9465, lng: -1.0232 };
 const DEFAULT_ZOOM = 7;
 const PLACED_ZOOM = 16;
+
+const GHANA_BOUNDS = {
+  north: 11.175,
+  south: 4.737,
+  east: 1.199,
+  west: -3.261,
+};
 
 const LIBRARIES: ("places")[] = ["places"];
 
@@ -69,28 +76,6 @@ function extractLocation(
   return parts.join(", ");
 }
 
-/* ── Parse Google Maps link ── */
-function parseMapsLink(url: string): { lat: number; lng: number } | null {
-  // https://www.google.com/maps/@5.6037,-0.187,15z
-  const atMatch = url.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
-  if (atMatch) return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
-
-  // https://www.google.com/maps/place/.../@5.6037,-0.187,15z
-  const placeMatch = url.match(/place\/[^/]+\/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
-  if (placeMatch) return { lat: parseFloat(placeMatch[1]), lng: parseFloat(placeMatch[2]) };
-
-  // https://maps.google.com/?q=5.6037,-0.187  or  ?ll=5.6037,-0.187
-  const qMatch = url.match(/[?&](?:q|ll)=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
-  if (qMatch) return { lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]) };
-
-  // Short links: https://goo.gl/maps/... or https://maps.app.goo.gl/...
-  // These redirect — can't parse client-side, but try embedded coords
-  const shortMatch = url.match(/(-?\d{1,3}\.\d{4,}),\s*(-?\d{1,3}\.\d{4,})/);
-  if (shortMatch) return { lat: parseFloat(shortMatch[1]), lng: parseFloat(shortMatch[2]) };
-
-  return null;
-}
-
 /* ── Component ── */
 export function CoordinatePicker({
   latitude,
@@ -110,8 +95,6 @@ export function CoordinatePicker({
 
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
-  const [mapsLink, setMapsLink] = useState("");
-  const [linkError, setLinkError] = useState("");
   const geocoderRef = useRef<google.maps.Geocoder | null>(null);
 
   const lat = latitude ? parseFloat(latitude) : undefined;
@@ -193,31 +176,6 @@ export function CoordinatePicker({
     [reverseGeocode],
   );
 
-  /* Paste Google Maps link */
-  const handleLinkPaste = useCallback(
-    (value: string) => {
-      setMapsLink(value);
-      setLinkError("");
-      if (!value.trim()) return;
-
-      const coords = parseMapsLink(value.trim());
-      if (!coords) {
-        setLinkError("Could not extract coordinates from this link");
-        return;
-      }
-      if (coords.lat < -90 || coords.lat > 90 || coords.lng < -180 || coords.lng > 180) {
-        setLinkError("Invalid coordinates in link");
-        return;
-      }
-
-      mapRef.current?.panTo(coords);
-      mapRef.current?.setZoom(PLACED_ZOOM);
-      reverseGeocode(coords);
-      setMapsLink("");
-    },
-    [reverseGeocode],
-  );
-
   /* Loading state */
   if (!isLoaded) {
     return (
@@ -258,46 +216,9 @@ export function CoordinatePicker({
           <input
             type="text"
             placeholder="Type an address, landmark, or area in Ghana…"
-            className={inputCls || "border border-border rounded-lg bg-panel-alt px-3 py-2.5 text-foreground text-sm transition-colors focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 w-full"}
+            className={inputCls ? `${inputCls} w-full` : "border border-border rounded-lg bg-panel-alt px-3 py-2.5 text-foreground text-sm transition-colors focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 w-full"}
           />
         </Autocomplete>
-      </div>
-
-      {/* ── Paste Google Maps link ── */}
-      <div>
-        <h3 className="text-xs font-bold uppercase tracking-wider text-muted mb-2">
-          Or Paste a Google Maps Link
-        </h3>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={mapsLink}
-            onChange={(e) => {
-              setMapsLink(e.target.value);
-              setLinkError("");
-            }}
-            onPaste={(e) => {
-              const pasted = e.clipboardData.getData("text");
-              e.preventDefault();
-              handleLinkPaste(pasted);
-            }}
-            placeholder="https://maps.google.com/..."
-            className={
-              (inputCls || "border border-border rounded-lg bg-panel-alt px-3 py-2.5 text-foreground text-sm transition-colors focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20") +
-              " flex-1"
-            }
-          />
-          <button
-            type="button"
-            onClick={() => handleLinkPaste(mapsLink)}
-            className="px-3 py-2 text-xs font-semibold rounded-lg bg-accent text-white hover:bg-accent/90 transition-colors shrink-0"
-          >
-            Go
-          </button>
-        </div>
-        {linkError && (
-          <p className="text-[10px] text-red-500 mt-1">{linkError}</p>
-        )}
       </div>
 
       {/* ── Interactive Map ── */}
@@ -318,6 +239,11 @@ export function CoordinatePicker({
               fullscreenControl: true,
               zoomControl: true,
               gestureHandling: "greedy",
+              restriction: {
+                latLngBounds: GHANA_BOUNDS,
+                strictBounds: false,
+              },
+              minZoom: 6,
             }}
           >
             {hasPin && (
@@ -331,7 +257,7 @@ export function CoordinatePicker({
         </div>
         {hasPin && (
           <p className="text-[10px] text-muted/60 mt-1">
-            Drag the pin to adjust the location. Coordinates: {lat!.toFixed(5)}, {lng!.toFixed(5)}
+            Drag the pin to adjust the location.
           </p>
         )}
       </div>

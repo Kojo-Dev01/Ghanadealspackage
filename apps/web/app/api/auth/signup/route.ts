@@ -30,6 +30,20 @@ export async function POST(request: Request) {
     );
   }
 
+  // If OTP verification is required, pass through without setting cookie
+  if (json.needsVerification) {
+    return NextResponse.json({
+      ok: true,
+      needsVerification: true,
+      userId: json.userId,
+      email: json.email,
+      name: json.name,
+      role: json.role,
+      verificationToken: json.verificationToken,
+    });
+  }
+
+  // Legacy path: if token is returned directly (shouldn't happen now)
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, json.token, {
     httpOnly: true,

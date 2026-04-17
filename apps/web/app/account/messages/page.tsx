@@ -247,7 +247,7 @@ export default function MessagesPage() {
           </div>
           <h3 style={S.emptyH}>No messages yet</h3>
           <p style={S.emptyP}>Start a conversation by enquiring about a property</p>
-          <Link href="/properties" style={S.emptyBtn}>Browse Properties</Link>
+          <Link href="/listings" style={S.emptyBtn}>Browse Properties</Link>
         </div>
       ) : (
         <>

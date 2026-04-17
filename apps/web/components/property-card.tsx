@@ -5,9 +5,12 @@ import { SaveButton } from "./save-button";
 
 type PropertyCardProps = {
   property: PropertyRecord;
+  isHighlighted?: boolean;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 };
 
-export function PropertyCard({ property }: PropertyCardProps) {
+export function PropertyCard({ property, isHighlighted, onMouseEnter, onMouseLeave }: PropertyCardProps) {
   const badge = property.badges.includes("premium")
     ? { label: "Premium", className: "badge badge-premium" }
     : property.badges.includes("verified")
@@ -15,7 +18,11 @@ export function PropertyCard({ property }: PropertyCardProps) {
       : null;
 
   return (
-    <article className="property-card-v">
+    <article
+      className={`property-card-v${isHighlighted ? " property-card-v--highlighted" : ""}`}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
       <div className="card-img gd-shimmer-bg">
         <Link href={`/property/${property.id}`}>
           <Image src={property.image} alt={property.title} width={640} height={420} unoptimized />

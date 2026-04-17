@@ -37,7 +37,7 @@ export function ListingsViewToggle({ properties, gridContent }: Props) {
       {view === "grid" ? (
         <>{gridContent}</>
       ) : (
-        <ListingsMap properties={properties} />
+        <ListingsMap properties={properties} hoveredId={null} onHover={() => {}} />
       )}
     </>
   );

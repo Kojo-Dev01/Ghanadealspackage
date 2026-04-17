@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "./auth-provider";
 import { fetchUnreadConversationCount } from "../lib/api";
@@ -80,12 +81,7 @@ export function AccountSidebar({ className, onClose }: { className?: string; onC
       {/* Brand */}
       <div style={{ padding: "0 8px", marginBottom: 28 }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: "var(--red)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 16, fontWeight: 800, color: "#fff",
-          }}>G</div>
+          <Image src="/legacy/assets/favicon.jpeg" alt="GhanaDeals Logo" width={32} height={32} style={{ objectFit: "contain", borderRadius: 8 }} />
           <div>
             <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: "-0.02em" }}>
               <span style={{ color: "var(--red)" }}>Ghana</span>

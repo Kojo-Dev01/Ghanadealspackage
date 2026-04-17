@@ -9,19 +9,22 @@ type Props = {
   max?: number;
   label?: string;
   hint?: string;
+  /** Hide the image preview grid — useful when parent renders a unified grid */
+  hidePreview?: boolean;
 };
 
 const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/heif", "image/heic"];
 const DEFAULT_MAX = 10;
 
-export function GalleryUploader({ value, onChange, max = DEFAULT_MAX, label = "Property Photos", hint }: Props) {
+export function GalleryUploader({ value, onChange, max = DEFAULT_MAX, label = "Property Photos", hint, hidePreview = false }: Props) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const uploadFile = useCallback(async (file: File): Promise<string | null> => {
+  const uploadFile = useCallback(async (file: File, signal: AbortSignal): Promise<string | null> => {
     if (!ACCEPTED.includes(file.type)) {
       setError("Only JPG, PNG, WebP, and HEIF images are allowed.");
       return null;
@@ -35,7 +38,7 @@ export function GalleryUploader({ value, onChange, max = DEFAULT_MAX, label = "P
     body.append("file", file);
     body.append("folder", "properties");
 
-    const res = await fetch("/api/uploads/sign", { method: "POST", body });
+    const res = await fetch("/api/uploads/sign", { method: "POST", body, signal });
 
     if (!res.ok) {
       const msg = await res.json().catch(() => null);
@@ -60,20 +63,32 @@ export function GalleryUploader({ value, onChange, max = DEFAULT_MAX, label = "P
       setError("");
     }
 
+    // Create abort controller for this batch
+    const controller = new AbortController();
+    abortRef.current = controller;
     setUploading(true);
 
     try {
-      const results = await Promise.all(batch.map((f) => uploadFile(f)));
+      const results = await Promise.all(batch.map((f) => uploadFile(f, controller.signal)));
       const uploaded = results.filter((u): u is string => u !== null);
       if (uploaded.length > 0) {
         onChange([...value, ...uploaded]);
       }
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setError("Upload cancelled.");
+        return;
+      }
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
+      abortRef.current = null;
       setUploading(false);
     }
   }, [value, onChange, max, uploadFile]);
+
+  function cancelUpload() {
+    abortRef.current?.abort();
+  }
 
   function handleFileInput(fileList: FileList | null) {
     if (!fileList?.length) return;
@@ -104,11 +119,22 @@ export function GalleryUploader({ value, onChange, max = DEFAULT_MAX, label = "P
     <div className="grid gap-1.5">
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-muted">{label}</span>
-        <span className="text-[10px] text-muted/60">{value.length} / {max}</span>
+        <div className="flex items-center gap-3">
+          {value.length > 0 && (
+            <button
+              type="button"
+              onClick={() => { onChange([]); setError(""); }}
+              className="text-[10px] font-semibold text-red-500 hover:text-red-600 hover:underline cursor-pointer"
+            >
+              Clear All
+            </button>
+          )}
+          <span className="text-[10px] text-muted/60">{value.length} / {max}</span>
+        </div>
       </div>
 
       {/* Uploaded images grid */}
-      {value.length > 0 && (
+      {!hidePreview && value.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {value.map((url, i) => (
             <div key={url} className="relative group">
@@ -167,6 +193,13 @@ export function GalleryUploader({ value, onChange, max = DEFAULT_MAX, label = "P
             <>
               <Loader2 size={24} className="text-accent animate-spin" />
               <span className="text-sm text-muted">Uploading…</span>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); cancelUpload(); }}
+                className="mt-1 px-3 py-1 text-xs font-semibold rounded-lg border border-red-300 text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+              >
+                Cancel Upload
+              </button>
             </>
           ) : (
             <>

@@ -1,16 +1,20 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef, useCallback } from "react";
 
+export type FiltersState = {
+  q: string;
+  listingType: string;
+  type: string;
+  minPrice: string;
+  maxPrice: string;
+  minBeds: string;
+  minBaths: string;
+};
+
 type Props = {
-  q?: string;
-  listingType?: string;
-  type?: string;
-  minPrice?: string;
-  maxPrice?: string;
-  minBeds?: string;
-  minBaths?: string;
+  initialFilters: FiltersState;
+  onFiltersChange: (filters: FiltersState) => void;
 };
 
 /* Preset price suggestions shown in datalist */
@@ -105,34 +109,43 @@ function SearchIcon() {
   );
 }
 
-export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minBeds, minBaths }: Props) {
-  const searchParams = useSearchParams();
+export function ListingsFilters({ initialFilters, onFiltersChange }: Props) {
+  const [search, setSearch] = useState(initialFilters.q);
+  const [selectedListingType, setSelectedListingType] = useState(initialFilters.listingType);
+  const [selectedPropertyType, setSelectedPropertyType] = useState(initialFilters.type);
+  const [minPriceRaw, setMinPriceRaw] = useState(initialFilters.minPrice);
+  const [maxPriceRaw, setMaxPriceRaw] = useState(initialFilters.maxPrice);
+  const [beds, setBeds] = useState(initialFilters.minBeds);
+  const [baths, setBaths] = useState(initialFilters.minBaths);
 
-  const urlQ = searchParams.get("q") ?? "";
-  const urlListingType = searchParams.get("listingType") ?? "";
-  const urlType = searchParams.get("type") ?? "";
-  const urlMinPrice = searchParams.get("minPrice") ?? "";
-  const urlMaxPrice = searchParams.get("maxPrice") ?? "";
-  const urlMinBeds = searchParams.get("minBeds") ?? "";
-  const urlMinBaths = searchParams.get("minBaths") ?? "";
-
-  const [search, setSearch] = useState(urlQ);
-  const [selectedListingType, setSelectedListingType] = useState(urlListingType);
-  const [selectedPropertyType, setSelectedPropertyType] = useState(urlType);
-  const [minPriceRaw, setMinPriceRaw] = useState(urlMinPrice || minPrice || "");
-  const [maxPriceRaw, setMaxPriceRaw] = useState(urlMaxPrice || maxPrice || "");
-  const [beds, setBeds] = useState(urlMinBeds);
-  const [baths, setBaths] = useState(urlMinBaths);
-
+  /* Sync from parent when filters are cleared externally */
+  const prevFiltersRef = useRef(initialFilters);
   useEffect(() => {
-    setSearch(urlQ);
-    setSelectedListingType(urlListingType);
-    setSelectedPropertyType(urlType);
-    setMinPriceRaw(urlMinPrice);
-    setMaxPriceRaw(urlMaxPrice);
-    setBeds(urlMinBeds);
-    setBaths(urlMinBaths);
-  }, [urlQ, urlListingType, urlType, urlMinPrice, urlMaxPrice, urlMinBeds, urlMinBaths]);
+    const prev = prevFiltersRef.current;
+    const next = initialFilters;
+    if (
+      prev.q !== next.q || prev.listingType !== next.listingType ||
+      prev.type !== next.type || prev.minPrice !== next.minPrice ||
+      prev.maxPrice !== next.maxPrice || prev.minBeds !== next.minBeds ||
+      prev.minBaths !== next.minBaths
+    ) {
+      if (!searchFocusedRef.current) setSearch(next.q);
+      setSelectedListingType(next.listingType);
+      setSelectedPropertyType(next.type);
+      if (!priceFocusedRef.current && !sliderActiveRef.current) {
+        setMinPriceRaw(next.minPrice);
+        setMaxPriceRaw(next.maxPrice);
+      }
+      setBeds(next.minBeds);
+      setBaths(next.minBaths);
+      prevFiltersRef.current = next;
+    }
+  }, [initialFilters]);
+
+  /* Track which text fields are focused so external sync doesn't fight typing */
+  const searchFocusedRef = useRef(false);
+  const priceFocusedRef = useRef(false);
+  const sliderActiveRef = useRef(false);
 
   const [minFocused, setMinFocused] = useState(false);
   const [maxFocused, setMaxFocused] = useState(false);
@@ -146,7 +159,7 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
 
   /* ── Dropdown state ── */
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const barRef = useRef<HTMLFormElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
 
   const toggle = useCallback((key: string) => {
     setOpenDropdown((prev) => (prev === key ? null : key));
@@ -162,6 +175,83 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
     document.addEventListener("pointerdown", onPointerDown);
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, []);
+
+  /* ── Emit helper — builds filters object and calls parent ── */
+  const buildFilters = useCallback(
+    (overrides: Partial<FiltersState> = {}): FiltersState => ({
+      q: overrides.q ?? search,
+      listingType: overrides.listingType ?? selectedListingType,
+      type: overrides.type ?? selectedPropertyType,
+      minPrice: overrides.minPrice ?? minPriceRaw,
+      maxPrice: overrides.maxPrice ?? maxPriceRaw,
+      minBeds: overrides.minBeds ?? beds,
+      minBaths: overrides.minBaths ?? baths,
+    }),
+    [search, selectedListingType, selectedPropertyType, minPriceRaw, maxPriceRaw, beds, baths],
+  );
+
+  /* Keep latest refs so setTimeout closures always read fresh values */
+  const buildFiltersRef = useRef(buildFilters);
+  const onFiltersChangeRef = useRef(onFiltersChange);
+  useEffect(() => { buildFiltersRef.current = buildFilters; }, [buildFilters]);
+  useEffect(() => { onFiltersChangeRef.current = onFiltersChange; }, [onFiltersChange]);
+
+  /* Instant emit (discrete filters) */
+  const emit = useCallback(
+    (overrides: Partial<FiltersState>) => {
+      onFiltersChangeRef.current(buildFiltersRef.current(overrides));
+    },
+    [],
+  );
+
+  /* ── Debounce timer for text / slider inputs ── */
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debouncedEmit = useCallback(
+    (overrides: Partial<FiltersState>) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        onFiltersChangeRef.current(buildFiltersRef.current(overrides));
+      }, 500);
+    },
+    [],
+  );
+  useEffect(() => {
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, []);
+
+  /* ── Instant-apply setters for discrete filters ── */
+  const applyListingType = (v: string) => {
+    setSelectedListingType(v);
+    setOpenDropdown(null);
+    emit({ listingType: v });
+  };
+  const applyPropertyType = (v: string) => {
+    setSelectedPropertyType(v);
+    setOpenDropdown(null);
+    emit({ type: v });
+  };
+  const applyBeds = (v: string) => {
+    setBeds(v);
+    emit({ minBeds: v });
+  };
+  const applyBaths = (v: string) => {
+    setBaths(v);
+    emit({ minBaths: v });
+  };
+
+  /* ── Clear all filters ── */
+  const hasAnyFilter = search || selectedListingType || selectedPropertyType || minPriceRaw || maxPriceRaw || beds || baths;
+  const clearFilters = () => {
+    setSearch("");
+    setSelectedListingType("");
+    setSelectedPropertyType("");
+    setMinPriceRaw("");
+    setMaxPriceRaw("");
+    setBeds("");
+    setBaths("");
+    setOpenDropdown(null);
+    onFiltersChange({ q: "", listingType: "", type: "", minPrice: "", maxPrice: "", minBeds: "", minBaths: "" });
+  };
 
   const hideBedsBaths =
     selectedListingType === "new" ||
@@ -185,25 +275,21 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
   const isPriceActive = minVal > 0 || maxVal > 0;
 
   return (
-    <form ref={barRef} className="filter-bar" action="/listings" method="get" style={{ marginBottom: 24 }}>
-      {/* Hidden inputs for form submission */}
-      <input type="hidden" name="minPrice" value={minPriceRaw} />
-      <input type="hidden" name="maxPrice" value={maxPriceRaw} />
-      <input type="hidden" name="listingType" value={selectedListingType} />
-      <input type="hidden" name="type" value={selectedPropertyType} />
-      <input type="hidden" name="minBeds" value={beds} />
-      <input type="hidden" name="minBaths" value={baths} />
-
+    <div ref={barRef} className="filter-bar" style={{ marginBottom: 24 }}>
       {/* ── Search bar ── */}
       <div className="filter-search-row">
         <SearchIcon />
         <input
           className="filter-search-input"
           type="text"
-          name="q"
           placeholder="Search by location, title, or keyword"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            debouncedEmit({ q: e.target.value });
+          }}
+          onFocus={() => { searchFocusedRef.current = true; }}
+          onBlur={() => { searchFocusedRef.current = false; }}
         />
       </div>
 
@@ -226,7 +312,7 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
                   key={opt.value}
                   type="button"
                   className={`filter-dropdown-item${selectedListingType === opt.value ? " filter-dropdown-item--selected" : ""}`}
-                  onClick={() => { setSelectedListingType(opt.value); setOpenDropdown(null); }}
+                  onClick={() => applyListingType(opt.value)}
                 >
                   {opt.label}
                 </button>
@@ -250,7 +336,7 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
               <button
                 type="button"
                 className={`filter-dropdown-item${selectedPropertyType === "" ? " filter-dropdown-item--selected" : ""}`}
-                onClick={() => { setSelectedPropertyType(""); setOpenDropdown(null); }}
+                onClick={() => applyPropertyType("")}
               >
                 Any Type
               </button>
@@ -259,7 +345,7 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
                   key={t}
                   type="button"
                   className={`filter-dropdown-item${selectedPropertyType === t ? " filter-dropdown-item--selected" : ""}`}
-                  onClick={() => { setSelectedPropertyType(t); setOpenDropdown(null); }}
+                  onClick={() => applyPropertyType(t)}
                 >
                   {t}
                 </button>
@@ -289,7 +375,7 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
                         key={opt.value}
                         type="button"
                         className={`filter-option-chip${beds === opt.value ? " filter-option-chip--selected" : ""}`}
-                        onClick={() => setBeds(opt.value)}
+                        onClick={() => applyBeds(opt.value)}
                       >
                         {opt.label}
                       </button>
@@ -304,7 +390,7 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
                         key={opt.value}
                         type="button"
                         className={`filter-option-chip${baths === opt.value ? " filter-option-chip--selected" : ""}`}
-                        onClick={() => setBaths(opt.value)}
+                        onClick={() => applyBaths(opt.value)}
                       >
                         {opt.label}
                       </button>
@@ -343,9 +429,13 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
                   className="price-range-input"
                   placeholder="Min Price"
                   value={minFocused ? minPriceRaw : displayPrice(minVal)}
-                  onChange={(e) => setMinPriceRaw(e.target.value.replace(/[^0-9]/g, ""))}
-                  onFocus={() => setMinFocused(true)}
-                  onBlur={() => setMinFocused(false)}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/[^0-9]/g, "");
+                    setMinPriceRaw(v);
+                    debouncedEmit({ minPrice: v });
+                  }}
+                  onFocus={() => { setMinFocused(true); priceFocusedRef.current = true; }}
+                  onBlur={() => { setMinFocused(false); priceFocusedRef.current = false; }}
                 />
                 <datalist id="gd-min-presets">
                   {PRICE_PRESETS.map((v) => (
@@ -360,9 +450,13 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
                   className="price-range-input"
                   placeholder="Max Price"
                   value={maxFocused ? maxPriceRaw : displayPrice(maxVal)}
-                  onChange={(e) => setMaxPriceRaw(e.target.value.replace(/[^0-9]/g, ""))}
-                  onFocus={() => setMaxFocused(true)}
-                  onBlur={() => setMaxFocused(false)}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/[^0-9]/g, "");
+                    setMaxPriceRaw(v);
+                    debouncedEmit({ maxPrice: v });
+                  }}
+                  onFocus={() => { setMaxFocused(true); priceFocusedRef.current = true; }}
+                  onBlur={() => { setMaxFocused(false); priceFocusedRef.current = false; }}
                 />
                 <datalist id="gd-max-presets">
                   {PRICE_PRESETS.map((v) => (
@@ -378,9 +472,14 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
                   min={0}
                   max={SLIDER_MAX}
                   value={minSlider}
+                  onPointerDown={() => { sliderActiveRef.current = true; }}
+                  onPointerUp={() => { sliderActiveRef.current = false; }}
                   onChange={(e) => {
                     const step = Math.min(Number(e.target.value), maxSlider);
-                    setMinPriceRaw(sliderToPrice(step) > 0 ? String(sliderToPrice(step)) : "");
+                    const price = sliderToPrice(step);
+                    const v = price > 0 ? String(price) : "";
+                    setMinPriceRaw(v);
+                    debouncedEmit({ minPrice: v });
                   }}
                 />
                 <input
@@ -388,10 +487,14 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
                   min={0}
                   max={SLIDER_MAX}
                   value={maxSlider}
+                  onPointerDown={() => { sliderActiveRef.current = true; }}
+                  onPointerUp={() => { sliderActiveRef.current = false; }}
                   onChange={(e) => {
                     const step = Math.max(Number(e.target.value), minSlider);
                     const price = sliderToPrice(step);
-                    setMaxPriceRaw(step < SLIDER_MAX ? String(price) : "");
+                    const v = step < SLIDER_MAX ? String(price) : "";
+                    setMaxPriceRaw(v);
+                    debouncedEmit({ maxPrice: v });
                   }}
                 />
               </div>
@@ -411,15 +514,16 @@ export function ListingsFilters({ q, listingType, type, minPrice, maxPrice, minB
           )}
         </div>
 
-        {/* Apply / Search button */}
-        <button className="filter-pill filter-pill--search" type="submit">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
-          Search
-        </button>
+        {/* Clear filters */}
+        {hasAnyFilter && (
+          <button className="filter-pill filter-pill--clear" type="button" onClick={clearFilters}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6L6 18" /><path d="M6 6l12 12" />
+            </svg>
+            Clear
+          </button>
+        )}
       </div>
-    </form>
+    </div>
   );
 }

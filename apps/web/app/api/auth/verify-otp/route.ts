@@ -4,40 +4,27 @@ import { NextResponse } from "next/server";
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:4000/v1";
 const SESSION_COOKIE = "gd_web_session";
-const MAX_AGE = 60 * 60 * 24 * 7; // 7 days (matches JWT expiry)
+const MAX_AGE = 60 * 60 * 24 * 7;
 
 export async function POST(request: Request) {
   const body = await request.json();
 
-  const res = await fetch(`${API_BASE}/auth/login`, {
+  const res = await fetch(`${API_BASE}/auth/verify-otp`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ email: body.email, password: body.password }),
+    body: JSON.stringify({ userId: body.userId, code: body.code, verificationToken: body.verificationToken }),
   });
 
   const json = await res.json();
 
-  // Unverified user — API sends 403 with needsVerification
-  if (res.status === 403 && json.needsVerification) {
-    return NextResponse.json({
-      ok: false,
-      needsVerification: true,
-      userId: json.userId,
-      email: json.email,
-      name: json.name,
-      role: json.role,
-      verificationToken: json.verificationToken,
-      message: json.message,
-    }, { status: 403 });
-  }
-
   if (!res.ok) {
     return NextResponse.json(
-      { ok: false, message: json.message ?? "Login failed" },
+      { ok: false, message: json.message ?? "Verification failed" },
       { status: res.status },
     );
   }
 
+  // OTP verified — set the session cookie with the returned token
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, json.token, {
     httpOnly: true,

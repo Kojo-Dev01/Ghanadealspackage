@@ -1,124 +1,232 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import {
+  GoogleMap,
+  useJsApiLoader,
+  OverlayViewF,
+  OverlayView,
+} from "@react-google-maps/api";
+import Image from "next/image";
+import Link from "next/link";
 import type { PropertyRecord } from "../lib/api";
 
 type Props = {
   properties: PropertyRecord[];
+  hoveredId: string | null;
+  onHover: (id: string | null) => void;
 };
 
-export function ListingsMap({ properties }: Props) {
-  const mapRef = useRef<HTMLDivElement>(null);
+const MAP_ID = "ghanadeals-listings";
+
+/* Ghana bounding box */
+const GHANA_BOUNDS = {
+  north: 11.175,
+  south: 4.737,
+  east: 1.199,
+  west: -3.261,
+};
+
+const MAP_OPTIONS: google.maps.MapOptions = {
+  disableDefaultUI: true,
+  zoomControl: true,
+  mapTypeControl: false,
+  streetViewControl: false,
+  fullscreenControl: false,
+  clickableIcons: false,
+  gestureHandling: "greedy",
+  restriction: {
+    latLngBounds: GHANA_BOUNDS,
+    strictBounds: true,
+  },
+  minZoom: 5,
+  styles: [
+    { featureType: "poi", stylers: [{ visibility: "off" }] },
+    { featureType: "transit", stylers: [{ visibility: "off" }] },
+  ],
+};
+
+/* Ghana center fallback */
+const GHANA_CENTER = { lat: 7.9465, lng: -1.0232 };
+const GHANA_DEFAULT_ZOOM = 6;
+
+function shortPrice(v: number): string {
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1)}M`;
+  if (v >= 1_000) return `${(v / 1_000).toFixed(0)}K`;
+  return String(v);
+}
+
+/* ── Price tag marker ── */
+function PriceMarker({
+  property,
+  isHovered,
+  isSelected,
+  onClick,
+}: {
+  property: PropertyRecord;
+  isHovered: boolean;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  const active = isHovered || isSelected;
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      className={`map-price-tag${active ? " map-price-tag--active" : ""}`}
+    >
+      From {shortPrice(property.price)}
+    </button>
+  );
+}
+
+/* ── Info popup card ── */
+function InfoCard({
+  property,
+  onClose,
+}: {
+  property: PropertyRecord;
+  onClose: () => void;
+}) {
+  return (
+    <div className="map-info-card">
+      <button type="button" className="map-info-close" onClick={onClose}>
+        ✕
+      </button>
+      <Link href={`/property/${property.id}`} className="map-info-link">
+        <div className="map-info-img">
+          <Image
+            src={property.image}
+            alt={property.title}
+            width={280}
+            height={160}
+            unoptimized
+            style={{ objectFit: "cover", width: "100%", height: "100%" }}
+          />
+        </div>
+        <div className="map-info-body">
+          <div className="map-info-price">{property.priceFormatted}</div>
+          <div className="map-info-title">{property.title}</div>
+          <div className="map-info-specs">
+            {property.beds > 0 && <span>{property.beds} Beds</span>}
+            {property.baths > 0 && <span>{property.baths} Baths</span>}
+            <span>{property.area} sqm</span>
+          </div>
+          <div className="map-info-location">{property.location}</div>
+        </div>
+      </Link>
+    </div>
+  );
+}
+
+export function ListingsMap({ properties, hoveredId, onHover }: Props) {
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
+  });
+
+  const mapRef = useRef<google.maps.Map | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const mappable = properties.filter((p) => p.latitude != null && p.longitude != null);
+  const mappable = properties.filter(
+    (p) => p.latitude != null && p.longitude != null,
+  );
 
-  if (mappable.length === 0) {
+  /* Fit bounds when properties change */
+  const onLoad = useCallback(
+    (map: google.maps.Map) => {
+      mapRef.current = map;
+      fitBounds(map, mappable);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  useEffect(() => {
+    if (mapRef.current && mappable.length > 0) {
+      fitBounds(mapRef.current, mappable);
+    }
+    setSelectedId(null);
+  }, [mappable.length]);
+
+  const selected = selectedId
+    ? mappable.find((p) => p.id === selectedId)
+    : null;
+
+  if (!isLoaded) {
     return (
-      <div style={{ padding: 40, textAlign: "center", color: "var(--text-secondary)", background: "var(--panel-alt)", borderRadius: 12, border: "1px solid var(--border)" }}>
-        <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>No map data available</p>
-        <p style={{ fontSize: 12 }}>Properties in this view don&apos;t have map coordinates yet.</p>
+      <div className="listings-map-placeholder">
+        <div className="listings-spinner" style={{ width: 28, height: 28 }} />
       </div>
     );
   }
 
-  // Calculate center from all mappable properties
-  const avgLat = mappable.reduce((s, p) => s + p.latitude!, 0) / mappable.length;
-  const avgLng = mappable.reduce((s, p) => s + p.longitude!, 0) / mappable.length;
-
-  // Calculate bounding box for zoom
-  const lats = mappable.map((p) => p.latitude!);
-  const lngs = mappable.map((p) => p.longitude!);
-  const minLat = Math.min(...lats) - 0.01;
-  const maxLat = Math.max(...lats) + 0.01;
-  const minLng = Math.min(...lngs) - 0.01;
-  const maxLng = Math.max(...lngs) + 0.01;
-
-  const selected = selectedId ? mappable.find((p) => p.id === selectedId) : null;
-
-  const fmt = (v: number) =>
-    `GHS ${new Intl.NumberFormat("en-GH", { maximumFractionDigits: 0 }).format(v)}`;
+  if (mappable.length === 0) {
+    return (
+      <div className="listings-map-placeholder">
+        <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
+          No map data available
+        </p>
+        <p style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
+          Properties don&apos;t have coordinates yet.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: selected ? "1fr 320px" : "1fr", gap: 0, borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)", height: 500 }}>
-      <div style={{ position: "relative", height: "100%" }}>
-        <iframe
-          title="Property map"
-          width="100%"
-          height="100%"
-          style={{ border: 0 }}
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          src={`https://www.openstreetmap.org/export/embed.html?bbox=${minLng}%2C${minLat}%2C${maxLng}%2C${maxLat}&layer=mapnik`}
-        />
-        {/* Overlay with clickable property pins */}
-        <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, padding: 8, pointerEvents: "auto", justifyContent: "flex-start", maxHeight: "100%", overflowY: "auto" }}>
-            {mappable.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => setSelectedId(selectedId === p.id ? null : p.id)}
-                style={{
-                  padding: "4px 8px",
-                  background: selectedId === p.id ? "var(--accent)" : "white",
-                  color: selectedId === p.id ? "white" : "var(--text-primary)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 6,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {fmt(p.price)}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+    <GoogleMap
+      mapContainerClassName="listings-map-container"
+      center={GHANA_CENTER}
+      zoom={GHANA_DEFAULT_ZOOM}
+      options={MAP_OPTIONS}
+      onLoad={onLoad}
+      onClick={() => setSelectedId(null)}
+    >
+      {mappable.map((p) => (
+        <OverlayViewF
+          key={p.id}
+          position={{ lat: p.latitude!, lng: p.longitude! }}
+          mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+        >
+          <PriceMarker
+            property={p}
+            isHovered={hoveredId === p.id}
+            isSelected={selectedId === p.id}
+            onClick={() => setSelectedId(selectedId === p.id ? null : p.id)}
+          />
+        </OverlayViewF>
+      ))}
 
       {selected && (
-        <div style={{ background: "var(--panel)", borderLeft: "1px solid var(--border)", padding: 16, overflowY: "auto" }}>
-          <button onClick={() => setSelectedId(null)} style={{ float: "right", background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "var(--text-secondary)" }}>
-            &times;
-          </button>
-          {selected.image && (
-            <img src={selected.image} alt={selected.title} style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 8, marginBottom: 12 }} />
-          )}
-          <p style={{ fontWeight: 700, fontSize: 16, color: "var(--accent)", marginBottom: 4 }}>
-            {fmt(selected.price)}
-          </p>
-          <a href={`/property/${selected.id}`} style={{ fontWeight: 600, fontSize: 14, color: "var(--text-primary)", textDecoration: "none" }}>
-            {selected.title}
-          </a>
-          <p style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>
-            {selected.location}, {selected.region}
-          </p>
-          <div style={{ display: "flex", gap: 12, marginTop: 8, fontSize: 12, color: "var(--text-secondary)" }}>
-            {selected.beds > 0 && <span>{selected.beds} bed</span>}
-            {selected.baths > 0 && <span>{selected.baths} bath</span>}
-            {selected.area > 0 && <span>{selected.area} sqft</span>}
-          </div>
-          <a
-            href={`/property/${selected.id}`}
-            style={{
-              display: "block",
-              textAlign: "center",
-              padding: "8px 16px",
-              marginTop: 16,
-              background: "var(--accent)",
-              color: "white",
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 600,
-              textDecoration: "none",
-            }}
-          >
-            View Details
-          </a>
-        </div>
+        <OverlayViewF
+          position={{ lat: selected.latitude!, lng: selected.longitude! }}
+          mapPaneName={OverlayView.FLOAT_PANE}
+        >
+          <InfoCard
+            property={selected}
+            onClose={() => setSelectedId(null)}
+          />
+        </OverlayViewF>
       )}
-    </div>
+    </GoogleMap>
   );
+}
+
+function fitBounds(map: google.maps.Map, items: PropertyRecord[]) {
+  if (items.length === 0) {
+    /* No items — show all of Ghana */
+    map.fitBounds(GHANA_BOUNDS, { top: 20, bottom: 20, left: 20, right: 20 });
+    return;
+  }
+  if (items.length === 1) {
+    map.setCenter({ lat: items[0].latitude!, lng: items[0].longitude! });
+    map.setZoom(14);
+    return;
+  }
+  const bounds = new google.maps.LatLngBounds();
+  items.forEach((p) => bounds.extend({ lat: p.latitude!, lng: p.longitude! }));
+  map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
 }
