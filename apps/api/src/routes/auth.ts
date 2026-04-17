@@ -120,9 +120,16 @@ export async function registerAuthRoutes(app: FastifyInstance) {
       .eq("user_id", userId)
       .eq("used", false);
 
-    await (supabaseAdmin as any)
+    const { error: otpInsertError } = await (supabaseAdmin as any)
       .from("email_otps")
       .insert({ user_id: userId, email, code: otpCode, expires_at: expiresAt, verification_token: verificationToken });
+
+    if (otpInsertError) {
+      request.log.error(otpInsertError, "Failed to insert OTP row");
+      // Clean up — user was just created but OTP can't be stored
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+      return reply.code(500).send({ message: "Failed to create verification code" });
+    }
 
     // Send OTP email (fire-and-forget logging, but we still await)
     sendOtpEmail(email, name, otpCode).catch((err) =>
@@ -193,9 +200,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         .eq("user_id", userId)
         .eq("used", false);
 
-      await (supabaseAdmin as any)
+      const { error: otpInsertError } = await (supabaseAdmin as any)
         .from("email_otps")
         .insert({ user_id: userId, email, code: otpCode, expires_at: expiresAt, verification_token: verificationToken });
+
+      if (otpInsertError) {
+        request.log.error(otpInsertError, "Failed to insert OTP row on login");
+        return reply.code(500).send({ message: "Failed to create verification code" });
+      }
 
       sendOtpEmail(email, name, otpCode).catch((err) =>
         request.log.error(err, "Failed to send OTP email"),
@@ -397,9 +409,14 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const newVerificationToken = generateVerificationToken();
     const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60_000).toISOString();
 
-    await (supabaseAdmin as any)
+    const { error: otpInsertError } = await (supabaseAdmin as any)
       .from("email_otps")
       .insert({ user_id: userId, email, code: otpCode, expires_at: expiresAt, verification_token: newVerificationToken });
+
+    if (otpInsertError) {
+      request.log.error(otpInsertError, "Failed to insert OTP row on resend");
+      return reply.code(500).send({ message: "Failed to create verification code" });
+    }
 
     sendOtpEmail(email, name, otpCode).catch((err) =>
       request.log.error(err, "Failed to send OTP email"),

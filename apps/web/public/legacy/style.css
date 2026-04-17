@@ -760,7 +760,7 @@ ul, ol { list-style: none; }
   position: fixed;
   top: 90px;
   right: 24px;
-  z-index: 3000;
+  z-index: 6000;
   display: flex;
   flex-direction: column;
   gap: 10px;
