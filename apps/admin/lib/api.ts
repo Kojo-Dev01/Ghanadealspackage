@@ -460,6 +460,13 @@ type AdminUsersResponse = {
   total: number;
   page: number;
   limit: number;
+  stats: {
+    total: number;
+    agents: number;
+    buyers: number;
+    suspended: number;
+    newThisWeek: number;
+  };
 };
 
 export async function fetchAdminUsers(params?: {

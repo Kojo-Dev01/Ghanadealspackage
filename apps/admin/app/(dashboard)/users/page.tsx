@@ -7,6 +7,10 @@ import {
   Phone,
   Heart,
   Calendar,
+  Users,
+  UserCheck,
+  ShieldAlert,
+  UserPlus,
 } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -33,6 +37,7 @@ export default async function AdminUsersPage({
   const users = usersResponse?.items ?? [];
   const total = usersResponse?.total ?? 0;
   const totalPages = Math.ceil(total / 20);
+  const stats = usersResponse?.stats ?? { total: 0, agents: 0, buyers: 0, suspended: 0, newThisWeek: 0 };
 
   function formatDate(iso: string) {
     return new Date(iso).toLocaleDateString("en-GB", {
@@ -98,6 +103,28 @@ export default async function AdminUsersPage({
           {errorMsg}
         </div>
       )}
+
+      {/* User Stats */}
+      <section className="flex flex-wrap gap-4">
+        {([
+          { label: "Total Users", value: stats.total, icon: Users, color: "text-blue-500" },
+          { label: "Sellers", value: stats.agents, icon: UserCheck, color: "text-violet-500" },
+          { label: "Buyers", value: stats.buyers, icon: Users, color: "text-sky-500" },
+          { label: "Suspended", value: stats.suspended, icon: ShieldAlert, color: "text-red-500" },
+          { label: "New This Week", value: stats.newThisWeek, icon: UserPlus, color: "text-green-500" },
+        ] as const).map((s) => (
+          <article
+            key={s.label}
+            className="flex-1 min-w-[140px] bg-panel border border-border rounded-xl p-4 shadow-sm"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">{s.label}</span>
+              <s.icon size={15} className={s.color} />
+            </div>
+            <strong className="block text-2xl font-extrabold tracking-tight">{s.value}</strong>
+          </article>
+        ))}
+      </section>
 
       {/* Search */}
       <section className="bg-panel border border-border rounded-xl shadow-sm p-5">

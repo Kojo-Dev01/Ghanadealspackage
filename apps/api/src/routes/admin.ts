@@ -703,7 +703,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       updatedAt: row.updated_at,
     }));
 
-    return { items, total: count ?? 0, page, limit };
+    return { items, total: count ?? 0, page, limit, stats };
   });
 
   // ---- Suspend user ----
