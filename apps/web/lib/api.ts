@@ -737,6 +737,7 @@ export type ChatMessage = {
   property_ref: PropertyRefData | null;
   read_at: string | null;
   created_at: string;
+  deleted_at: string | null;
 };
 
 export async function fetchConversations(): Promise<ConversationListItem[]> {

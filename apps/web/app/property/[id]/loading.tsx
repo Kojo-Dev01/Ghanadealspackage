@@ -1,5 +1,5 @@
-import { BrandedLoader } from "../../../components/branded-loader";
+import { PropertyDetailSkeleton } from "../../../components/property-detail-skeleton";
 
 export default function Loading() {
-  return <BrandedLoader />;
+  return <PropertyDetailSkeleton />;
 }

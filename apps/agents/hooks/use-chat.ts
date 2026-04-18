@@ -25,6 +25,7 @@ export type ChatMessage = {
   property_ref: PropertyRefData | null;
   read_at: string | null;
   created_at: string;
+  deleted_at: string | null;
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";

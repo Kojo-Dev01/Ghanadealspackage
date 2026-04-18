@@ -613,3 +613,106 @@ export async function toggleAdminTeamMemberActive(id: string): Promise<{ ok: boo
   if (!res.ok) return { ok: false, message: body.message };
   return { ok: true, active: body.item?.active, message: body.message };
 }
+
+// ---- Conversations / Chats ----
+
+export type AdminConversationUser = {
+  user_id: string;
+  name: string;
+  email: string;
+  avatar_url: string | null;
+};
+
+export type AdminConversationListItem = {
+  id: string;
+  propertyId: string | null;
+  property: { id: string; title: string; image: string | null } | null;
+  buyer: AdminConversationUser | null;
+  seller: AdminConversationUser | null;
+  lastMessage: { content: string; message_type: string; sender_id: string; created_at: string } | null;
+  messageCount: number;
+  lastMessageAt: string;
+  createdAt: string;
+};
+
+export type AdminConversationDetail = {
+  id: string;
+  propertyId: string | null;
+  buyerId: string;
+  sellerId: string;
+  property: { id: string; title: string; image: string | null; price: number; location: string } | null;
+  buyer: AdminConversationUser | null;
+  seller: AdminConversationUser | null;
+  lastMessageAt: string;
+  createdAt: string;
+};
+
+export type AdminChatMessage = {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
+  message_type: string;
+  attachment_url: string | null;
+  attachment_name: string | null;
+  property_ref_id: string | null;
+  property_ref: { id: string; title: string; image: string | null; price: number; location: string; listingType: string } | null;
+  read_at: string | null;
+  created_at: string;
+  deleted_at: string | null;
+  deleted_by: string | null;
+};
+
+type AdminConversationsResponse = {
+  items: AdminConversationListItem[];
+  total: number;
+  page: number;
+  limit: number;
+};
+
+export async function fetchAdminConversations(params?: {
+  q?: string;
+  page?: number;
+  limit?: number;
+}): Promise<AdminConversationsResponse | null> {
+  const token = await getToken();
+  if (!token) return null;
+  const sp = new URLSearchParams();
+  if (params?.q) sp.set("q", params.q);
+  if (params?.page) sp.set("page", String(params.page));
+  if (params?.limit) sp.set("limit", String(params.limit));
+  const q = sp.toString();
+  const res = await apiFetch(`/v1/admin/conversations${q ? `?${q}` : ""}`, token);
+  if (!res?.ok) return null;
+  return res.json();
+}
+
+export async function fetchAdminConversation(id: string): Promise<AdminConversationDetail | null> {
+  const token = await getToken();
+  if (!token) return null;
+  const res = await apiFetch(`/v1/admin/conversations/${encodeURIComponent(id)}`, token);
+  if (!res?.ok) return null;
+  return res.json();
+}
+
+export async function fetchAdminConversationMessages(id: string, cursor?: string): Promise<{ messages: AdminChatMessage[]; hasMore: boolean } | null> {
+  const token = await getToken();
+  if (!token) return null;
+  const sp = new URLSearchParams();
+  if (cursor) sp.set("cursor", cursor);
+  const q = sp.toString();
+  const res = await apiFetch(`/v1/admin/conversations/${encodeURIComponent(id)}/messages${q ? `?${q}` : ""}`, token);
+  if (!res?.ok) return null;
+  return res.json();
+}
+
+export async function deleteAdminMessage(conversationId: string, messageId: string): Promise<boolean> {
+  const token = await getToken();
+  if (!token) return false;
+  const res = await apiFetch(
+    `/v1/admin/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`,
+    token,
+    { method: "DELETE" }
+  );
+  return res?.ok ?? false;
+}

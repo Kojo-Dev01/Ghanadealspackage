@@ -1332,4 +1332,229 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       message: nextActive ? "Admin user reactivated" : "Admin user deactivated",
     };
   });
+
+  // ═══════════════════════════════════════════════
+  // CONVERSATIONS — Admin view of all user chats
+  // ═══════════════════════════════════════════════
+
+  // ---- List all conversations ----
+  app.get("/conversations", { preHandler: requirePermission("inquiries.read") }, async (request, reply) => {
+    const query = request.query as { q?: string; page?: string; limit?: string };
+    const supabase = getSupabaseAdminClient();
+    if (!supabase) return reply.code(503).send({ message: "Database not configured" });
+
+    const page = Math.max(1, Number(query.page ?? "1") || 1);
+    const limit = Math.min(50, Math.max(1, Number(query.limit ?? "20") || 20));
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const { data, count, error } = await (supabase as any)
+      .from("conversations")
+      .select(`
+        id,
+        property_id,
+        buyer_id,
+        seller_id,
+        last_message_at,
+        created_at,
+        properties ( id, title, image ),
+        buyer:profiles!conversations_buyer_id_fkey ( user_id, name, email, avatar_url ),
+        seller:profiles!conversations_seller_id_fkey ( user_id, name, email, avatar_url )
+      `, { count: "exact" })
+      .order("last_message_at", { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      app.log.error(error, "Failed to fetch conversations");
+      return { items: [], total: 0, page, limit };
+    }
+
+    // Fetch last message for each conversation
+    const convoIds = (data ?? []).map((c: any) => c.id);
+    let lastMsgMap: Record<string, any> = {};
+    if (convoIds.length > 0) {
+      const { data: msgs } = await (supabase as any)
+        .from("messages")
+        .select("conversation_id, content, message_type, sender_id, created_at")
+        .in("conversation_id", convoIds)
+        .order("created_at", { ascending: false });
+
+      for (const msg of msgs ?? []) {
+        if (!lastMsgMap[msg.conversation_id]) {
+          lastMsgMap[msg.conversation_id] = msg;
+        }
+      }
+    }
+
+    // Count messages per conversation
+    const countMap: Record<string, number> = {};
+    if (convoIds.length > 0) {
+      const { data: allMsgs } = await (supabase as any)
+        .from("messages")
+        .select("conversation_id")
+        .in("conversation_id", convoIds);
+      for (const m of allMsgs ?? []) {
+        countMap[m.conversation_id] = (countMap[m.conversation_id] ?? 0) + 1;
+      }
+    }
+
+    // Agent avatar fallback
+    const userIds = (data ?? []).flatMap((c: any) => [c.buyer_id, c.seller_id]);
+    const uniqueUserIds = [...new Set(userIds)];
+    const agentAvatarMap: Record<string, string | null> = {};
+    if (uniqueUserIds.length > 0) {
+      const { data: agentRows } = await (supabase as any)
+        .from("agents")
+        .select("user_id, avatar_url")
+        .in("user_id", uniqueUserIds);
+      for (const a of agentRows ?? []) {
+        agentAvatarMap[a.user_id] = a.avatar_url;
+      }
+    }
+
+    let items = (data ?? []).map((c: any) => {
+      const buyer = c.buyer ? { ...c.buyer, avatar_url: c.buyer.avatar_url ?? agentAvatarMap[c.buyer.user_id] ?? null } : null;
+      const seller = c.seller ? { ...c.seller, avatar_url: c.seller.avatar_url ?? agentAvatarMap[c.seller.user_id] ?? null } : null;
+      return {
+        id: c.id,
+        propertyId: c.property_id,
+        property: c.properties,
+        buyer,
+        seller,
+        lastMessage: lastMsgMap[c.id] ?? null,
+        messageCount: countMap[c.id] ?? 0,
+        lastMessageAt: c.last_message_at,
+        createdAt: c.created_at,
+      };
+    });
+
+    // In-memory search (participant names or property title)
+    if (query.q) {
+      const q = query.q.toLowerCase();
+      items = items.filter((c: any) =>
+        c.buyer?.name?.toLowerCase().includes(q) ||
+        c.seller?.name?.toLowerCase().includes(q) ||
+        c.property?.title?.toLowerCase().includes(q)
+      );
+    }
+
+    return { items, total: count ?? 0, page, limit };
+  });
+
+  // ---- Get conversation detail ----
+  app.get<{ Params: { id: string } }>("/conversations/:id", { preHandler: requirePermission("inquiries.read") }, async (request, reply) => {
+    const { id } = request.params;
+    const supabase = getSupabaseAdminClient();
+    if (!supabase) return reply.code(503).send({ message: "Database not configured" });
+
+    const { data: convo, error } = await (supabase as any)
+      .from("conversations")
+      .select(`
+        id, property_id, buyer_id, seller_id, last_message_at, created_at,
+        properties ( id, title, image, price, location ),
+        buyer:profiles!conversations_buyer_id_fkey ( user_id, name, email, avatar_url ),
+        seller:profiles!conversations_seller_id_fkey ( user_id, name, email, avatar_url )
+      `)
+      .eq("id", id)
+      .single();
+
+    if (error || !convo) {
+      return reply.code(404).send({ message: "Conversation not found" });
+    }
+
+    const userIds = [convo.buyer_id, convo.seller_id];
+    const { data: agentRows } = await (supabase as any)
+      .from("agents").select("user_id, avatar_url").in("user_id", userIds);
+    const agentAvatarMap: Record<string, string | null> = {};
+    for (const a of agentRows ?? []) agentAvatarMap[a.user_id] = a.avatar_url;
+
+    if (convo.buyer) convo.buyer.avatar_url = convo.buyer.avatar_url ?? agentAvatarMap[convo.buyer.user_id] ?? null;
+    if (convo.seller) convo.seller.avatar_url = convo.seller.avatar_url ?? agentAvatarMap[convo.seller.user_id] ?? null;
+
+    return {
+      id: convo.id, propertyId: convo.property_id, buyerId: convo.buyer_id, sellerId: convo.seller_id,
+      property: convo.properties, buyer: convo.buyer, seller: convo.seller,
+      lastMessageAt: convo.last_message_at, createdAt: convo.created_at,
+    };
+  });
+
+  // ---- Get messages for a conversation ----
+  app.get<{ Params: { id: string } }>("/conversations/:id/messages", { preHandler: requirePermission("inquiries.read") }, async (request, reply) => {
+    const { id } = request.params;
+    const query = request.query as { cursor?: string; limit?: string };
+    const limit = Math.min(100, Math.max(1, Number(query.limit ?? "50") || 50));
+
+    const supabase = getSupabaseAdminClient();
+    if (!supabase) return reply.code(503).send({ message: "Database not configured" });
+
+    const { data: convo } = await (supabase as any)
+      .from("conversations").select("id").eq("id", id).single();
+    if (!convo) return reply.code(404).send({ message: "Conversation not found" });
+
+    let q = (supabase as any)
+      .from("messages")
+      .select("id, conversation_id, sender_id, content, message_type, attachment_url, attachment_name, property_ref_id, read_at, created_at, deleted_at, deleted_by")
+      .eq("conversation_id", id)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (query.cursor) q = q.lt("created_at", query.cursor);
+
+    const { data: messages, error } = await q;
+    if (error) {
+      app.log.error(error, "Failed to fetch messages");
+      return reply.code(500).send({ message: "Failed to fetch messages" });
+    }
+
+    const reversed = (messages || []).reverse();
+    const refIds = [...new Set(reversed.filter((m: any) => m.property_ref_id).map((m: any) => m.property_ref_id))];
+    let propMap: Record<string, any> = {};
+    if (refIds.length > 0) {
+      const { data: props } = await (supabase as any)
+        .from("properties").select("id, title, image, price, location, listing_type").in("id", refIds);
+      if (props) for (const p of props) propMap[p.id] = { id: p.id, title: p.title, image: p.image, price: Number(p.price), location: p.location, listingType: p.listing_type };
+    }
+
+    return {
+      messages: reversed.map((m: any) => ({ ...m, property_ref: m.property_ref_id ? propMap[m.property_ref_id] ?? null : null })),
+      hasMore: (messages || []).length === limit,
+    };
+  });
+
+  // ---- Soft-delete a message (moderation) ----
+  app.delete<{ Params: { id: string; msgId: string } }>("/conversations/:id/messages/:msgId", { preHandler: requirePermission("inquiries.update") }, async (request, reply) => {
+    const { id, msgId } = request.params;
+    const adminUser = (request as any).adminUser;
+
+    const supabase = getSupabaseAdminClient();
+    if (!supabase) return reply.code(503).send({ message: "Database not configured" });
+
+    // Verify message belongs to this conversation
+    const { data: msg, error: msgErr } = await (supabase as any)
+      .from("messages")
+      .select("id, conversation_id, deleted_at")
+      .eq("id", msgId)
+      .eq("conversation_id", id)
+      .single();
+
+    if (msgErr || !msg) {
+      return reply.code(404).send({ message: "Message not found" });
+    }
+
+    if (msg.deleted_at) {
+      return reply.code(400).send({ message: "Message already deleted" });
+    }
+
+    const { error } = await (supabase as any)
+      .from("messages")
+      .update({ deleted_at: new Date().toISOString(), deleted_by: adminUser?.id ?? null })
+      .eq("id", msgId);
+
+    if (error) {
+      app.log.error(error, "Failed to delete message");
+      return reply.code(500).send({ message: "Failed to delete message" });
+    }
+
+    return { success: true };
+  });
 }

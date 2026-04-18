@@ -327,7 +327,7 @@ export async function registerConversationRoutes(app: FastifyInstance) {
 
     let q = (supabase as any)
       .from("messages")
-      .select("id, conversation_id, sender_id, content, message_type, attachment_url, attachment_name, property_ref_id, read_at, created_at")
+      .select("id, conversation_id, sender_id, content, message_type, attachment_url, attachment_name, property_ref_id, read_at, created_at, deleted_at")
       .eq("conversation_id", id)
       .order("created_at", { ascending: false })
       .limit(limit);

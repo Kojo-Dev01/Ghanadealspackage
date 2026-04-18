@@ -451,24 +451,35 @@ export default function ChatPage() {
               {group.msgs.map((msg) => {
                 const isMine = msg.sender_id === user?.id;
                 const hasMedia = msg.message_type === "image" || msg.message_type === "property_ref";
+                const isDeleted = !!msg.deleted_at;
                 return (
                   <div key={msg.id} style={{ display: "flex", justifyContent: isMine ? "flex-end" : "flex-start", marginBottom: 3 }}>
                     <div style={{
                       maxWidth: "75%",
                       fontSize: 14, lineHeight: 1.55,
-                      padding: hasMedia ? 6 : "10px 14px",
-                      background: isMine ? "var(--red)" : "var(--bg-secondary)",
-                      color: isMine ? "#fff" : "var(--text-primary)",
+                      padding: isDeleted ? "10px 14px" : hasMedia ? 6 : "10px 14px",
+                      background: isDeleted ? "var(--bg-secondary)" : isMine ? "var(--red)" : "var(--bg-secondary)",
+                      color: isDeleted ? "var(--text-tertiary)" : isMine ? "#fff" : "var(--text-primary)",
                       borderRadius: isMine ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-                      border: isMine ? "none" : "1px solid var(--border-primary)",
+                      border: isDeleted ? "1px dashed var(--border-primary)" : isMine ? "none" : "1px solid var(--border-primary)",
                       wordBreak: "break-word",
+                      fontStyle: isDeleted ? "italic" : undefined,
                     }}>
-                      <BubbleContent msg={msg} isMine={isMine} onImageClick={setLightboxUrl} />
+                      {isDeleted ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-tertiary)" }}>
+                          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                            <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                          </svg>
+                          This message was removed by a moderator
+                        </div>
+                      ) : (
+                        <BubbleContent msg={msg} isMine={isMine} onImageClick={setLightboxUrl} />
+                      )}
                       <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 4, marginTop: 4, padding: "0 2px" }}>
-                        <span style={{ fontSize: 10, color: isMine ? "rgba(255,255,255,.6)" : "var(--text-tertiary)" }}>
+                        <span style={{ fontSize: 10, color: isDeleted ? "var(--text-tertiary)" : isMine ? "rgba(255,255,255,.6)" : "var(--text-tertiary)" }}>
                           {formatTime(msg.created_at)}
                         </span>
-                        {isMine && (
+                        {!isDeleted && isMine && (
                           <span style={{ fontSize: 11, color: "rgba(255,255,255,.6)" }}>{msg.read_at ? "✓✓" : "✓"}</span>
                         )}
                       </div>

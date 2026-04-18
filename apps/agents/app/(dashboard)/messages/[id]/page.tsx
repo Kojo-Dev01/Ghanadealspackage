@@ -405,6 +405,7 @@ export default function SellerChatPage() {
             {group.msgs.map((msg) => {
               const isMine = msg.sender_id === userId;
               const hasMedia = msg.message_type === "image" || msg.message_type === "property_ref";
+              const isDeleted = !!msg.deleted_at;
               return (
                 <div
                   key={msg.id}
@@ -412,17 +413,30 @@ export default function SellerChatPage() {
                 >
                   <div
                     className={`max-w-[75%] sm:max-w-[70%] text-sm sm:text-[14px] leading-relaxed ${
-                      hasMedia ? "p-1.5" : "px-3.5 py-2.5"
+                      isDeleted
+                        ? "px-3.5 py-2.5 bg-panel-alt/50 border border-border border-dashed text-muted rounded-2xl italic"
+                        : hasMedia ? "p-1.5" : "px-3.5 py-2.5"
                     } ${
-                      isMine
+                      !isDeleted && isMine
                         ? "bg-accent text-white rounded-2xl rounded-br-sm"
-                        : "bg-panel border border-border text-foreground rounded-2xl rounded-bl-sm"
+                        : !isDeleted
+                          ? "bg-panel border border-border text-foreground rounded-2xl rounded-bl-sm"
+                          : ""
                     }`}
                   >
-                    <BubbleContent msg={msg} isMine={isMine} onImageClick={setLightboxUrl} />
-                    <div className={`flex justify-end items-center gap-1 mt-1 px-1 text-[10px] ${isMine ? "text-white/60" : "text-muted"}`}>
+                    {isDeleted ? (
+                      <div className="flex items-center gap-1.5 text-xs text-muted">
+                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+                          <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                        </svg>
+                        This message was removed by a moderator
+                      </div>
+                    ) : (
+                      <BubbleContent msg={msg} isMine={isMine} onImageClick={setLightboxUrl} />
+                    )}
+                    <div className={`flex justify-end items-center gap-1 mt-1 px-1 text-[10px] ${isDeleted ? "text-muted/60" : isMine ? "text-white/60" : "text-muted"}`}>
                       {formatTime(msg.created_at)}
-                      {isMine && (
+                      {!isDeleted && isMine && (
                         <span className="text-[11px]">{msg.read_at ? "✓✓" : "✓"}</span>
                       )}
                     </div>

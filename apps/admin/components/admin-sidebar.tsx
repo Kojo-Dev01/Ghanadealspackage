@@ -9,7 +9,7 @@ import {
   Building2,
   Users,
   UserCircle,
-  MessageSquare,
+  MessagesSquare,
   BarChart3,
   Settings,
   LogOut,
@@ -25,7 +25,7 @@ import type { Permission } from "@/lib/permissions-shared";
 
 type AdminRole = "super_admin" | "moderator" | "customer_service";
 
-type NavKey = "overview" | "listings" | "agents" | "users" | "inquiries" | "metrics" | "settings" | "team" | "system";
+type NavKey = "overview" | "listings" | "agents" | "users" | "chats" | "metrics" | "settings" | "team" | "system";
 
 const ROLE_PERMISSIONS: Record<AdminRole, ReadonlySet<Permission>> = {
   super_admin: new Set<Permission>([
@@ -48,7 +48,7 @@ const NAV_PERMISSION: Record<NavKey, Permission | null> = {
   listings: "listings.read",
   agents: "agents.read",
   users: "users.read",
-  inquiries: "inquiries.read",
+  chats: "inquiries.read",
   metrics: "metrics.read",
   team: "admin_users.read",
   settings: null,
@@ -63,7 +63,7 @@ const navItems: Array<
   { key: "listings", label: "Listings", href: "/listings", icon: <Building2 size={18} /> },
   { key: "agents", label: "Sellers", href: "/agents", icon: <UserCircle size={18} /> },
   { key: "users", label: "Users", href: "/users", icon: <Users size={18} /> },
-  { key: "inquiries", label: "Inquiries", href: "/inquiries", icon: <MessageSquare size={18} /> },
+  { key: "chats", label: "Chats", href: "/chats", icon: <MessagesSquare size={18} /> },
   { key: "metrics", label: "Metrics", href: "/metrics", icon: <BarChart3 size={18} /> },
   { key: "team", label: "Team", href: "/team", icon: <ShieldCheck size={18} /> },
   { key: "system", label: "System", href: "/system", icon: <Monitor size={18} /> },
@@ -74,7 +74,7 @@ function getActiveNav(pathname: string): NavKey {
   if (pathname.startsWith("/listings")) return "listings";
   if (pathname.startsWith("/agents")) return "agents";
   if (pathname.startsWith("/users")) return "users";
-  if (pathname.startsWith("/inquiries")) return "inquiries";
+  if (pathname.startsWith("/chats")) return "chats";
   if (pathname.startsWith("/metrics")) return "metrics";
   if (pathname.startsWith("/team")) return "team";
   if (pathname.startsWith("/system")) return "system";
