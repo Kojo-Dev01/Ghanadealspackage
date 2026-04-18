@@ -2,7 +2,7 @@
 
 // ---- Enums ----
 
-export type ListingType = "sale" | "rent";
+export type ListingType = "sale" | "rent" | "new" | "land" | "uncompleted";
 export type ModerationStatus = "pending" | "approved" | "flagged" | "archived";
 export type InquiryStatus = "new" | "read" | "responded" | "closed";
 

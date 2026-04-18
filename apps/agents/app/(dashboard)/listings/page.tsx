@@ -35,6 +35,7 @@ export default async function AgentListingsPage({
     { value: "rent", label: "Rent" },
     { value: "land", label: "Land" },
     { value: "new", label: "New Projects" },
+    { value: "uncompleted", label: "Uncompleted" },
     { value: "commercial", label: "Commercial" },
   ];
 

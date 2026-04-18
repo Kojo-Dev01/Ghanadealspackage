@@ -24,6 +24,7 @@ const typeColors: Record<string, string> = {
   rent: "rgba(139,92,246,0.9)",
   land: "rgba(16,185,129,0.9)",
   new: "rgba(59,130,246,0.9)",
+  uncompleted: "rgba(245,158,11,0.9)",
   commercial: "rgba(16,185,129,0.9)",
 };
 
@@ -86,7 +87,7 @@ export function ListingCard({ listing }: { listing: DashboardListing }) {
               background: typeBg, color: "#fff", backdropFilter: "blur(4px)",
             }}
           >
-            For {listing.listingType === "new" ? "Sale" : listing.listingType}
+            {{ sale: "For Sale", rent: "For Rent", new: "New Development", land: "Land", uncompleted: "Uncompleted" }[listing.listingType] ?? listing.listingType}
           </span>
         </div>
       </div>

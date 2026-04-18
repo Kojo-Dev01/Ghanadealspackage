@@ -3,7 +3,7 @@ import { getSupabaseAdminClient } from "../lib/supabase.js";
 
 // ---- Types ----
 
-export type ListingType = "sale" | "rent" | "new";
+export type ListingType = "sale" | "rent" | "new" | "land" | "uncompleted";
 export type ModerationStatus = "pending" | "approved" | "flagged" | "archived";
 
 export interface PropertyRow {

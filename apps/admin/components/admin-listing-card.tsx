@@ -63,10 +63,10 @@ export function AdminListingCard({
             style={{
               padding: '4px 10px',
               backdropFilter: 'blur(4px)',
-              background: listing.listingType === "sale" ? 'rgba(59,130,246,0.9)' : 'rgba(139,92,246,0.9)',
+              background: { sale: 'rgba(59,130,246,0.9)', rent: 'rgba(139,92,246,0.9)', new: 'rgba(59,130,246,0.9)', land: 'rgba(16,185,129,0.9)', uncompleted: 'rgba(245,158,11,0.9)' }[listing.listingType] ?? 'rgba(16,185,129,0.9)',
             }}
           >
-            For {listing.listingType}
+            {{ sale: "For Sale", rent: "For Rent", new: "New Development", land: "Land", uncompleted: "Uncompleted" }[listing.listingType] ?? listing.listingType}
           </span>
         </div>
         {/* Agent name — bottom left */}

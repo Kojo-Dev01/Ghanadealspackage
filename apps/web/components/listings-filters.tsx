@@ -63,8 +63,8 @@ const LISTING_TYPES = [
   { value: "sale", label: "For Sale" },
   { value: "rent", label: "For Rent" },
   { value: "new", label: "New Development" },
-  { value: "commercial", label: "Commercial" },
   { value: "land", label: "Land" },
+  { value: "uncompleted", label: "Uncompleted" },
 ];
 
 const PROPERTY_TYPES = [
@@ -266,6 +266,8 @@ export function ListingsFilters({ initialFilters, onFiltersChange }: Props) {
 
   const hideBedsBaths =
     selectedListingType === "new" ||
+    selectedListingType === "land" ||
+    selectedListingType === "uncompleted" ||
     selectedPropertyType === "Commercial" ||
     selectedPropertyType === "Land";
 
@@ -422,6 +424,13 @@ export function ListingsFilters({ initialFilters, onFiltersChange }: Props) {
                     ))}
                   </div>
                 </div>
+                <button
+                  type="button"
+                  className="filter-dropdown-done"
+                  onClick={() => setOpenDropdown(null)}
+                >
+                  Done
+                </button>
                 {isBedsBathsActive && (
                   <button
                     type="button"
@@ -435,13 +444,6 @@ export function ListingsFilters({ initialFilters, onFiltersChange }: Props) {
                     Clear
                   </button>
                 )}
-                <button
-                  type="button"
-                  className="filter-dropdown-done"
-                  onClick={() => setOpenDropdown(null)}
-                >
-                  Done
-                </button>
               </div>
             )}
           </div>
@@ -541,6 +543,13 @@ export function ListingsFilters({ initialFilters, onFiltersChange }: Props) {
                   {minVal > 0 ? fmtPrice(minVal) : "No Min"} – {maxVal > 0 ? fmtPrice(maxVal) : "No Max"}
                 </div>
               )}
+              <button
+                type="button"
+                className="filter-dropdown-done"
+                onClick={() => setOpenDropdown(null)}
+              >
+                Done
+              </button>
               {isPriceActive && (
                 <button
                   type="button"
@@ -554,13 +563,6 @@ export function ListingsFilters({ initialFilters, onFiltersChange }: Props) {
                   Clear
                 </button>
               )}
-              <button
-                type="button"
-                className="filter-dropdown-done"
-                onClick={() => setOpenDropdown(null)}
-              >
-                Done
-              </button>
             </div>
           )}
         </div>

@@ -14,7 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("gh-theme");if(t==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}})()`,
+            __html: `(function(){try{var c=document.cookie.match(/(?:^|; )gh-theme=([^;]*)/);var t=c?c[1]:localStorage.getItem("gh-theme");if(t==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}})()`,
           }}
         />
         <link rel="stylesheet" href="/legacy/style.css" />

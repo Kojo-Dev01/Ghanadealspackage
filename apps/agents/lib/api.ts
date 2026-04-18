@@ -38,7 +38,7 @@ type LoginResult =
         agent: AgentProfile | null;
       };
     }
-  | { ok: false; reason: "invalid" | "forbidden" | "config" };
+  | { ok: false; reason: "invalid" | "forbidden" | "suspended" | "config"; message?: string };
 
 export async function loginAgent(
   email: string,
@@ -54,6 +54,12 @@ export async function loginAgent(
     if (res.status === 401) return { ok: false, reason: "invalid" };
 
     const data = await res.json();
+
+    // Suspended user
+    if (res.status === 403 && data.suspended) {
+      return { ok: false, reason: "suspended", message: data.message };
+    }
+
     if (!res.ok) return { ok: false, reason: "invalid" };
     if (data.user?.role !== "agent") return { ok: false, reason: "forbidden" };
 
@@ -244,7 +250,7 @@ export async function updateInquiryStatus(
 
 export type CreateListingData = {
   title: string;
-  listingType: "sale" | "rent" | "new";
+  listingType: "sale" | "rent" | "new" | "land" | "uncompleted";
   price: number;
   priceLabel?: string;
   region: string;

@@ -56,6 +56,7 @@ const typeMeta: Record<string, { label: string; color: string; bg: string }> = {
   rent: { label: "For Rent", color: "#a78bfa", bg: "rgba(139,92,246,0.1)" },
   land: { label: "Land", color: "#34d399", bg: "rgba(5,150,105,0.1)" },
   new: { label: "New Development", color: "#60a5fa", bg: "rgba(59,130,246,0.1)" },
+  uncompleted: { label: "Uncompleted", color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
   commercial: { label: "Commercial", color: "#34d399", bg: "rgba(5,150,105,0.1)" },
 };
 

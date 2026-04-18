@@ -148,6 +148,7 @@ export function HeroSection() {
   /* Hide beds & baths for certain tabs/types */
   const hideBedsBaths =
     activeTab === "land" ||
+    activeTab === "uncompleted" ||
     activeTab === "commercial" ||
     selectedType === "Commercial" ||
     selectedType === "Land";
@@ -158,11 +159,12 @@ export function HeroSection() {
     if (activeTab === "buy") params.set("listingType", "sale");
     else if (activeTab === "rent") params.set("listingType", "rent");
     else if (activeTab === "new") params.set("listingType", "new");
+    else if (activeTab === "land") params.set("listingType", "land");
+    else if (activeTab === "uncompleted") params.set("listingType", "uncompleted");
     else if (activeTab === "commercial") params.set("type", "Commercial");
-    else if (activeTab === "land") params.set("type", "Land");
 
     if (query.trim()) params.set("q", query.trim());
-    if (selectedType && activeTab !== "commercial" && activeTab !== "land") params.set("type", selectedType);
+    if (selectedType && activeTab !== "commercial" && activeTab !== "land" && activeTab !== "uncompleted") params.set("type", selectedType);
     if (minVal > 0) params.set("minPrice", String(minVal));
     if (maxVal > 0) params.set("maxPrice", String(maxVal));
     if (beds) params.set("minBeds", beds);
@@ -187,8 +189,8 @@ export function HeroSection() {
                 ["buy", "Buy"],
                 ["rent", "Rent"],
                 ["new", "New Projects"],
-                ["commercial", "Commercial"],
                 ["land", "Land"],
+                ["uncompleted", "Uncompleted"],
               ] as const
             ).map(([key, label]) => (
               <button
@@ -218,8 +220,8 @@ export function HeroSection() {
 
           {/* Filter pills row */}
           <div className="hero-filter-row">
-            {/* Property Type (not shown for commercial/land tabs) */}
-            {activeTab !== "commercial" && activeTab !== "land" && (
+            {/* Property Type (not shown for commercial/land/uncompleted tabs) */}
+            {activeTab !== "commercial" && activeTab !== "land" && activeTab !== "uncompleted" && (
               <div className="filter-pill-wrapper">
                 <button
                   type="button"
@@ -301,12 +303,12 @@ export function HeroSection() {
                         ))}
                       </div>
                     </div>
+                    <button type="button" className="filter-dropdown-done" onClick={() => setOpenDropdown(null)}>Done</button>
                     {isBedsBathsActive && (
                       <button type="button" className="filter-dropdown-clear" onClick={() => { setBeds(""); setBaths(""); }}>
                         Clear
                       </button>
                     )}
-                    <button type="button" className="filter-dropdown-done" onClick={() => setOpenDropdown(null)}>Done</button>
                   </div>
                 )}
               </div>
@@ -385,12 +387,12 @@ export function HeroSection() {
                       {minVal > 0 ? fmtPrice(minVal) : "No Min"} – {maxVal > 0 ? fmtPrice(maxVal) : "No Max"}
                     </div>
                   )}
+                  <button type="button" className="filter-dropdown-done" onClick={() => setOpenDropdown(null)}>Done</button>
                   {isPriceActive && (
                     <button type="button" className="filter-dropdown-clear" onClick={() => { setMinPriceRaw(""); setMaxPriceRaw(""); }}>
                       Clear
                     </button>
                   )}
-                  <button type="button" className="filter-dropdown-done" onClick={() => setOpenDropdown(null)}>Done</button>
                 </div>
               )}
             </div>

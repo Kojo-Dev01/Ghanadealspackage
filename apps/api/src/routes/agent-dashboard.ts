@@ -50,7 +50,7 @@ const updateProfileSchema = z.object({
 
 const createListingSchema = z.object({
   title: z.string().min(3).max(200),
-  listingType: z.enum(["sale", "rent", "new"]),
+  listingType: z.enum(["sale", "rent", "new", "land", "uncompleted"]),
   price: z.number().min(0),
   priceLabel: z.string().max(50).optional(),
   region: z.string().min(1).max(100),
@@ -149,7 +149,7 @@ export async function registerAgentDashboardRoutes(app: FastifyInstance) {
     if (status && ["pending", "approved", "flagged", "archived"].includes(status)) {
       query = query.eq("moderation_status", status);
     }
-    if (listing_type && ["sale", "rent", "land", "new", "commercial"].includes(listing_type)) {
+    if (listing_type && ["sale", "rent", "new", "land", "uncompleted", "commercial"].includes(listing_type)) {
       query = query.eq("listing_type", listing_type);
     }
 

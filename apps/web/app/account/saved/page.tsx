@@ -75,10 +75,10 @@ export default function SavedPropertiesPage() {
                       )}
                       <span style={{
                         position: "absolute", top: 10, left: 10,
-                        background: property.listingType === "rent" ? "var(--info)" : "var(--success)",
+                        background: { sale: "var(--success)", rent: "var(--info)", new: "var(--info)", land: "var(--success)", uncompleted: "var(--warning, #f59e0b)" }[property.listingType] ?? "var(--success)",
                         color: "#fff", padding: "3px 8px", borderRadius: "var(--radius-sm)", fontSize: 11, fontWeight: 600, textTransform: "capitalize"
                       }}>
-                        For {property.listingType}
+                        {{ sale: "For Sale", rent: "For Rent", new: "New Development", land: "Land", uncompleted: "Uncompleted" }[property.listingType] ?? property.listingType}
                       </span>
                     </div>
                     <div style={{ padding: 14 }}>

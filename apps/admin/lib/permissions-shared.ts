@@ -8,6 +8,8 @@ export type Permission =
   | "agents.read"
   | "agents.verify"
   | "users.read"
+  | "users.update"
+  | "users.delete"
   | "inquiries.read"
   | "inquiries.update"
   | "admin_users.read"

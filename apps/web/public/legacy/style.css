@@ -341,8 +341,8 @@ ul, ol { list-style: none; }
 }
 .logo svg { width: 28px; height: 28px; color: var(--red); }
 .logo span { color: var(--red); }
-.logo span span { color: var(--text-primary); }
-.site-footer .logo span span { color: #fff; }
+.logo span span { color: #000; }
+[data-theme="dark"] .logo span span { color: #fff; }
 
 /* Nav */
 .main-nav { display: flex; align-items: center; gap: 4px; }
@@ -804,7 +804,7 @@ ul, ol { list-style: none; }
 /* ---------- HERO ---------- */
 .hero {
   position: relative;
-  height: 560px;
+  height: 640px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -838,7 +838,7 @@ ul, ol { list-style: none; }
 .hero-content p {
   font-size: 18px;
   color: rgba(255,255,255,0.8);
-  margin-bottom: 28px;
+  margin-bottom: 72px;
 }
 .hero-stats {
   display: flex;
@@ -1841,7 +1841,7 @@ ul, ol { list-style: none; }
   font-weight: 600;
   color: var(--text-primary);
   background: var(--bg-card);
-  border: 1px solid var(--border-primary);
+  border: 2px solid var(--red);
   border-radius: 24px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.12);
   cursor: pointer;
@@ -3030,6 +3030,26 @@ ul, ol { list-style: none; }
 .details-table .dt-label { color: var(--text-secondary); }
 .details-table .dt-value { font-weight: 600; color: var(--text-primary); }
 
+/* Property details grid (matches amenities style) */
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+}
+.detail-item svg { width: 18px; height: 18px; color: var(--red); flex-shrink: 0; }
+.detail-item-content { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.detail-item-label { font-size: 12px; color: var(--text-secondary); }
+.detail-item-value { font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* Amenities grid */
 .amenities-grid {
   display: grid;
@@ -3382,6 +3402,7 @@ ul, ol { list-style: none; }
   }
   .gallery-side { display: none; }
   .amenities-grid { grid-template-columns: repeat(2, 1fr); }
+  .details-grid { grid-template-columns: repeat(2, 1fr); }
   .details-table { grid-template-columns: 1fr; }
 
   /* Detail page mobile improvements */
@@ -3447,6 +3468,7 @@ ul, ol { list-style: none; }
 
   /* Property detail — small mobile */
   .amenities-grid { grid-template-columns: 1fr; }
+  .details-grid { grid-template-columns: 1fr; }
   .detail-price { font-size: 22px; }
   .detail-title { font-size: 16px; }
   .detail-layout { gap: 20px; }

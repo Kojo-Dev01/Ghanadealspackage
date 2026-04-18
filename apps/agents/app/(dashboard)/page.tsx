@@ -7,20 +7,25 @@ import {
   fetchVerificationStatus,
   fetchSavedCount,
   fetchNotificationUnreadCount,
+  fetchAgentProfile,
 } from "@/lib/api";
 import { ShieldCheck, ShieldAlert, Clock, XCircle, ArrowRight } from "lucide-react";
 
 export default async function AgentOverviewPage() {
-  const [stats, listingsData, conversations, verification, savedCount, notifCount] = await Promise.all([
+  const [stats, listingsData, conversations, verification, savedCount, notifCount, profile] = await Promise.all([
     fetchAgentStats(),
     fetchAgentListings({ page: 1 }),
     fetchConversations(),
     fetchVerificationStatus(),
     fetchSavedCount(),
     fetchNotificationUnreadCount(),
+    fetchAgentProfile(),
   ]);
 
   const vStatus = verification?.verificationStatus ?? "unverified";
+  const firstName = profile?.name?.split(" ")[0] ?? "";
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
   const statCards = [
     {
@@ -67,7 +72,7 @@ export default async function AgentOverviewPage() {
   return (
     <AgentShell
       eyebrow="Dashboard"
-      title="Overview"
+      title={firstName ? `${greeting}, ${firstName}` : "Overview"}
       description="Your listings and messages at a glance."
       actions={
         <Link

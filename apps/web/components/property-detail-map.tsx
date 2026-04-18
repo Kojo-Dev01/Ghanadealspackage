@@ -38,7 +38,7 @@ export function PropertyDetailMap({ latitude, longitude, title, image, priceForm
 
   if (!isLoaded) {
     return (
-      <div style={{ width: "100%", height: 340, borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)", background: "var(--bg-card)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ width: "100%", height: 220, borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)", background: "var(--bg-card)", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--text-secondary)", fontSize: 14 }}>
           <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
             <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -50,13 +50,14 @@ export function PropertyDetailMap({ latitude, longitude, title, image, priceForm
     );
   }
 
-  const tagLabel = `${type} for ${listingType === "rent" ? "Rent" : "Sale"}`;
+  const listingLabel = ({ sale: "for Sale", rent: "for Rent", new: "— New Development", land: "— Land", uncompleted: "— Uncompleted" } as Record<string, string>)[listingType] ?? `for ${listingType}`;
+  const tagLabel = `${type} ${listingLabel}`;
 
   return (
-    <div style={{ position: "relative", borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)", height: 340 }}>
+    <div style={{ position: "relative", borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)", height: 220 }}>
       <GoogleMap
         mapContainerStyle={MAP_CONTAINER}
-        center={{ lat: latitude, lng: longitude }}
+        center={{ lat: latitude + 0.0012, lng: longitude }}
         zoom={16}
         onLoad={onLoad}
         options={{

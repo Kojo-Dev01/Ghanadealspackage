@@ -447,6 +447,10 @@ export type AdminUser = {
   phone: string;
   avatarUrl: string | null;
   savedCount: number;
+  role: "agent" | "buyer";
+  suspended: boolean;
+  suspendedAt: string | null;
+  suspendedReason: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -472,6 +476,32 @@ export async function fetchAdminUsers(params?: {
   const res = await apiFetch(`/v1/admin/users${q ? `?${q}` : ""}`, token);
   if (!res?.ok) return null;
   return res.json() as Promise<AdminUsersResponse>;
+}
+
+export async function suspendUser(id: string, reason?: string): Promise<boolean> {
+  const token = await getToken();
+  const res = await apiFetch(`/v1/admin/users/${id}/suspend`, token, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reason }),
+  });
+  return res?.ok ?? false;
+}
+
+export async function unsuspendUser(id: string): Promise<boolean> {
+  const token = await getToken();
+  const res = await apiFetch(`/v1/admin/users/${id}/unsuspend`, token, {
+    method: "PATCH",
+  });
+  return res?.ok ?? false;
+}
+
+export async function deleteUser(id: string): Promise<boolean> {
+  const token = await getToken();
+  const res = await apiFetch(`/v1/admin/users/${id}`, token, {
+    method: "DELETE",
+  });
+  return res?.ok ?? false;
 }
 
 // ---- Admin Team (RBAC) ----

@@ -36,7 +36,7 @@ export function PropertyCard({ property, isHighlighted, onMouseEnter, onMouseLea
       <Link href={`/property/${property.id}`}>
         <div className="card-body">
           <div className="card-type">
-            {property.type} for {property.listingType === "rent" ? "Rent" : "Sale"}
+            {property.type} {({ sale: "for Sale", rent: "for Rent", new: "— New Development", land: "— Land", uncompleted: "— Uncompleted" } as Record<string, string>)[property.listingType] ?? `for ${property.listingType}`}
           </div>
           <div className="card-price">
             {property.priceFormatted}

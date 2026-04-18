@@ -42,7 +42,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
               <span className="detail-breadcrumb-sep">›</span>
               <Link href={`/listings?region=${encodeURIComponent(property.region)}`}>{property.region}</Link>
               <span className="detail-breadcrumb-sep">›</span>
-              <span>{property.type} for {property.listingType === "rent" ? "Rent" : "Sale"}</span>
+              <span>{property.type} {({ sale: "for Sale", rent: "for Rent", new: "— New Development", land: "— Land", uncompleted: "— Uncompleted" } as Record<string, string>)[property.listingType] ?? `for ${property.listingType}`}</span>
             </div>
           </nav>
 
@@ -68,14 +68,35 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
 
               <div className="detail-section">
                 <h3 className="detail-section-title">Property Details</h3>
-                <div className="details-table">
-                  <div className="dt-row"><span className="dt-label">Reference</span><span className="dt-value">{property.ref}</span></div>
-                  <div className="dt-row"><span className="dt-label">Type</span><span className="dt-value">{property.type}</span></div>
-                  <div className="dt-row"><span className="dt-label">Bedrooms</span><span className="dt-value">{property.beds || "N/A"}</span></div>
-                  <div className="dt-row"><span className="dt-label">Bathrooms</span><span className="dt-value">{property.baths || "N/A"}</span></div>
-                  <div className="dt-row"><span className="dt-label">Area</span><span className="dt-value">{property.area} sqm</span></div>
-                  <div className="dt-row"><span className="dt-label">Furnishing</span><span className="dt-value">{property.furnishing}</span></div>
-                  <div className="dt-row"><span className="dt-label">Parking</span><span className="dt-value">{property.parking}</span></div>
+                <div className="details-grid">
+                  <div className="detail-item">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+                    <div className="detail-item-content"><span className="detail-item-label">Reference</span><span className="detail-item-value">{property.ref}</span></div>
+                  </div>
+                  <div className="detail-item">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <div className="detail-item-content"><span className="detail-item-label">Type</span><span className="detail-item-value">{property.type}</span></div>
+                  </div>
+                  <div className="detail-item">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg>
+                    <div className="detail-item-content"><span className="detail-item-label">Bedrooms</span><span className="detail-item-value">{property.beds || "N/A"}</span></div>
+                  </div>
+                  <div className="detail-item">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6 6.5 3.5a1.5 1.5 0 0 0-1-.5C4.683 3 4 3.683 4 4.5V17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><line x1="10" x2="8" y1="5" y2="7"/><line x1="2" x2="22" y1="12" y2="12"/><line x1="7" x2="7" y1="19" y2="21"/><line x1="17" x2="17" y1="19" y2="21"/></svg>
+                    <div className="detail-item-content"><span className="detail-item-label">Bathrooms</span><span className="detail-item-value">{property.baths || "N/A"}</span></div>
+                  </div>
+                  <div className="detail-item">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                    <div className="detail-item-content"><span className="detail-item-label">Area</span><span className="detail-item-value">{property.area} sqm</span></div>
+                  </div>
+                  <div className="detail-item">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3"/><path d="M2 11v5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v2H6v-2a2 2 0 0 0-4 0Z"/><path d="M4 18v2"/><path d="M20 18v2"/></svg>
+                    <div className="detail-item-content"><span className="detail-item-label">Furnishing</span><span className="detail-item-value">{property.furnishing}</span></div>
+                  </div>
+                  <div className="detail-item">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 3v6"/><path d="M15 3v6"/></svg>
+                    <div className="detail-item-content"><span className="detail-item-label">Parking</span><span className="detail-item-value">{property.parking}</span></div>
+                  </div>
                 </div>
               </div>
 

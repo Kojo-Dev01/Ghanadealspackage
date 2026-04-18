@@ -18,9 +18,13 @@ export default async function AgentLoginPage({
       ? "Invalid email or password."
       : params.error === "forbidden"
         ? "This account does not have seller access."
-        : params.error === "config"
-          ? "Authentication service is not available. Please try again later."
-          : "";
+        : params.error === "suspended"
+          ? "Your account has been suspended. Please contact support for assistance."
+          : params.error === "sso"
+            ? "SSO sign-in failed or expired. Please sign in manually."
+            : params.error === "config"
+              ? "Authentication service is not available. Please try again later."
+              : "";
 
   async function loginAction(formData: FormData) {
     "use server";

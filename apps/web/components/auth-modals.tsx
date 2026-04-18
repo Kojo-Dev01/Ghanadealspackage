@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import type { FormEvent } from "react";
 import { useAuth } from "./auth-provider";
 import { requestPasswordReset } from "../lib/api";
+import { navigateToSellerDashboard } from "../lib/sso";
 
 function EyeIcon({ visible }: { visible: boolean }) {
   if (visible) {
@@ -117,7 +118,7 @@ export function AuthModals({
 
     if (authIntent === "list-property") {
       if (otpPending.role === "agent") {
-        window.location.href = process.env.NEXT_PUBLIC_SELLERS_URL || "http://localhost:3002";
+        navigateToSellerDashboard();
       } else {
         window.location.href = "/sellers/register";
       }
@@ -187,7 +188,7 @@ export function AuthModals({
 
     if (authIntent === "list-property") {
       if (result.role === "agent") {
-        window.location.href = process.env.NEXT_PUBLIC_SELLERS_URL || "http://localhost:3002";
+        navigateToSellerDashboard();
       } else {
         window.location.href = "/sellers/register";
       }

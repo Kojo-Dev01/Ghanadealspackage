@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { randomInt, randomBytes } from "crypto";
+import { randomInt, randomBytes, createHash } from "crypto";
 import { getSupabaseAdminClient, getSupabaseServerClient } from "../lib/supabase.js";
 import { createNotification } from "../lib/notifications.js";
 import { sendOtpEmail } from "../lib/email.js";
@@ -181,12 +181,20 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     const role = String(meta.role ?? "buyer");
     const name = String(meta.name ?? "");
 
-    // Check if email is verified
+    // Check if email is verified and if account is suspended
     const { data: profileCheck } = await (supabaseAdmin as any)
       .from("profiles")
-      .select("email_verified")
+      .select("email_verified, suspended, suspended_reason")
       .eq("user_id", userId)
       .single();
+
+    // Block suspended users
+    if (profileCheck?.suspended) {
+      const reason = profileCheck.suspended_reason
+        ? `Your account has been suspended: ${profileCheck.suspended_reason}`
+        : "Your account has been suspended. Please contact support for assistance.";
+      return reply.code(403).send({ message: reason, suspended: true });
+    }
 
     if (profileCheck && !profileCheck.email_verified) {
       // Send a new OTP automatically
@@ -561,5 +569,191 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     }
 
     return { message: "Account removed. You can sign up with a different email." };
+  });
+
+  // ── SSO ── One-time token exchange for cross-app authentication ──
+
+  const SSO_TOKEN_TTL_SECONDS = 30; // Token expires in 30 seconds
+  const SSO_TOKEN_BYTES = 32;       // 256-bit random token
+
+  function hashToken(token: string): string {
+    return createHash("sha256").update(token).digest("hex");
+  }
+
+  // POST /sso/generate — Authenticated user generates a single-use SSO token
+  app.post("/sso/generate", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch {
+      return reply.code(401).send({ message: "Not authenticated" });
+    }
+
+    const payload = request.user as { sub: string; email: string; role: string; name: string };
+
+    // Only agents can SSO into the seller dashboard
+    if (payload.role !== "agent") {
+      return reply.code(403).send({ message: "Only seller accounts can access the seller dashboard" });
+    }
+
+    const supabaseAdmin = getSupabaseAdminClient();
+    if (!supabaseAdmin) {
+      return reply.code(503).send({ message: "Auth service not configured" });
+    }
+
+    // Check account is not suspended
+    const { data: profile } = await (supabaseAdmin as any)
+      .from("profiles")
+      .select("suspended")
+      .eq("user_id", payload.sub)
+      .single();
+
+    if (profile?.suspended) {
+      return reply.code(403).send({ message: "Account is suspended" });
+    }
+
+    // Generate a cryptographically random token
+    const rawToken = randomBytes(SSO_TOKEN_BYTES).toString("hex");
+    const tokenHash = hashToken(rawToken);
+    const expiresAt = new Date(Date.now() + SSO_TOKEN_TTL_SECONDS * 1000).toISOString();
+
+    // Invalidate any existing unused tokens for this user (only one active at a time)
+    await (supabaseAdmin as any)
+      .from("sso_tokens")
+      .delete()
+      .eq("user_id", payload.sub)
+      .is("used_at", null);
+
+    // Store the hashed token
+    const { error: insertErr } = await (supabaseAdmin as any)
+      .from("sso_tokens")
+      .insert({
+        user_id: payload.sub,
+        token_hash: tokenHash,
+        target_app: "agents",
+        expires_at: expiresAt,
+      });
+
+    if (insertErr) {
+      request.log.error(insertErr, "Failed to create SSO token");
+      return reply.code(500).send({ message: "Failed to generate SSO token" });
+    }
+
+    // Clean up expired tokens (fire-and-forget maintenance)
+    (supabaseAdmin as any)
+      .from("sso_tokens")
+      .delete()
+      .lt("expires_at", new Date().toISOString())
+      .then(() => {})
+      .catch((err: unknown) => request.log.error(err, "SSO cleanup error"));
+
+    return { token: rawToken, expiresIn: SSO_TOKEN_TTL_SECONDS };
+  });
+
+  // POST /sso/exchange — Exchange a one-time SSO token for a session JWT
+  app.post("/sso/exchange", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
+    const body = z.object({
+      token: z.string().min(1).max(256),
+      targetApp: z.string().min(1).max(50).default("agents"),
+    }).safeParse(request.body);
+
+    if (!body.success) {
+      return reply.code(400).send({ message: "Invalid request" });
+    }
+
+    const { token: rawToken, targetApp } = body.data;
+    const tokenHash = hashToken(rawToken);
+
+    const supabaseAdmin = getSupabaseAdminClient();
+    if (!supabaseAdmin) {
+      return reply.code(503).send({ message: "Auth service not configured" });
+    }
+
+    // Find the token by hash — must be unused and not expired
+    const { data: ssoRow, error: findErr } = await (supabaseAdmin as any)
+      .from("sso_tokens")
+      .select("id, user_id, target_app, expires_at, used_at")
+      .eq("token_hash", tokenHash)
+      .is("used_at", null)
+      .single();
+
+    if (findErr || !ssoRow) {
+      return reply.code(401).send({ message: "Invalid or expired SSO token" });
+    }
+
+    // Check expiry
+    if (new Date(ssoRow.expires_at) < new Date()) {
+      // Mark as used to prevent future attempts
+      await (supabaseAdmin as any)
+        .from("sso_tokens")
+        .update({ used_at: new Date().toISOString() })
+        .eq("id", ssoRow.id);
+      return reply.code(401).send({ message: "SSO token has expired" });
+    }
+
+    // Check target app matches
+    if (ssoRow.target_app !== targetApp) {
+      return reply.code(403).send({ message: "Token not valid for this application" });
+    }
+
+    // Immediately mark as used (single-use: prevents replay even on concurrent requests)
+    const { data: markResult } = await (supabaseAdmin as any)
+      .from("sso_tokens")
+      .update({ used_at: new Date().toISOString() })
+      .eq("id", ssoRow.id)
+      .is("used_at", null)  // Atomic check — only succeeds if still unused
+      .select("id")
+      .single();
+
+    if (!markResult) {
+      // Another concurrent request already used this token
+      return reply.code(401).send({ message: "SSO token already used" });
+    }
+
+    const userId = ssoRow.user_id;
+
+    // Verify the user still exists, is an agent, and is not suspended
+    const { data: authUser, error: authErr } = await supabaseAdmin.auth.admin.getUserById(userId);
+    if (authErr || !authUser?.user) {
+      return reply.code(401).send({ message: "User account not found" });
+    }
+
+    const meta = authUser.user.user_metadata ?? {};
+    const role = String(meta.role ?? "buyer");
+    const name = String(meta.name ?? "");
+    const email = authUser.user.email ?? "";
+
+    if (role !== "agent") {
+      return reply.code(403).send({ message: "Only seller accounts can access the seller dashboard" });
+    }
+
+    // Check suspension
+    const { data: profile } = await (supabaseAdmin as any)
+      .from("profiles")
+      .select("suspended")
+      .eq("user_id", userId)
+      .single();
+
+    if (profile?.suspended) {
+      return reply.code(403).send({ message: "Account is suspended" });
+    }
+
+    // Fetch agent record
+    const { data: agentRecord } = await (supabaseAdmin as any)
+      .from("agents")
+      .select("id, name, company, phone, verified, rating, areas, years, color")
+      .eq("user_id", userId)
+      .single();
+
+    // Issue a fresh JWT for the target app
+    const sessionToken = app.jwt.sign(
+      { sub: userId, email, role, name },
+      { expiresIn: "7d" }
+    );
+
+    return {
+      token: sessionToken,
+      user: { id: userId, email, name, role },
+      agent: agentRecord ?? null,
+    };
   });
 }

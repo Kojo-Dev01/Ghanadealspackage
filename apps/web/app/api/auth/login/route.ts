@@ -31,6 +31,14 @@ export async function POST(request: Request) {
     }, { status: 403 });
   }
 
+  // Suspended user
+  if (res.status === 403 && json.suspended) {
+    return NextResponse.json(
+      { ok: false, suspended: true, message: json.message },
+      { status: 403 },
+    );
+  }
+
   if (!res.ok) {
     return NextResponse.json(
       { ok: false, message: json.message ?? "Login failed" },

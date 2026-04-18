@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "../../components/auth-provider";
 import { AccountSidebar } from "../../components/account-sidebar";
 import { WsProvider } from "../../components/ws-provider";
+import { navigateToSellerDashboard } from "../../lib/sso";
 
 function ThemeToggle() {
   const [isDark, setIsDark] = useState(false);
@@ -78,8 +79,9 @@ function DashboardHeader({ onOpenSidebar }: { onOpenSidebar: () => void }) {
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <ThemeToggle />
         {isSeller ? (
-          <a
-            href={process.env.NEXT_PUBLIC_SELLERS_URL || "http://localhost:3002"}
+          <button
+            type="button"
+            onClick={() => navigateToSellerDashboard()}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -90,6 +92,8 @@ function DashboardHeader({ onOpenSidebar }: { onOpenSidebar: () => void }) {
               color: "#fff",
               fontSize: 13,
               fontWeight: 600,
+              border: "none",
+              cursor: "pointer",
               textDecoration: "none",
               transition: "opacity 0.15s ease",
             }}
@@ -100,7 +104,7 @@ function DashboardHeader({ onOpenSidebar }: { onOpenSidebar: () => void }) {
               <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9,22 9,12 15,12 15,22" />
             </svg>
             Seller Dashboard
-          </a>
+          </button>
         ) : (
           <Link
             href="/sellers/register"

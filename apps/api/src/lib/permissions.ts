@@ -23,6 +23,8 @@ export type Permission =
   | "agents.read"
   | "agents.verify"
   | "users.read"
+  | "users.update"
+  | "users.delete"
   | "inquiries.read"
   | "inquiries.update"
   | "admin_users.read"
@@ -66,6 +68,7 @@ const ROLE_PERMISSIONS: Record<AdminRole, ReadonlySet<Permission>> = {
     "stats.read",
     "metrics.read",
     "users.read",
+    "users.update",
     "inquiries.read",
     "inquiries.update",
   ]),

@@ -21,12 +21,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const toggle = useCallback(() => {
     setIsDark((prev) => {
       const next = !prev;
+      const val = next ? "dark" : "light";
+      const domainMatch = window.location.hostname.match(/[^.]+\.[^.]+$/);
+      const cookieDomain = domainMatch ? ";domain=." + domainMatch[0] : "";
+      document.cookie = `gh-theme=${val};path=/;max-age=31536000;SameSite=Lax${cookieDomain}`;
+      window.localStorage.setItem("gh-theme", val);
       if (next) {
         document.documentElement.setAttribute("data-theme", "dark");
-        window.localStorage.setItem("gh-theme", "dark");
       } else {
         document.documentElement.removeAttribute("data-theme");
-        window.localStorage.setItem("gh-theme", "light");
       }
       return next;
     });

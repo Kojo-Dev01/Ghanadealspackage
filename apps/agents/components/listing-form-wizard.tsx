@@ -44,7 +44,7 @@ function useFormattedNumber(
 /* ── Types ── */
 export type ListingFormData = {
   title: string;
-  listingType: "sale" | "rent" | "new";
+  listingType: "sale" | "rent" | "new" | "land" | "uncompleted";
   type: string;
   price: string;
   priceLabel: string;
@@ -192,10 +192,12 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
         </div>
         <label className="grid gap-1 text-xs font-semibold text-muted">
           Listing Type *
-          <select value={data.listingType} onChange={(e) => set("listingType", e.target.value as "sale" | "rent" | "new")} className={inputCls}>
+          <select value={data.listingType} onChange={(e) => set("listingType", e.target.value as ListingFormData["listingType"])} className={inputCls}>
             <option value="sale">For Sale</option>
             <option value="rent">For Rent</option>
             <option value="new">New Development</option>
+            <option value="land">Land</option>
+            <option value="uncompleted">Uncompleted</option>
           </select>
         </label>
         <label className="grid gap-1 text-xs font-semibold text-muted">
@@ -208,10 +210,12 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
           Price (GHS) *
           <PriceInput value={data.price} onChange={(v) => set("price", v)} placeholder="e.g. 250,000" className={inputCls} />
         </label>
-        <label className="grid gap-1 text-xs font-semibold text-muted">
-          Price Label <span className="font-normal opacity-60">(optional)</span>
-          <input value={data.priceLabel} onChange={(e) => set("priceLabel", e.target.value)} maxLength={50} placeholder="e.g. /month, /year" className={inputCls} />
-        </label>
+        {!["new", "land", "uncompleted"].includes(data.listingType) && (
+          <label className="grid gap-1 text-xs font-semibold text-muted">
+            Price Label <span className="font-normal opacity-60">(optional)</span>
+            <input value={data.priceLabel} onChange={(e) => set("priceLabel", e.target.value)} maxLength={50} placeholder="e.g. /month, /year" className={inputCls} />
+          </label>
+        )}
       </div>
     );
   }
@@ -478,7 +482,7 @@ export function ListingFormWizard({ action, defaultValues, submitLabel = "Submit
           </div>
           <dl className="grid gap-1 text-sm">
             <div className="flex gap-2"><dt className="text-muted w-28 shrink-0">Title</dt><dd className="text-foreground">{data.title || "—"}</dd></div>
-            <div className="flex gap-2"><dt className="text-muted w-28 shrink-0">Listing Type</dt><dd className="text-foreground capitalize">{data.listingType === "sale" ? "For Sale" : "For Rent"}</dd></div>
+            <div className="flex gap-2"><dt className="text-muted w-28 shrink-0">Listing Type</dt><dd className="text-foreground capitalize">{{ sale: "For Sale", rent: "For Rent", new: "New Development", land: "Land", uncompleted: "Uncompleted" }[data.listingType]}</dd></div>
             <div className="flex gap-2"><dt className="text-muted w-28 shrink-0">Property Type</dt><dd className="text-foreground">{data.type}</dd></div>
             <div className="flex gap-2"><dt className="text-muted w-28 shrink-0">Price</dt><dd className="text-foreground">GHS {price.toLocaleString()}{data.priceLabel ? ` ${data.priceLabel}` : ""}</dd></div>
           </dl>

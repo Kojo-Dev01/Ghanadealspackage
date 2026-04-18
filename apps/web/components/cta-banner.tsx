@@ -1,13 +1,14 @@
 "use client";
 
 import { useAuth } from "./auth-provider";
+import { navigateToSellerDashboard } from "../lib/sso";
 
 export function CTABanner() {
   const { user } = useAuth();
 
   function handleClick() {
     if (user && user.role === "agent") {
-      window.location.href = process.env.NEXT_PUBLIC_SELLERS_URL || "http://localhost:3002";
+      navigateToSellerDashboard();
     } else if (user) {
       window.location.href = "/sellers/register";
     } else {

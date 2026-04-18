@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "./auth-provider";
 import { NotificationBell } from "./notification-bell";
+import { navigateToSellerDashboard } from "../lib/sso";
 
 type ExtractedHeaderProps = {
   headerScrolled: boolean;
@@ -41,8 +42,9 @@ export function ExtractedHeader({
   const buyActive = onListings && (listingType === "sale" || (!listingType && !typeParam));
   const rentActive = onListings && listingType === "rent";
   const newActive = onListings && listingType === "new";
+  const landActive = onListings && listingType === "land";
+  const uncompletedActive = onListings && listingType === "uncompleted";
   const commercialActive = onListings && typeParam === "Commercial";
-  const landActive = onListings && typeParam === "Land";
   const agentsActive = pathname.startsWith("/agents");
   const homeActive = pathname === "/";
 
@@ -66,15 +68,18 @@ export function ExtractedHeader({
   const toggleTheme = () => {
     const nextIsDark = !isDark;
     setIsDark(nextIsDark);
+    const val = nextIsDark ? "dark" : "light";
+    const domainMatch = window.location.hostname.match(/[^.]+\.[^.]+$/);
+    const cookieDomain = domainMatch ? ";domain=." + domainMatch[0] : "";
+    document.cookie = `gh-theme=${val};path=/;max-age=31536000;SameSite=Lax${cookieDomain}`;
+    window.localStorage.setItem("gh-theme", val);
 
     if (nextIsDark) {
       document.documentElement.setAttribute("data-theme", "dark");
-      window.localStorage.setItem("gh-theme", "dark");
       return;
     }
 
     document.documentElement.removeAttribute("data-theme");
-    window.localStorage.setItem("gh-theme", "light");
   };
 
   return (
@@ -90,8 +95,8 @@ export function ExtractedHeader({
           <Link href="/listings?listingType=sale" className={buyActive ? "active" : undefined}>Buy</Link>
           <Link href="/listings?listingType=rent" className={rentActive ? "active" : undefined}>Rent</Link>
           <Link href="/listings?listingType=new" className={newActive ? "active" : undefined}>New Developments</Link>
-          <Link href="/listings?type=Commercial" className={commercialActive ? "active" : undefined}>Commercial</Link>
-          <Link href="/listings?type=Land" className={landActive ? "active" : undefined}>Land</Link>
+          <Link href="/listings?listingType=land" className={landActive ? "active" : undefined}>Land</Link>
+          <Link href="/listings?listingType=uncompleted" className={uncompletedActive ? "active" : undefined}>Uncompleted</Link>
           <Link href="/agents" className={agentsActive ? "active" : undefined}>Find Agents</Link>
         </nav>
 
@@ -128,7 +133,7 @@ export function ExtractedHeader({
                       <div style={{ fontSize: 11, color: "var(--red)", marginTop: 4, textTransform: "capitalize" }}>{user.role}{agent?.verified ? " ✓" : ""}</div>
                     </div>
                     {user.role === "agent" ? (
-                      <a href={process.env.NEXT_PUBLIC_SELLERS_URL || "http://localhost:3002"} onClick={() => setProfileOpen(false)} style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--text-primary)", textDecoration: "none", transition: "background var(--transition-fast)" }} onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg-card-hover)"} onMouseLeave={(e) => e.currentTarget.style.background = "none"}>Dashboard</a>
+                      <button type="button" onClick={() => { setProfileOpen(false); navigateToSellerDashboard(); }} style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--text-primary)", textDecoration: "none", transition: "background var(--transition-fast)" }} onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg-card-hover)"} onMouseLeave={(e) => e.currentTarget.style.background = "none"}>Dashboard</button>
                     ) : (
                       <Link href="/account" onClick={() => setProfileOpen(false)} style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left", background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--text-primary)", textDecoration: "none", transition: "background var(--transition-fast)" }} onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg-card-hover)"} onMouseLeave={(e) => e.currentTarget.style.background = "none"}>Dashboard</Link>
                     )}
@@ -145,7 +150,7 @@ export function ExtractedHeader({
               </>
             )}
           </div>
-          <button className="btn-list-property" type="button" onClick={() => { if (user && user.role === "agent") { window.location.href = process.env.NEXT_PUBLIC_SELLERS_URL || "http://localhost:3002"; } else if (user) { window.location.href = "/sellers/register"; } else { onOpenSignup("list-property"); } }}>{user && user.role === "agent" ? "Seller Dashboard" : "List Property"}</button>
+          <button className="btn-list-property" type="button" onClick={() => { if (user && user.role === "agent") { navigateToSellerDashboard(); } else if (user) { window.location.href = "/sellers/register"; } else { onOpenSignup("list-property"); } }}>{user && user.role === "agent" ? "Seller Dashboard" : "List Property"}</button>
           <div className={`hamburger ${mobileOpen ? "open" : ""}`} id="hamburger" onClick={onToggleMobileNav}>
             <div className="hamburger-lines"><span /><span /><span /></div>
           </div>
@@ -158,8 +163,8 @@ export function ExtractedHeader({
       <Link href="/listings?listingType=sale" className={buyActive ? "active" : undefined} onClick={onCloseMobileNav}>Buy</Link>
       <Link href="/listings?listingType=rent" className={rentActive ? "active" : undefined} onClick={onCloseMobileNav}>Rent</Link>
       <Link href="/listings?listingType=new" className={newActive ? "active" : undefined} onClick={onCloseMobileNav}>New Developments</Link>
-      <Link href="/listings?type=Commercial" className={commercialActive ? "active" : undefined} onClick={onCloseMobileNav}>Commercial</Link>
-      <Link href="/listings?type=Land" className={landActive ? "active" : undefined} onClick={onCloseMobileNav}>Land</Link>
+      <Link href="/listings?listingType=land" className={landActive ? "active" : undefined} onClick={onCloseMobileNav}>Land</Link>
+      <Link href="/listings?listingType=uncompleted" className={uncompletedActive ? "active" : undefined} onClick={onCloseMobileNav}>Uncompleted</Link>
       <Link href="/agents" className={agentsActive ? "active" : undefined} onClick={onCloseMobileNav}>Find Agents</Link>
       <div className="mobile-nav-buttons">
         {user ? (
@@ -174,7 +179,7 @@ export function ExtractedHeader({
               </div>
             </div>
             {user.role === "agent" ? (
-              <a href={process.env.NEXT_PUBLIC_SELLERS_URL || "http://localhost:3002"} onClick={onCloseMobileNav} className="mobile-nav-link">Dashboard</a>
+              <button type="button" onClick={() => { onCloseMobileNav(); navigateToSellerDashboard(); }} className="mobile-nav-link" style={{ background: "none", border: "none", cursor: "pointer", textAlign: "left", width: "100%" }}>Dashboard</button>
             ) : (
               <Link href="/account" onClick={onCloseMobileNav} className="mobile-nav-link">Dashboard</Link>
             )}

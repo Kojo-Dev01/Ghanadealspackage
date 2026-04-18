@@ -1,7 +1,7 @@
 export type PropertyRecord = {
   id: string;
   title: string;
-  listingType: "sale" | "rent" | "new";
+  listingType: "sale" | "rent" | "new" | "land" | "uncompleted";
   price: number;
   priceFormatted: string;
   priceLabel?: string;

@@ -11,6 +11,8 @@ import Image from "next/image";
 import Link from "next/link";
 import type { PropertyRecord } from "../lib/api";
 
+const LIBRARIES: ("places")[] = ["places"];
+
 type Props = {
   properties: PropertyRecord[];
   hoveredId: string | null;
@@ -35,10 +37,6 @@ const MAP_OPTIONS: google.maps.MapOptions = {
   fullscreenControl: false,
   clickableIcons: false,
   gestureHandling: "greedy",
-  restriction: {
-    latLngBounds: GHANA_BOUNDS,
-    strictBounds: true,
-  },
   minZoom: 5,
   styles: [
     { featureType: "poi", stylers: [{ visibility: "off" }] },
@@ -125,6 +123,7 @@ function InfoCard({
 export function ListingsMap({ properties, hoveredId, onHover }: Props) {
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
+    libraries: LIBRARIES,
   });
 
   const mapRef = useRef<google.maps.Map | null>(null);

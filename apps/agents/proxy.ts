@@ -25,7 +25,7 @@ export async function proxy(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   const hasSession = await hasValidSession(token);
 
-  if (pathname.startsWith("/login")) {
+  if (pathname.startsWith("/login") || pathname.startsWith("/auth/sso")) {
     if (hasSession) return NextResponse.redirect(new URL("/", request.url));
     return NextResponse.next();
   }

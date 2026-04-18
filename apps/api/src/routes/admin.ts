@@ -642,7 +642,7 @@ export async function registerAdminRoutes(app: FastifyInstance) {
 
     let qb = (supabase as any)
       .from("profiles")
-      .select("id, user_id, name, email, phone, avatar_url, saved_properties, created_at, updated_at", { count: "exact" })
+      .select("id, user_id, name, email, phone, avatar_url, saved_properties, suspended, suspended_at, suspended_reason, created_at, updated_at", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(from, to);
 
@@ -653,7 +653,38 @@ export async function registerAdminRoutes(app: FastifyInstance) {
     const { data, count, error } = await qb;
     if (error) {
       app.log.error(error, "Failed to fetch users");
-      return { items: [], total: 0, page, limit };
+      return { items: [], total: 0, page, limit, stats: { total: 0, agents: 0, buyers: 0, suspended: 0, newThisWeek: 0 } };
+    }
+
+    // Summary stats (unfiltered counts, run in parallel)
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+    const [totalCountRes, agentCountRes, suspendedCountRes, newWeekRes] = await Promise.all([
+      (supabase as any).from("profiles").select("id", { count: "exact", head: true }),
+      (supabase as any).from("agents").select("id", { count: "exact", head: true }),
+      (supabase as any).from("profiles").select("id", { count: "exact", head: true }).eq("suspended", true),
+      (supabase as any).from("profiles").select("id", { count: "exact", head: true }).gte("created_at", weekAgo),
+    ]);
+    const totalUsers = totalCountRes.count ?? 0;
+    const totalAgents = agentCountRes.count ?? 0;
+    const stats = {
+      total: totalUsers,
+      agents: totalAgents,
+      buyers: totalUsers - totalAgents,
+      suspended: suspendedCountRes.count ?? 0,
+      newThisWeek: newWeekRes.count ?? 0,
+    };
+
+    // Determine which users are also agents
+    const userIds = (data ?? []).map((row: Record<string, unknown>) => row.user_id).filter(Boolean);
+    const agentUserIds = new Set<string>();
+    if (userIds.length > 0) {
+      const { data: agentRows } = await (supabase as any)
+        .from("agents")
+        .select("user_id")
+        .in("user_id", userIds);
+      for (const a of agentRows ?? []) {
+        agentUserIds.add(a.user_id);
+      }
     }
 
     const items = (data ?? []).map((row: Record<string, unknown>) => ({
@@ -664,11 +695,85 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       phone: row.phone,
       avatarUrl: row.avatar_url,
       savedCount: Array.isArray(row.saved_properties) ? (row.saved_properties as unknown[]).length : 0,
+      role: agentUserIds.has(row.user_id as string) ? "agent" : "buyer",
+      suspended: row.suspended ?? false,
+      suspendedAt: row.suspended_at ?? null,
+      suspendedReason: row.suspended_reason ?? null,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     }));
 
     return { items, total: count ?? 0, page, limit };
+  });
+
+  // ---- Suspend user ----
+  app.patch("/users/:id/suspend", { preHandler: requirePermission("users.update") }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = request.body as { reason?: string } | undefined;
+    const reason = typeof body?.reason === "string" ? body.reason.trim().slice(0, 500) : null;
+
+    const supabase = getSupabaseAdminClient();
+    if (!supabase) return reply.code(503).send({ message: "Database not configured" });
+
+    const { error } = await (supabase as any)
+      .from("profiles")
+      .update({ suspended: true, suspended_at: new Date().toISOString(), suspended_reason: reason })
+      .eq("id", id);
+
+    if (error) {
+      app.log.error(error, "Failed to suspend user");
+      return reply.code(500).send({ message: "Failed to suspend user" });
+    }
+
+    return { ok: true };
+  });
+
+  // ---- Unsuspend user ----
+  app.patch("/users/:id/unsuspend", { preHandler: requirePermission("users.update") }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    const supabase = getSupabaseAdminClient();
+    if (!supabase) return reply.code(503).send({ message: "Database not configured" });
+
+    const { error } = await (supabase as any)
+      .from("profiles")
+      .update({ suspended: false, suspended_at: null, suspended_reason: null })
+      .eq("id", id);
+
+    if (error) {
+      app.log.error(error, "Failed to unsuspend user");
+      return reply.code(500).send({ message: "Failed to unsuspend user" });
+    }
+
+    return { ok: true };
+  });
+
+  // ---- Delete user (cascades via auth.users FK) ----
+  app.delete("/users/:id", { preHandler: requirePermission("users.delete") }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    const supabase = getSupabaseAdminClient();
+    if (!supabase) return reply.code(503).send({ message: "Database not configured" });
+
+    // Get user_id from profile
+    const { data: profile, error: fetchErr } = await (supabase as any)
+      .from("profiles")
+      .select("user_id")
+      .eq("id", id)
+      .single();
+
+    if (fetchErr || !profile) {
+      return reply.code(404).send({ message: "User not found" });
+    }
+
+    // Delete from Supabase auth (cascades to profiles, email_otps, etc.)
+    const { error: authErr } = await supabase.auth.admin.deleteUser(profile.user_id);
+    if (authErr) {
+      app.log.error(authErr, "Failed to delete auth user");
+      return reply.code(500).send({ message: "Failed to delete user" });
+    }
+
+    return { ok: true };
   });
 
   // ---- Agents verification management ----
