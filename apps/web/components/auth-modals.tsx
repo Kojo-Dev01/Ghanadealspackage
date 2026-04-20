@@ -504,12 +504,22 @@ export function AuthModals({
                 <input
                   name="phone"
                   type="tel"
+                  inputMode="numeric"
                   className="form-input"
                   placeholder="24 123 4567"
                   required
+                  pattern="[0-9\-\s]+"
+                  onKeyPress={(e) => {
+                    if (!/[0-9\-\s]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                   style={{ flex: 1 }}
                 />
               </div>
+              <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginTop: 6 }}>
+                Select your country code above, then enter your phone number without it
+              </p>
             </div>
             <div className="form-group">
               <label>Password</label>
