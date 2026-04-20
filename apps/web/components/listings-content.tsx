@@ -86,6 +86,14 @@ export function ListingsContent({
     return () => { mountedRef.current = false; };
   }, []);
 
+  /* Sync filters state when initialFilters change (e.g., from header navigation) */
+  useEffect(() => {
+    setFilters(initialFilters);
+    setPage(initialPage);
+    setItems(initialItems);
+    setTotal(initialTotal);
+  }, [initialFilters, initialItems, initialPage, initialTotal]);
+
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   /* ── Fetch from API and update URL ── */
