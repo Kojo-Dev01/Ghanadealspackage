@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { useAuth } from "./auth-provider";
 import { requestPasswordReset } from "../lib/api";
 import { navigateToSellerDashboard } from "../lib/sso";
+import countryCodes from "../countryCodes.json";
 
 function EyeIcon({ visible }: { visible: boolean }) {
   if (visible) {
@@ -43,6 +44,10 @@ export function AuthModals({
   const [forgotLoading, setForgotLoading] = useState(false);
   const [showLoginPw, setShowLoginPw] = useState(false);
   const [showSignupPw, setShowSignupPw] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState(countryCodes.find(c => c.iso === "GH") || countryCodes[0]);
+  const [countrySearch, setCountrySearch] = useState("");
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const countryDropdownRef = useRef<HTMLDivElement>(null);
 
   /* ── OTP verification state ── */
   const [otpPending, setOtpPending] = useState<OtpPending | null>(null);
@@ -51,12 +56,16 @@ export function AuthModals({
   const [resendCooldown, setResendCooldown] = useState(0);
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  /* Resend cooldown timer */
+  /* Close dropdown when clicking outside */
   useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const t = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [resendCooldown]);
+    function onPointerDown(e: PointerEvent) {
+      if (countryDropdownRef.current && !countryDropdownRef.current.contains(e.target as Node)) {
+        setShowCountryDropdown(false);
+      }
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, []);
 
   /* Auto-focus first OTP input when OTP view appears */
   useEffect(() => {
@@ -201,7 +210,7 @@ export function AuthModals({
     const form = event.currentTarget;
     const name = (form.elements.namedItem("fullName") as HTMLInputElement).value.trim();
     const email = (form.elements.namedItem("email") as HTMLInputElement).value.trim();
-    const phone = "+233" + (form.elements.namedItem("phone") as HTMLInputElement).value.trim();
+    const phone = selectedCountry.code + (form.elements.namedItem("phone") as HTMLInputElement).value.trim();
     const password = (form.elements.namedItem("password") as HTMLInputElement).value;
 
     const result = await signup({ name, email, phone, password, accountType: "buyer" });
@@ -392,9 +401,114 @@ export function AuthModals({
             </div>
             <div className="form-group">
               <label>Phone Number</label>
-              <div className="phone-input-wrap">
-                <input type="text" className="phone-prefix form-input" value="+233" readOnly />
-                <input name="phone" type="tel" className="form-input" placeholder="24 123 4567" required style={{ flex: 1 }} />
+              <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ position: "relative", width: 180 }} ref={countryDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      border: "1.5px solid var(--border-primary)",
+                      borderRadius: 6,
+                      background: "var(--bg-card)",
+                      color: "var(--text-primary)",
+                      fontSize: 14,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      transition: "border-color 0.15s",
+                    }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = "var(--red)"; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border-primary)"; }}
+                  >
+                    <span>{selectedCountry.flag} {selectedCountry.code}</span>
+                    <svg width="12" height="12" viewBox="0 0 10 10" fill="none" style={{ marginLeft: 4 }}>
+                      <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  
+                  {showCountryDropdown && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        right: 0,
+                        marginTop: 4,
+                        background: "var(--bg-card)",
+                        border: "1px solid var(--border-primary)",
+                        borderRadius: 8,
+                        zIndex: 1000,
+                        maxHeight: 300,
+                        overflow: "hidden",
+                        display: "flex",
+                        flexDirection: "column",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                      }}
+                    >
+                      <input
+                        type="text"
+                        placeholder="Search country..."
+                        value={countrySearch}
+                        onChange={(e) => setCountrySearch(e.target.value)}
+                        style={{
+                          padding: "8px 12px",
+                          border: "none",
+                          borderBottom: "1px solid var(--border-primary)",
+                          background: "var(--bg-card)",
+                          color: "var(--text-primary)",
+                          fontSize: 13,
+                          outline: "none",
+                        }}
+                      />
+                      <div style={{ overflowY: "auto", flex: 1 }}>
+                        {countryCodes
+                          .filter(
+                            (c) =>
+                              c.country.toLowerCase().includes(countrySearch.toLowerCase()) ||
+                              c.code.includes(countrySearch)
+                          )
+                          .map((country) => (
+                            <button
+                              key={country.iso}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCountry(country);
+                                setShowCountryDropdown(false);
+                                setCountrySearch("");
+                              }}
+                              style={{
+                                width: "100%",
+                                padding: "10px 12px",
+                                border: "none",
+                                background: selectedCountry.iso === country.iso ? "rgba(230,57,70,0.08)" : "transparent",
+                                color: "var(--text-primary)",
+                                fontSize: 13,
+                                cursor: "pointer",
+                                textAlign: "left",
+                                transition: "background 0.15s",
+                                borderBottom: "1px solid var(--bg-secondary)",
+                              }}
+                              onMouseEnter={(e) => { if (selectedCountry.iso !== country.iso) e.currentTarget.style.background = "var(--bg-secondary)"; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = selectedCountry.iso === country.iso ? "rgba(230,57,70,0.08)" : "transparent"; }}
+                            >
+                              <span>{country.flag} {country.country} ({country.code})</span>
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <input
+                  name="phone"
+                  type="tel"
+                  className="form-input"
+                  placeholder="24 123 4567"
+                  required
+                  style={{ flex: 1 }}
+                />
               </div>
             </div>
             <div className="form-group">
