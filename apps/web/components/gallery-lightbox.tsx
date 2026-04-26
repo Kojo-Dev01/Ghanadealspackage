@@ -52,15 +52,15 @@ export function GalleryLightbox({ images, alt }: GalleryLightboxProps) {
       {/* Gallery grid */}
       <div className="gallery-grid" style={{ marginTop: 20, cursor: "pointer" }}>
         <div className="gallery-main gd-shimmer-bg" onClick={() => openAt(0)}>
-          <GalleryImage src={images[0]} alt={alt} width={1200} height={700} unoptimized />
+          <GalleryImage src={images[0]} alt={alt} width={1200} height={700} priority sizes="(max-width: 768px) 100vw, 65vw" quality={80} />
           <div className="card-photo-count" style={{ position: "absolute", bottom: 12, left: 12 }}>{images.length} Photos</div>
         </div>
         <div className="gallery-side">
           <div className="gallery-side-img gd-shimmer-bg" onClick={() => openAt(1)}>
-            <GalleryImage src={images[1] ?? images[0]} alt="Interior" width={500} height={320} unoptimized />
+            <GalleryImage src={images[1] ?? images[0]} alt="Interior" width={500} height={320} sizes="(max-width: 768px) 0px, 35vw" quality={75} />
           </div>
           <div className="gallery-side-img gd-shimmer-bg" style={{ position: "relative" }} onClick={() => openAt(2)}>
-            <GalleryImage src={images[2] ?? images[0]} alt="View" width={500} height={320} unoptimized />
+            <GalleryImage src={images[2] ?? images[0]} alt="View" width={500} height={320} sizes="(max-width: 768px) 0px, 35vw" quality={75} />
             {images.length > 3 && (
               <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 20, fontWeight: 700, borderRadius: "inherit" }}>
                 +{images.length - 3} more
@@ -75,7 +75,7 @@ export function GalleryLightbox({ images, alt }: GalleryLightboxProps) {
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, marginTop: 12 }}>
           {images.map((src, i) => (
             <div key={i} onClick={() => openAt(i)} className="gd-shimmer-bg" style={{ flexShrink: 0, width: 140, height: 95, borderRadius: 8, overflow: "hidden", border: "2px solid var(--border, #eee)", cursor: "pointer" }}>
-              <GalleryImage src={src} alt={`Photo ${i + 1}`} width={140} height={95} style={{ width: "100%", height: "100%", objectFit: "cover" }} unoptimized />
+              <GalleryImage src={src} alt={`Photo ${i + 1}`} width={140} height={95} style={{ width: "100%", height: "100%", objectFit: "cover" }} sizes="140px" quality={70} />
             </div>
           ))}
         </div>
@@ -150,7 +150,7 @@ export function GalleryLightbox({ images, alt }: GalleryLightboxProps) {
                   transition: "opacity 0.2s, border-color 0.2s",
                 }}
               >
-                <Image src={src} alt={`Thumb ${i + 1}`} width={72} height={52} style={{ width: "100%", height: "100%", objectFit: "cover" }} unoptimized />
+                <Image src={src} alt={`Thumb ${i + 1}`} width={72} height={52} style={{ width: "100%", height: "100%", objectFit: "cover" }} sizes="72px" quality={65} />
               </div>
             ))}
           </div>

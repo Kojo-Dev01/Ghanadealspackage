@@ -3,6 +3,9 @@ import Link from "next/link";
 import type { PropertyRecord } from "../lib/api";
 import { SaveButton } from "./save-button";
 
+// 10×7 neutral gray — shown while the real image loads (remote images require an explicit blurDataURL)
+const CARD_BLUR_PLACEHOLDER = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAHCAYAAAAxrNxjAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAJElEQVQI12NgYGD4z8BQDwAEgAF/QualIgAAAABJRU5ErkJggg==";
+
 type PropertyCardProps = {
   property: PropertyRecord;
   isHighlighted?: boolean;
@@ -25,7 +28,17 @@ export function PropertyCard({ property, isHighlighted, onMouseEnter, onMouseLea
     >
       <div className="card-img gd-shimmer-bg">
         <Link href={`/property/${property.id}`}>
-          <Image src={property.image} alt={property.title} width={640} height={420} unoptimized />
+          <Image
+            src={property.image}
+            alt={property.title}
+            width={640}
+            height={420}
+            loading="lazy"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            quality={75}
+            placeholder="blur"
+            blurDataURL={CARD_BLUR_PLACEHOLDER}
+          />
         </Link>
         <div className="card-badges">
           {badge ? <span className={badge.className}>{badge.label}</span> : null}
