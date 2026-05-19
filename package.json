@@ -31,5 +31,9 @@
     "lint:api": "npm --workspace @ghanadeals/api run lint",
     "lint:admin": "npm --workspace @ghanadeals/admin run lint",
     "lint:agents": "npm --workspace @ghanadeals/agents run lint"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/sdk-trace-base": "^2.7.1"
   }
 }
