@@ -26,23 +26,45 @@ async function sendEmail(opts: SendEmailOptions): Promise<boolean> {
     console.warn("[email] Resend not configured — RESEND_API_KEY is missing");
     return false;
   }
-  try {
-    const { data, error } = await resend.emails.send({
-      from: getFromEmail(),
-      to: opts.to,
-      subject: opts.subject,
-      html: opts.html,
-    });
-    if (error) {
-      console.error("[email] Resend API error:", error);
+
+  const MAX_ATTEMPTS = 3;
+  const RETRY_DELAY_MS = 1500;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const { data, error } = await resend.emails.send({
+        from: getFromEmail(),
+        to: opts.to,
+        subject: opts.subject,
+        html: opts.html,
+      });
+
+      if (error) {
+        // statusCode: null means a network-level failure — retry
+        const isTransient = (error as { statusCode?: number | null }).statusCode == null;
+        if (isTransient && attempt < MAX_ATTEMPTS) {
+          console.warn(`[email] Transient error on attempt ${attempt}/${MAX_ATTEMPTS}, retrying in ${RETRY_DELAY_MS}ms…`, error);
+          await new Promise((r) => setTimeout(r, RETRY_DELAY_MS * attempt));
+          continue;
+        }
+        console.error(`[email] Resend API error (attempt ${attempt}/${MAX_ATTEMPTS}):`, error);
+        return false;
+      }
+
+      console.log("[email] Sent to", opts.to, "id:", data?.id);
+      return true;
+    } catch (err) {
+      if (attempt < MAX_ATTEMPTS) {
+        console.warn(`[email] Network exception on attempt ${attempt}/${MAX_ATTEMPTS}, retrying…`, err);
+        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS * attempt));
+        continue;
+      }
+      console.error("[email] Failed to send after all attempts:", err);
       return false;
     }
-    console.log("[email] Sent to", opts.to, "id:", data?.id);
-    return true;
-  } catch (err) {
-    console.error("[email] Failed to send:", err);
-    return false;
   }
+
+  return false;
 }
 
 // ---- Templates ----

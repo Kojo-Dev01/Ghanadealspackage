@@ -6,6 +6,15 @@
     "apps/*",
     "shared/*"
   ],
+  "devDependencies": {
+    "postcss": "^8.5.15"
+  },
+  "overrides": {
+    "postcss": "^8.5.15",
+    "next": {
+      "postcss": "^8.5.15"
+    }
+  },
   "scripts": {
     "dev": "npm run dev:web & npm run dev:api & npm run dev:admin & npm run dev:agents",
     "dev:web": "npm --workspace @ghanadeals/web run dev",

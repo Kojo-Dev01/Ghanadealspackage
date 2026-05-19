@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../../components/auth-provider";
 import { fetchBuyerProfile, updateBuyerProfile, type UserProfile } from "../../../lib/api";
+
+const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
+const ACCEPTED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -10,9 +13,13 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
   const [saving, setSaving] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -22,10 +29,47 @@ export default function ProfilePage() {
         setProfile(p);
         setName(p.name);
         setPhone(p.phone);
+        setAvatarUrl(p.avatar_url);
       }
       setFetching(false);
     });
   }, [user]);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!ACCEPTED_AVATAR_TYPES.includes(file.type)) {
+      setAvatarError("Only JPG, PNG, and WebP images are allowed.");
+      return;
+    }
+    if (file.size > MAX_AVATAR_SIZE) {
+      setAvatarError("Image must be under 5 MB.");
+      return;
+    }
+
+    setAvatarError("");
+    setAvatarUploading(true);
+
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      body.append("folder", "avatars");
+      const res = await fetch("/api/uploads/sign", { method: "POST", body });
+      if (!res.ok) {
+        const msg = await res.json().catch(() => null);
+        throw new Error(msg?.message ?? "Upload failed");
+      }
+      const { url } = await res.json();
+      setAvatarUrl(url);
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setAvatarUploading(false);
+      // reset so the same file can be re-selected if needed
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +79,7 @@ export default function ProfilePage() {
     const updated = await updateBuyerProfile({
       name: name.trim(),
       phone: phone.trim(),
+      avatar_url: avatarUrl,
     });
 
     if (updated) {
@@ -70,24 +115,63 @@ export default function ProfilePage() {
           }}>
             {/* Avatar + Email Header */}
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 28, paddingBottom: 24, borderBottom: "1px solid var(--border-primary)" }}>
-              <div style={{
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                background: "var(--red)",
-                color: "#fff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 22,
-                fontWeight: 700,
-                flexShrink: 0,
-              }}>
-                {(profile?.name || user?.name || user?.email || "U")[0].toUpperCase()}
+              <div style={{ position: "relative", flexShrink: 0 }}>
+                <div style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
+                  background: avatarUrl ? undefined : "var(--red)",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 22,
+                  fontWeight: 700,
+                  overflow: "hidden",
+                }}>
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    (profile?.name || user?.name || user?.email || "U")[0].toUpperCase()
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={avatarUploading}
+                  title="Change photo"
+                  style={{
+                    position: "absolute",
+                    bottom: -4,
+                    right: -4,
+                    width: 22,
+                    height: 22,
+                    borderRadius: "50%",
+                    background: "var(--red)",
+                    border: "2px solid var(--bg-card)",
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: avatarUploading ? "not-allowed" : "pointer",
+                    fontSize: 12,
+                    lineHeight: 1,
+                  }}
+                >
+                  {avatarUploading ? "…" : "✎"}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  style={{ display: "none" }}
+                  onChange={handleAvatarChange}
+                />
               </div>
               <div>
                 <div style={{ fontWeight: 600, fontSize: 18, color: "var(--text-primary)" }}>{profile?.name || user?.name}</div>
                 <div style={{ color: "var(--text-secondary)", fontSize: 14 }}>{profile?.email || user?.email}</div>
+                {avatarError && <div style={{ color: "var(--red)", fontSize: 12, marginTop: 4 }}>{avatarError}</div>}
               </div>
             </div>
 

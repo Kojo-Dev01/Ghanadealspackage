@@ -538,7 +538,7 @@ export async function fetchBuyerProfile(): Promise<UserProfile | null> {
 }
 
 export async function updateBuyerProfile(
-  data: Partial<{ name: string; phone: string }>
+  data: Partial<{ name: string; phone: string; avatar_url: string | null }>
 ): Promise<UserProfile | null> {
   try {
     const res = await authFetch("/buyer/profile", {

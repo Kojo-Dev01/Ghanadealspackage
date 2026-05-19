@@ -172,6 +172,47 @@ export async function registerNotificationRoutes(app: FastifyInstance) {
     mutedTypes: z.array(z.string()).max(20).optional(),
   });
 
+  const pushTokenSchema = z.object({
+    token: z.string().min(10).max(300),
+    platform: z.enum(["ios", "android", "web"]).optional(),
+    deviceId: z.string().max(200).optional(),
+  });
+
+  // ── POST /push-token — register Expo push token ─────────────
+  app.post("/push-token", async (request, reply) => {
+    const { sub } = request.user as { sub: string };
+    const parsed = pushTokenSchema.safeParse(request.body);
+
+    if (!parsed.success) {
+      return reply.code(400).send({ message: "Invalid push token payload", errors: parsed.error.flatten().fieldErrors });
+    }
+
+    const supabase = getSupabaseAdminClient();
+    if (!supabase) return reply.code(503).send({ message: "Service unavailable" });
+
+    const { token, platform, deviceId } = parsed.data;
+
+    const row: Record<string, unknown> = {
+      user_id: sub,
+      token,
+      platform: platform ?? null,
+      device_id: deviceId ?? null,
+      enabled: true,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await (supabase as any)
+      .from("push_tokens")
+      .upsert(row, { onConflict: "user_id,token" });
+
+    if (error) {
+      request.log.error(error, "Failed to register push token");
+      return reply.code(500).send({ message: "Failed to register push token" });
+    }
+
+    return { message: "Push token registered" };
+  });
+
   app.put("/preferences", async (request, reply) => {
     const { sub } = request.user as { sub: string };
     const parsed = preferencesSchema.safeParse(request.body);

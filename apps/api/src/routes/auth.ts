@@ -320,10 +320,11 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     }
 
     const { email } = body.data;
-    const webUrl = process.env.CORS_ORIGINS?.split(",")[0] ?? "http://localhost:3000";
-
+    // Deep-link into the mobile app.
+    // NOTE: add "ghanadealsapp://reset-password" to the list of allowed redirect URLs
+    // in your Supabase project → Authentication → URL Configuration.
     const { error } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
-      redirectTo: `${webUrl}/reset-password`
+      redirectTo: "ghanadealsapp://reset-password"
     });
 
     if (error) {

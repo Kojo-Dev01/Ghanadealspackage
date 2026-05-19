@@ -6,6 +6,16 @@ const ALLOWED_TYPES = new Set([
   "application/pdf",
 ]);
 
+const ALLOWED_FOLDERS = new Set(["properties", "avatars", "chat", "documents", "selfies"]);
+
+const MIME_TO_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/avif": "avif",
+  "application/pdf": "pdf",
+};
+
 // Lazy-init so env vars are available after dotenv.config() in server.ts
 let _client: S3Client | null = null;
 function getS3Client() {
@@ -69,8 +79,9 @@ async function handleUpload(request: any, reply: any, forceFolder?: string) {
     }
 
     // Build object key: folder/timestamp-random.ext
-    const folder = forceFolder ?? (data.fields.folder as any)?.value ?? "properties";
-    const ext = data.filename.split(".").pop() ?? "jpg";
+    const rawFolder = forceFolder ?? (data.fields.folder as any)?.value ?? "properties";
+    const folder = ALLOWED_FOLDERS.has(rawFolder) ? rawFolder : "properties";
+    const ext = MIME_TO_EXT[data.mimetype] ?? "bin";
     const key = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
     const buffer = await data.toBuffer();

@@ -9,7 +9,7 @@ export default function NewListingPage() {
     "use server";
 
     const title = formData.get("title") as string;
-    const listingType = formData.get("listingType") as "sale" | "rent" | "new";
+    const listingType = formData.get("listingType") as "sale" | "rent" | "new" | "land" | "uncompleted";
     const price = Number(formData.get("price")) || 0;
     const priceLabel = (formData.get("priceLabel") as string) || undefined;
     const region = formData.get("region") as string;
