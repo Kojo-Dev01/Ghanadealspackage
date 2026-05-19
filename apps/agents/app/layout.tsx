@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import { NavigationProgress } from "@/components/navigation-progress";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SentryClientInit } from "@/components/sentry-client-init";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -38,6 +39,7 @@ export default function RootLayout({
         <Script id="theme-init" strategy="beforeInteractive">{`try{var c=document.cookie.match(/(?:^|; )gh-theme=([^;]*)/);var t=c?c[1]:localStorage.getItem("gh-theme");if(t==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}`}</Script>
       </head>
       <body className="min-h-screen bg-background text-foreground font-sans antialiased">
+        <SentryClientInit />
         <ThemeProvider>
           <NavigationProgress />
           {children}

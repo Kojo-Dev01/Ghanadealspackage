@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AuthProvider } from "../components/auth-provider";
+import { SentryClientInit } from "../components/sentry-client-init";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="stylesheet" href="/legacy/admin.css" />
       </head>
       <body>
+        <SentryClientInit />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

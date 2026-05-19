@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@sentry/nextjs": "^9.0.0",
     "@react-google-maps/api": "^2.20.8",
     "@supabase/supabase-js": "^2.49.4",
     "clsx": "^2.1.1",
