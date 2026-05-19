@@ -6,6 +6,10 @@
     "apps/*",
     "shared/*"
   ],
+  "dependencies": {
+    "@opentelemetry/api": "^1.8.0",
+    "@opentelemetry/sdk-trace-base": "^0.49.0"
+  },
   "devDependencies": {
     "postcss": "^8.5.15"
   },
