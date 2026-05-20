@@ -7,6 +7,9 @@ import { useWs } from "./ws-provider";
 type IncomingMessage = {
   id?: string;
   sender_id?: string;
+  sender_name?: string;
+  senderName?: string;
+  sender?: { name?: string };
   content?: string;
   message_type?: string;
   created_at?: string;
@@ -15,6 +18,7 @@ type IncomingMessage = {
 type ToastItem = {
   id: string;
   conversationId: string;
+  senderName: string;
   preview: string;
   createdAt: number;
 };
@@ -28,6 +32,11 @@ function getPreview(message: IncomingMessage) {
   if (message.message_type === "property_ref") return "Shared a property";
   const content = (message.content ?? "New message").trim();
   return content.length > 80 ? `${content.slice(0, 77)}...` : content;
+}
+
+function getSenderName(message: IncomingMessage) {
+  const name = message.senderName ?? message.sender_name ?? message.sender?.name ?? "New message";
+  return name.trim() || "New message";
 }
 
 function getConversationFromPath(pathname: string) {
@@ -65,6 +74,7 @@ export function GlobalMessageToasts({ userId }: { userId: string | null }) {
       const toast: ToastItem = {
         id: crypto.randomUUID(),
         conversationId: data.conversationId,
+        senderName: getSenderName(message),
         preview: getPreview(message),
         createdAt: now,
       };
@@ -93,7 +103,7 @@ export function GlobalMessageToasts({ userId }: { userId: string | null }) {
         right: 16,
         top: 16,
         zIndex: 120,
-        width: "min(360px, calc(100vw - 2rem))",
+        width: "min(380px, calc(100vw - 2rem))",
         display: "grid",
         gap: 8,
         pointerEvents: "none",
@@ -104,21 +114,49 @@ export function GlobalMessageToasts({ userId }: { userId: string | null }) {
           key={toast.id}
           style={{
             pointerEvents: "auto",
-            borderRadius: 12,
+            borderRadius: 16,
             border: "1px solid var(--border-primary)",
-            background: "var(--bg-card)",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.16)",
-            padding: 12,
+            background: "color-mix(in oklab, var(--bg-card) 94%, white 6%)",
+            boxShadow: "0 12px 34px rgba(0,0,0,0.18)",
+            padding: 14,
           }}
         >
-          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--red)", marginBottom: 2 }}>New message</div>
-          <div style={{ fontSize: 14, color: "var(--text-primary)", lineHeight: 1.35, wordBreak: "break-word" }}>{toast.preview}</div>
-          <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                background: "color-mix(in oklab, var(--red) 16%, transparent)",
+                color: "var(--red)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 11,
+                fontWeight: 800,
+                textTransform: "uppercase",
+                flexShrink: 0,
+              }}
+            >
+              {toast.senderName.slice(0, 2)}
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--red)", letterSpacing: 0.4, textTransform: "uppercase" }}>New message</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {toast.senderName}
+              </div>
+              <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.35, marginTop: 2, wordBreak: "break-word" }}>
+                {toast.preview}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
             <button
               type="button"
               style={{
                 height: 32,
-                padding: "0 12px",
+                padding: "0 14px",
                 borderRadius: 8,
                 border: "none",
                 background: "var(--red)",
@@ -138,7 +176,7 @@ export function GlobalMessageToasts({ userId }: { userId: string | null }) {
               type="button"
               style={{
                 height: 32,
-                padding: "0 12px",
+                padding: "0 14px",
                 borderRadius: 8,
                 border: "1px solid var(--border-primary)",
                 background: "var(--bg-secondary)",

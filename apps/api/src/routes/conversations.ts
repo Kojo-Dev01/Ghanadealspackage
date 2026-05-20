@@ -161,12 +161,19 @@ export async function registerConversationRoutes(app: FastifyInstance) {
         .update({ last_message_at: msg.created_at })
         .eq("id", convo.id);
 
+      const { data: senderProfile } = await (supabase as any)
+        .from("profiles")
+        .select("name")
+        .eq("user_id", userId)
+        .single();
+      const senderName = senderProfile?.name ?? "Someone";
+
       // Real-time push to seller
       console.warn(`[init-message] initiator=${userId}, sellerId=${sellerId}, about to notify sellerId`);
       sendToUser(sellerId, {
         type: "new_message",
         conversationId: convo.id,
-        message: msg,
+        message: { ...msg, senderName },
       });
 
       // Notification for seller
@@ -446,13 +453,20 @@ export async function registerConversationRoutes(app: FastifyInstance) {
       .update({ last_message_at: msg.created_at })
       .eq("id", id);
 
+    const { data: senderProfile } = await (supabase as any)
+      .from("profiles")
+      .select("name")
+      .eq("user_id", userId)
+      .single();
+    const senderName = senderProfile?.name ?? "Someone";
+
     // Real-time push to the other user
     const recipientId = convo.buyer_id === userId ? convo.seller_id : convo.buyer_id;
     console.warn(`[message] sender=${userId}, buyer=${convo.buyer_id}, seller=${convo.seller_id}, calculated recipientId=${recipientId}`);
     sendToUser(recipientId, {
       type: "new_message",
       conversationId: id,
-      message: enrichedMsg,
+      message: { ...enrichedMsg, senderName },
     });
 
     // Notification for recipient

@@ -7,6 +7,9 @@ import { useWs } from "./ws-provider";
 type IncomingMessage = {
   id?: string;
   sender_id?: string;
+  sender_name?: string;
+  senderName?: string;
+  sender?: { name?: string };
   content?: string;
   message_type?: string;
   created_at?: string;
@@ -15,6 +18,7 @@ type IncomingMessage = {
 type ToastItem = {
   id: string;
   conversationId: string;
+  senderName: string;
   preview: string;
   createdAt: number;
 };
@@ -28,6 +32,11 @@ function getPreview(message: IncomingMessage) {
   if (message.message_type === "property_ref") return "Shared a property";
   const content = (message.content ?? "New message").trim();
   return content.length > 80 ? `${content.slice(0, 77)}...` : content;
+}
+
+function getSenderName(message: IncomingMessage) {
+  const name = message.senderName ?? message.sender_name ?? message.sender?.name ?? "New message";
+  return name.trim() || "New message";
 }
 
 function getConversationFromPath(pathname: string) {
@@ -65,6 +74,7 @@ export function GlobalMessageToasts({ userId }: { userId: string | null }) {
       const toast: ToastItem = {
         id: crypto.randomUUID(),
         conversationId: data.conversationId,
+        senderName: getSenderName(message),
         preview: getPreview(message),
         createdAt: now,
       };
@@ -87,18 +97,26 @@ export function GlobalMessageToasts({ userId }: { userId: string | null }) {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed right-4 top-4 z-[120] w-[min(360px,calc(100vw-2rem))] space-y-2 pointer-events-none">
+    <div className="fixed right-4 top-4 z-[120] w-[min(380px,calc(100vw-2rem))] space-y-2.5 pointer-events-none">
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className="pointer-events-auto rounded-xl border border-border bg-panel shadow-lg p-3"
+          className="pointer-events-auto rounded-2xl border border-border/70 bg-panel/95 backdrop-blur shadow-[0_12px_34px_rgba(0,0,0,0.18)] p-3.5"
         >
-          <div className="text-xs font-semibold text-accent mb-0.5">New message</div>
-          <div className="text-sm text-foreground leading-snug break-words">{toast.preview}</div>
-          <div className="mt-2 flex items-center gap-2">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-accent/15 text-accent flex items-center justify-center text-xs font-bold uppercase flex-shrink-0">
+              {toast.senderName.slice(0, 2)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[11px] tracking-wide uppercase font-semibold text-accent/90">New message</div>
+              <div className="text-sm font-semibold text-foreground truncate">{toast.senderName}</div>
+              <div className="text-[13px] text-muted leading-snug break-words mt-0.5">{toast.preview}</div>
+            </div>
+          </div>
+          <div className="mt-3 flex items-center gap-2">
             <button
               type="button"
-              className="h-8 px-3 rounded-lg bg-accent text-white text-xs font-semibold hover:opacity-90"
+              className="h-8 px-3.5 rounded-lg bg-accent text-white text-xs font-semibold hover:opacity-90"
               onClick={() => {
                 setToasts((prev) => prev.filter((t) => t.id !== toast.id));
                 router.push(`/messages/${toast.conversationId}`);
@@ -108,7 +126,7 @@ export function GlobalMessageToasts({ userId }: { userId: string | null }) {
             </button>
             <button
               type="button"
-              className="h-8 px-3 rounded-lg bg-panel-alt text-muted text-xs font-semibold hover:text-foreground"
+              className="h-8 px-3.5 rounded-lg bg-panel-alt text-muted text-xs font-semibold hover:text-foreground"
               onClick={() => {
                 setToasts((prev) => prev.filter((t) => t.id !== toast.id));
               }}
