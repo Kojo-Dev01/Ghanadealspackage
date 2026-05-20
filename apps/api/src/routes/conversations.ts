@@ -162,6 +162,7 @@ export async function registerConversationRoutes(app: FastifyInstance) {
         .eq("id", convo.id);
 
       // Real-time push to seller
+      console.warn(`[init-message] initiator=${userId}, sellerId=${sellerId}, about to notify sellerId`);
       sendToUser(sellerId, {
         type: "new_message",
         conversationId: convo.id,
@@ -447,6 +448,7 @@ export async function registerConversationRoutes(app: FastifyInstance) {
 
     // Real-time push to the other user
     const recipientId = convo.buyer_id === userId ? convo.seller_id : convo.buyer_id;
+    console.warn(`[message] sender=${userId}, buyer=${convo.buyer_id}, seller=${convo.seller_id}, calculated recipientId=${recipientId}`);
     sendToUser(recipientId, {
       type: "new_message",
       conversationId: id,

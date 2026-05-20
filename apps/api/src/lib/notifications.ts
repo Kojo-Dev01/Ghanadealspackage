@@ -50,7 +50,7 @@ async function getActivePushTokens(userIds: string[]): Promise<string[]> {
 
   const { data, error } = await (supabase as any)
     .from("push_tokens")
-    .select("token")
+    .select("token, user_id")
     .in("user_id", userIds)
     .eq("enabled", true);
 
@@ -59,11 +59,14 @@ async function getActivePushTokens(userIds: string[]): Promise<string[]> {
     return [];
   }
 
-  const rows = (data ?? []) as Array<{ token?: unknown }>;
+  const rows = (data ?? []) as Array<{ token?: unknown; user_id?: string }>;
+  console.warn(`[push] fetched tokens for user IDs [${userIds.join(", ")}]:`, rows.map(r => `${r.user_id}:${r.token}`));
+  
   const tokens = rows
     .map((row) => (typeof row.token === "string" ? row.token : undefined))
     .filter((token): token is string => typeof token === "string" && isExpoPushToken(token));
 
+  console.warn(`[push] filtered to ${tokens.length} valid Expo tokens`);
   return [...new Set(tokens)];
 }
 
@@ -117,6 +120,8 @@ async function sendPushNotification(
 export async function createNotification(opts: CreateNotificationOptions): Promise<void> {
   const supabase = getSupabaseAdminClient();
   if (!supabase) return;
+
+  console.warn(`[notification] creating ${opts.type} for user ${opts.userId}`);
 
   await (supabase as any).from("notifications").insert({
     user_id: opts.userId,

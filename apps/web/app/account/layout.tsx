@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "../../components/auth-provider";
 import { AccountSidebar } from "../../components/account-sidebar";
 import { WsProvider } from "../../components/ws-provider";
+import { GlobalMessageToasts } from "../../components/global-message-toasts";
 import { navigateToSellerDashboard } from "../../lib/sso";
 
 function ThemeToggle() {
@@ -165,6 +166,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
 
   return (
     <WsProvider userId={user.id}>
+      <GlobalMessageToasts userId={user.id} />
       <style>{`
         .acct-grid {
           display: grid;

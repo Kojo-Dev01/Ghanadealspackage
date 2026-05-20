@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { WsProvider } from "./ws-provider";
+import { GlobalMessageToasts } from "./global-message-toasts";
 
 /**
  * Wraps the dashboard in a WsProvider that stays alive
@@ -21,5 +22,10 @@ export function DashboardWsWrapper({ children }: { children: ReactNode }) {
       .catch(() => {});
   }, []);
 
-  return <WsProvider userId={userId}>{children}</WsProvider>;
+  return (
+    <WsProvider userId={userId}>
+      <GlobalMessageToasts userId={userId} />
+      {children}
+    </WsProvider>
+  );
 }
