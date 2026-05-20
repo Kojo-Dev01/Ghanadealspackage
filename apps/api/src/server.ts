@@ -20,6 +20,7 @@ import { registerAgentDashboardRoutes } from "./routes/agent-dashboard.js";
 import { registerBuyerRoutes } from "./routes/buyer.js";
 import { registerNotificationRoutes } from "./routes/notifications.js";
 import { registerWebSocketPlugin } from "./plugins/websocket.js";
+import { registerOtel } from "./plugins/otel.js";
 import { registerConversationRoutes } from "./routes/conversations.js";
 
 const serverDir = path.dirname(fileURLToPath(import.meta.url));
@@ -58,6 +59,10 @@ await app.register(jwt, {
 await app.register(multipart, {
   limits: { fileSize: 5 * 1024 * 1024 }
 });
+
+
+// Register otel, skipping /v1/ws (websocket upgrades)
+await registerOtel(app);
 
 // WebSocket – must be registered on the root app before routes
 await registerWebSocketPlugin(app);
