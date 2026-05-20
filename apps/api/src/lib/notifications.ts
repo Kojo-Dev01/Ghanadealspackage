@@ -123,13 +123,22 @@ export async function createNotification(opts: CreateNotificationOptions): Promi
 
   console.warn(`[notification] creating ${opts.type} for user ${opts.userId}`);
 
-  await (supabase as any).from("notifications").insert({
+  const { error } = await (supabase as any).from("notifications").insert({
     user_id: opts.userId,
     type: opts.type,
     title: opts.title,
     body: opts.body ?? "",
     data: opts.data ?? {},
   });
+
+  if (error) {
+    console.error("[notification] failed to insert notification", {
+      userId: opts.userId,
+      type: opts.type,
+      error,
+    });
+    return;
+  }
 
   await sendPushNotification([opts.userId], {
     type: opts.type,

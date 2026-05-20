@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { startConversation, sendMessage } from "../lib/api";
+import { startConversation, sendMessage, submitInquiry } from "../lib/api";
 import { useAuth } from "./auth-provider";
 
 type Props = {
@@ -27,12 +27,27 @@ export function InquiryForm({ propertyId }: Props) {
     setStatus("loading");
     setFeedback("");
 
+    const text = message.trim();
+
+    // Also create a formal inquiry so agent receives inquiry notifications/email.
+    const inquiryResult = await submitInquiry({
+      propertyId,
+      name: user.name,
+      email: user.email,
+      message: text,
+      phone: "",
+    });
+
     const result = await startConversation(propertyId, "", "");
     if (result) {
       // Send as a property_ref message so the property is tagged with the caption
-      await sendMessage(result.conversationId, message.trim(), "property_ref", { propertyRefId: propertyId });
+      await sendMessage(result.conversationId, text, "property_ref", { propertyRefId: propertyId });
       setStatus("success");
-      setFeedback("Message sent! The seller will be notified.");
+      setFeedback(
+        inquiryResult.ok
+          ? "Message sent! The seller was notified."
+          : "Message sent, but inquiry alert could not be confirmed. Please try again."
+      );
       setMessage("");
     } else {
       setStatus("error");

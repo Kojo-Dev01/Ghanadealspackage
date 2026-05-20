@@ -40,6 +40,23 @@ export async function registerInquiryRoutes(app: FastifyInstance) {
     }
 
     const prop = property as { id: string; title: string; agent_id: string; agents: { id: string; user_id: string; name: string; email: string } };
+    const agentUserId = prop.agents?.user_id ?? null;
+
+    // Fallback profile lookup to keep notifications/emails working when agent.email/name is stale.
+    let profileName: string | null = null;
+    let profileEmail: string | null = null;
+    if (agentUserId) {
+      const { data: profile } = await (supabase as any)
+        .from("profiles")
+        .select("name, email")
+        .eq("user_id", agentUserId)
+        .single();
+      profileName = profile?.name ?? null;
+      profileEmail = profile?.email ?? null;
+    }
+
+    const agentName = (prop.agents?.name || profileName || "Agent").trim();
+    const agentEmail = (prop.agents?.email || profileEmail || "").trim();
 
     // If the caller is logged in, capture their user_id for "my enquiries"
     let userId: string | null = null;
@@ -71,23 +88,27 @@ export async function registerInquiryRoutes(app: FastifyInstance) {
     }
 
     // Send email notification to agent (fire-and-forget)
-    if (prop.agents?.email) {
+    if (agentEmail) {
       notifyAgentNewInquiry(
-        { email: prop.agents.email, name: prop.agents.name },
+        { email: agentEmail, name: agentName },
         { name: body.name, email: body.email, phone: body.phone, message: body.message },
         { title: prop.title, id: prop.id }
       ).catch((err) => app.log.error(err, "Failed to send inquiry email"));
+    } else {
+      app.log.warn({ propertyId: prop.id, agentUserId }, "Skipping inquiry email: agent email is missing");
     }
 
     // In-app notification for agent
-    if (prop.agents?.user_id) {
+    if (agentUserId) {
       createNotification({
-        userId: prop.agents.user_id,
+        userId: agentUserId,
         type: "inquiry_received",
         title: "New Inquiry",
         body: `${body.name} inquired about "${prop.title}"`,
         data: { propertyId: prop.id, inquiryId: (data as { id: string }).id },
       }).catch((err) => app.log.error(err, "Failed to create inquiry notification"));
+    } else {
+      app.log.warn({ propertyId: prop.id, agentId: prop.agent_id }, "Skipping inquiry notification: agent user_id is missing");
     }
 
     return reply.code(201).send({
